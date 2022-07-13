@@ -1,0 +1,12 @@
+.DS_Store
+__pycache__
+.coverage
+.coverage.*
+.pypirc
+.python-version
+.tox/
+build/
+code_source/
+coverage.xml
+dist/
+*.egg-info/
