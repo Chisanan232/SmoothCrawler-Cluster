@@ -1,6 +1,6 @@
 from smoothcrawler_cluster._utils.metadata import CrawlerStateRole, TaskResult, State, Task, Heartbeat
 
-from typing import List, Callable, TypeVar, Generic
+from typing import List, Dict, Callable, TypeVar, Generic
 from enum import Enum
 from abc import ABCMeta
 import traceback
@@ -437,11 +437,37 @@ class TestTask(_MetaDataTest):
 
 
     def test_task_content(self, task: Task) -> None:
-        pass
+
+        def _get_func() -> Dict:
+            return task.task_content
+
+        def _set_func(value) -> None:
+            task.task_content = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value={"k1": "v1", "k2": "v2", "k3": "v3"},
+            invalid_1_value="5",
+            invalid_2_value=["spider_1"]
+        )
 
 
     def test_task_result(self, task: Task) -> None:
-        pass
+
+        def _get_func() -> TaskResult:
+            return task.task_result
+
+        def _set_func(value) -> None:
+            task.task_result = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=TaskResult.Done,
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
 
 
 
