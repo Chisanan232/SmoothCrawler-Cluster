@@ -395,6 +395,8 @@ class Task:
 
     @task_result.setter
     def task_result(self, task_result: TaskResult) -> None:
+        if type(task_result) is not TaskResult:
+            raise ValueError("Property *task_result* only accept *TaskResult* type value.")
         self._task_result = task_result
 
 
