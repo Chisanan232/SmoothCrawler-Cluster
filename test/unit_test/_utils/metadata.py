@@ -2,6 +2,7 @@ from smoothcrawler_cluster._utils.metadata import CrawlerStateRole, TaskResult, 
 
 from typing import List, Callable, TypeVar, Generic
 from enum import Enum
+from abc import ABCMeta
 import traceback
 import pytest
 import random
@@ -10,14 +11,14 @@ import random
 _EnumT = TypeVar("_EnumT", bound=Enum)
 
 
-class EnumObjTest:
+class _EnumObjTest(metaclass=ABCMeta):
 
     def _run_enum_value_test(self, under_test_enum: Enum, expected_value: str) -> None:
         assert under_test_enum.value == expected_value, f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
 
 
 
-class TestCrawlerStateRole(EnumObjTest):
+class TestCrawlerStateRole(_EnumObjTest):
     """
     Test for the enum object key-value mapping.
     """
@@ -47,7 +48,7 @@ class TestCrawlerStateRole(EnumObjTest):
 
 
 
-class TestTaskResult(EnumObjTest):
+class TestTaskResult(_EnumObjTest):
     """
     Test for the enum object key-value mapping.
     """
@@ -77,7 +78,68 @@ class TestTaskResult(EnumObjTest):
 
 
 
-class TestState:
+class _MetaDataTest(metaclass=ABCMeta):
+
+    def _run_property_test(self, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
+        """
+        Test for getting and setting the property value. It also try to operate the property with invalid value to test
+        about it should NOT work finely without any issue.
+
+        :param setting_func: The function which would set value to the property.
+                                         The function would be like below: (for example with property *fail_backup*)
+
+                                         .. code_block: python
+
+                                            def _set_func(state: State, value: List[str]) -> None:
+                                                state.fail_backup = state
+
+        :param getting_func: The function which would get value by the property.
+                                         The function would be like below: (for example with property *fail_backup*)
+
+                                         .. code_block: python
+
+                                            def _get_func(state: State) -> List[str]:
+                                                return state.fail_backup
+
+        :param valid_value: The valid value which could be set to the property.
+        :param invalid_1_value: The invalid value which would raise an exception if set it to the property.
+        :param invalid_2_value: The second one invalid value.
+        :return: None
+        """
+
+        assert getting_func() is None, "Default initial value should be None value."
+
+        # Set value with normal value.
+        _test_cnt = valid_value
+        try:
+            setting_func(_test_cnt)
+        except Exception:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+        else:
+            assert True, "It works finely."
+            assert getting_func() == _test_cnt, "The value should be same as it set."
+
+        # Set value with normal value.
+        _test_cnt = invalid_1_value
+        try:
+            setting_func(_test_cnt)
+        except Exception:
+            assert True, "It works finely."
+        else:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+
+        # Set value with normal value.
+        _test_cnt = invalid_2_value
+        try:
+            setting_func(_test_cnt)
+        except Exception:
+            assert True, "It works finely."
+        else:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+
+
+
+class TestState(_MetaDataTest):
     """
     Test for all the attributes of
     """
@@ -151,7 +213,6 @@ class TestState:
             state.total_crawler = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=5,
@@ -175,7 +236,6 @@ class TestState:
             state.total_runner = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=5,
@@ -199,7 +259,6 @@ class TestState:
             state.total_backup = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=5,
@@ -223,7 +282,6 @@ class TestState:
             state.current_crawler = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -247,7 +305,6 @@ class TestState:
             state.current_runner = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -271,7 +328,6 @@ class TestState:
             state.current_backup = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -295,7 +351,6 @@ class TestState:
             state.standby_id = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value="1",
@@ -319,7 +374,6 @@ class TestState:
             state.fail_crawler = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -343,7 +397,6 @@ class TestState:
             state.fail_runner = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -367,7 +420,6 @@ class TestState:
             state.fail_backup = value
 
         self._run_property_test(
-            state=state,
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=["spider_1"],
@@ -376,67 +428,8 @@ class TestState:
         )
 
 
-    def _run_property_test(self, state: State, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
-        """
-        Test for getting and setting the property value. It also try to operate the property with invalid value to test
-        about it should NOT work finely without any issue.
 
-        :param state: The instance of the object **State** with nothing settings.
-        :param setting_func: The function which would set value to the property.
-                                         The function would be like below: (for example with property *fail_backup*)
-
-                                         .. code_block: python
-
-                                            def _set_func(state: State, value: List[str]) -> None:
-                                                state.fail_backup = state
-
-        :param getting_func: The function which would get value by the property.
-                                         The function would be like below: (for example with property *fail_backup*)
-
-                                         .. code_block: python
-
-                                            def _get_func(state: State) -> List[str]:
-                                                return state.fail_backup
-
-        :param valid_value: The valid value which could be set to the property.
-        :param invalid_1_value: The invalid value which would raise an exception if set it to the property.
-        :param invalid_2_value: The second one invalid value.
-        :return: None
-        """
-
-        assert getting_func() is None, "Default initial value should be None value."
-
-        # Set value with normal value.
-        _test_cnt = valid_value
-        try:
-            setting_func(_test_cnt)
-        except Exception:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-        else:
-            assert True, "It works finely."
-            assert getting_func() == _test_cnt, "The value should be same as it set."
-
-        # Set value with normal value.
-        _test_cnt = invalid_1_value
-        try:
-            setting_func(_test_cnt)
-        except Exception:
-            assert True, "It works finely."
-        else:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-
-        # Set value with normal value.
-        _test_cnt = invalid_2_value
-        try:
-            setting_func(_test_cnt)
-        except Exception:
-            assert True, "It works finely."
-        else:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-
-
-
-class TestTask:
+class TestTask(_MetaDataTest):
 
     @pytest.fixture(scope="function")
     def task(self) -> Task:
@@ -452,7 +445,7 @@ class TestTask:
 
 
 
-class TestHeartbeat:
+class TestHeartbeat(_MetaDataTest):
 
     @pytest.fixture(scope="function")
     def heartbeat(self) -> Heartbeat:
