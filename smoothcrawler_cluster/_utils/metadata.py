@@ -1,4 +1,5 @@
-from typing import List, AnyStr, Union
+from datetime import datetime as dt
+from typing import List, Union
 from enum import Enum
 
 
@@ -378,7 +379,7 @@ class Task:
     @task_content.setter
     def task_content(self, task_content: dict) -> None:
         if type(task_content) is not dict:
-            raise ValueError("Property *task_content* only accept list type value.")
+            raise ValueError("Property *task_content* only accept dict type value.")
         self._task_content = task_content
 
 
@@ -420,7 +421,7 @@ class Heartbeat:
     * Example value at node *heartbeat*:
 
     {
-        "datetime": "2022:07:15 08:42:59"
+        "datetime": "2022-07-15 08:42:59"
     }
 
     """
@@ -440,4 +441,12 @@ class Heartbeat:
 
     @datetime.setter
     def datetime(self, datetime: str) -> None:
-        self._datetime = datetime
+        if type(datetime) is not str:
+            raise ValueError("Property *datetime* only accept str type value.")
+
+        try:
+            _datetime_obj = dt.strptime(datetime, "%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            raise e
+        else:
+            self._datetime = datetime
