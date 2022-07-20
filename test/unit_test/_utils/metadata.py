@@ -479,4 +479,17 @@ class TestHeartbeat(_MetaDataTest):
 
 
     def test_datetime(self, heartbeat: Heartbeat) -> None:
-        pass
+
+        def _get_func() -> str:
+            return heartbeat.datetime
+
+        def _set_func(value) -> None:
+            heartbeat.datetime = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="2022-07-20 07:46:43",
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
