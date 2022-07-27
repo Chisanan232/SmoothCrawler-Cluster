@@ -1,0 +1,7 @@
+###### SmoothCrawler-Cluster Documentation-Writing Dependencies Requirements ######
+## For sphinx running ##
+sphinx >= 5.0.0
+sphinx-autobuild >= 2021.3.14
+
+## For sphinx theme ##
+sphinx_rtd_theme >= 1.0.0
