@@ -1,0 +1,3 @@
+###### SmoothCrawler-Cluster package Dependencies Requirements ######
+smoothcrawler >= 0.2.0
+kazoo >= 2.7.0
