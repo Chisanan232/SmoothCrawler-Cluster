@@ -22,8 +22,8 @@ getalltests() {
     fi
 }
 
-init_path=./test/unit_test/
-utils_path=./test/unit_test/_utils/
+init_path=./tests/unit_test/
+utils_path=./tests/unit_test/_utils/
 
 getalltests $init_path
 getalltests $utils_path
