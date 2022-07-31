@@ -6,6 +6,7 @@ pytest-html >= 3.1.1
 pytest-rerunfailures >= 10.2
 
 ## For calculating code coverage ##
+coverage >= 6.4.2
 codecov >= 2.1.12
 coveralls >= 3.3.1
 
