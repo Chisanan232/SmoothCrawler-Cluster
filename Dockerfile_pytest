@@ -21,14 +21,14 @@ WORKDIR ./apache-smoothcrawler-cluster/
 RUN pip install -U pip
 
 # # Install the Python dependencies for SmoothCrawler-Cluster package
-COPY ./requirements.txt ./
+COPY ./requirements/requirements.txt ./requirements/
 
-RUN pip install -r ./requirements.txt
+RUN pip install -r ./requirements/requirements.txt
 
 # # Install the Python dependencies for development
-COPY ./requirements-test.txt ./
+COPY ./requirements/requirements-test.txt ./requirements/
 
-RUN pip install -U -r ./requirements-test.txt
+RUN pip install -U -r ./requirements/requirements-test.txt
 
 # # Prepare for running shell scripts
 RUN apt-get update && \
