@@ -1,6 +1,6 @@
 from smoothcrawler_cluster._utils.metadata import CrawlerStateRole, TaskResult, State, Task, Heartbeat
 
-from typing import List, Dict, Callable, TypeVar, Generic
+from typing import List, Dict, Callable, TypeVar
 from enum import Enum
 from abc import ABCMeta
 import traceback
