@@ -445,7 +445,7 @@ class Heartbeat:
             raise ValueError("Property *datetime* only accept str type value.")
 
         try:
-            _datetime_obj = dt.strptime(datetime, "%Y-%m-%d %H:%M:%S")
+            dt.strptime(datetime, "%Y-%m-%d %H:%M:%S")
         except Exception as e:
             raise e
         else:
