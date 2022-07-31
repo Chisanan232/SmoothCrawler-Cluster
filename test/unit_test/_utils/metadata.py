@@ -19,9 +19,7 @@ class _EnumObjTest(metaclass=ABCMeta):
 
 
 class TestCrawlerStateRole(_EnumObjTest):
-    """
-    Test for the enum object key-value mapping.
-    """
+    """Test for the enum object key-value mapping."""
 
     def test_runner_value(self) -> None:
         _under_test_enum = CrawlerStateRole.Runner
@@ -49,9 +47,7 @@ class TestCrawlerStateRole(_EnumObjTest):
 
 
 class TestTaskResult(_EnumObjTest):
-    """
-    Test for the enum object key-value mapping.
-    """
+    """Test for the enum object key-value mapping."""
 
     def test_processing_value(self) -> None:
         _under_test_enum = TaskResult.Processing
@@ -140,9 +136,7 @@ class _MetaDataTest(metaclass=ABCMeta):
 
 
 class TestState(_MetaDataTest):
-    """
-    Test for all the attributes of
-    """
+    """Test for all the attributes of **State**."""
 
     @pytest.fixture(scope="function")
     def state(self) -> State:
@@ -430,6 +424,7 @@ class TestState(_MetaDataTest):
 
 
 class TestTask(_MetaDataTest):
+    """Test for all the attributes of **Task**."""
 
     @pytest.fixture(scope="function")
     def task(self) -> Task:
@@ -472,6 +467,7 @@ class TestTask(_MetaDataTest):
 
 
 class TestHeartbeat(_MetaDataTest):
+    """Test for all the attributes of **Heartbeat**."""
 
     @pytest.fixture(scope="function")
     def heartbeat(self) -> Heartbeat:
