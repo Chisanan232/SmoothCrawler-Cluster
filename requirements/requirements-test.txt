@@ -16,3 +16,6 @@ urllib3 >= 1.26.8
 requests >= 2.27.1
 beautifulsoup4 >= 4.10.0
 mysql-connector-python >= 8.0.28
+
+## For running testing in a sandbox runtime environment via tool 'tox'
+tox >= 3.25.1
