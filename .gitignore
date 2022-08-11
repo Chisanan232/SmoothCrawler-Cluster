@@ -3,6 +3,7 @@ __pycache__
 .coverage
 .coverage.*
 .pypirc
+.pytest_cache/
 .python-version
 .tox/
 build/

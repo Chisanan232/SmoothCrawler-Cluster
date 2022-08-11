@@ -7,7 +7,7 @@ declare -a init_tests
 declare -a utils_tests
 
 getalltests() {
-    declare -a testpatharray=( "$(ls -F $1 | grep -v '/$' | grep -v '__init__.py' | grep -v 'test_config.py' | grep -v -E '^_[a-z_]{1,64}.py' | grep -v '__pycache__')")
+    declare -a testpatharray=( $(ls -F $1 | grep -v '/$' | grep -v '__init__.py' | grep -v 'test_config.py' | grep -v -E '^_[a-z_]{1,64}.py' | grep -v '__pycache__'))
 
     declare -a alltestpaths
     for (( i = 0; i < ${#testpatharray[@]}; i++ )) ; do
@@ -16,9 +16,9 @@ getalltests() {
 
     if echo "$1" | grep -q "utils";
     then
-        utils_tests=${alltestpaths[@]}
+        utils_tests=("${alltestpaths[@]}")
     else
-        init_tests=${alltestpaths[@]}
+        init_tests=("${alltestpaths[@]}")
     fi
 }
 
