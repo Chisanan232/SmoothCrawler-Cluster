@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6,3.7,3.8,3.9,'3.10']
-        os: [ubuntu-18.04,ubuntu-latest, macos-10.15,macos-latest]
+        os: [ubuntu-18.04,ubuntu-20.04,ubuntu-22.04, macos-10.15,macos-11,macos-12]
         exclude:
           - os: ubuntu-18.04
             python-version: 3.6
@@ -119,6 +119,16 @@ jobs:
 
       - name: Generate testing report for Codacy
         run: coverage xml
+
+      - name: Upload coverage report to platform Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+          files: ./coverage.xml # optional
+          flags: unittests # optional
+          name: smoothcrawler-cluster_github-actions_test # optional
+          fail_ci_if_error: true # optional (default = false)
+          verbose: true # optional (default = false)
 
       - name: Upload testing coverage report
         uses: actions/upload-artifact@v3
