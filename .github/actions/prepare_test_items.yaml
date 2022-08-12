@@ -1,0 +1,28 @@
+name: Prepare test items
+
+on:
+  workflow_call:
+    inputs:
+      shell_path:
+        required: true
+        type: string
+      shell_arg:
+        required: true
+        type: string
+      output_matrix_path:
+        required: true
+        type: string
+
+
+jobs:
+  prep-testbed_unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - id: set-matrix
+        run: |
+          sudo apt-get install jq
+          echo "::set-output name=matrix::$(bash ${{ inputs.shell_path }} ${{ inputs.shell_arg }})"
+    outputs:
+      matrix: ${{ inputs.output_matrix_path }}
+
