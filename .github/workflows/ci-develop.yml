@@ -13,13 +13,19 @@ jobs:
   prep-testbed_unit-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+#      - uses: actions/checkout@v2
+#      - id: set-matrix
+#        run: |
+#          sudo apt-get install jq
+#          echo "::set-output name=matrix::$(bash scripts/ci/get-unit-test-paths.sh unix)"
+#    outputs:
+#      matrix: ${{ steps.set-matrix.outputs.matrix }}
       - id: set-matrix
-        run: |
-          sudo apt-get install jq
-          echo "::set-output name=matrix::$(bash scripts/ci/get-unit-test-paths.sh unix)"
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+        uses: ./.github/actions/prepare_test_items.yaml@v1
+        with:
+          shell_path: scripts/ci/get-unit-test-paths.sh
+          shell_arg: unix
+          output_matrix_path: ${{ steps.set-matrix.outputs.matrix }}
 
 
   unit-test:
