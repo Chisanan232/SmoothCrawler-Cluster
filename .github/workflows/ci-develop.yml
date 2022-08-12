@@ -11,23 +11,27 @@ on:
 jobs:
 
   prep-testbed_unit-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: 'develop'
+    uses: ./.github/workflows/actions/prepare_test_items.yaml
+    id: set-matrix
+    with:
+      shell_path: scripts/ci/get-unit-test-paths.sh
+      shell_arg: unix
+      output_matrix_path: ${{ steps.set-matrix.outputs.matrix }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
 #      - id: set-matrix
 #        run: |
 #          sudo apt-get install jq
 #          echo "::set-output name=matrix::$(bash scripts/ci/get-unit-test-paths.sh unix)"
 #    outputs:
 #      matrix: ${{ steps.set-matrix.outputs.matrix }}
-      - uses: ./.github/workflows/prepare_test_items.yaml
-        id: set-matrix
-        with:
-          shell_path: scripts/ci/get-unit-test-paths.sh
-          shell_arg: unix
-          output_matrix_path: ${{ steps.set-matrix.outputs.matrix }}
+#      - uses: ./.github/workflows/prepare_test_items.yaml
+#        id: set-matrix
+#        with:
+#          shell_path: scripts/ci/get-unit-test-paths.sh
+#          shell_arg: unix
+#          output_matrix_path: ${{ steps.set-matrix.outputs.matrix }}
 
 
   unit-test:
