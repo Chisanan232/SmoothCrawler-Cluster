@@ -21,7 +21,7 @@ jobs:
 #    outputs:
 #      matrix: ${{ steps.set-matrix.outputs.matrix }}
       - id: set-matrix
-        uses: ./.github/actions/prepare_test_items.yaml
+        uses: ./.github/workflows/actions/prepare_test_items.yaml
         with:
           shell_path: scripts/ci/get-unit-test-paths.sh
           shell_arg: unix
