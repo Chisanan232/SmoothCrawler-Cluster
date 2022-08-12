@@ -13,7 +13,7 @@ jobs:
   prep-testbed_unit-test:
     runs-on: ubuntu-latest
     steps:
-#      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 #      - id: set-matrix
 #        run: |
 #          sudo apt-get install jq
