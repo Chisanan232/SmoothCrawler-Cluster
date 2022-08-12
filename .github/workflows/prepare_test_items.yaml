@@ -9,9 +9,9 @@ on:
       shell_arg:
         required: true
         type: string
-#      output_matrix_path:
-#        required: true
-#        type: string
+      output_matrix_step:
+        required: true
+        type: string
 
 
 jobs:
@@ -25,5 +25,5 @@ jobs:
           sudo apt-get install jq
           echo "::set-output name=matrix::$(bash ${{ inputs.shell_path }} ${{ inputs.shell_arg }})"
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      matrix: ${{ ${{ inputs.output_matrix_step }}.set-matrix.outputs.matrix }}
 
