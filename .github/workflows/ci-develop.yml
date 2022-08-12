@@ -11,7 +11,7 @@ on:
 jobs:
 
   prep-testbed_unit-test:
-    uses: ./.github/workflows/actions/prepare_test_items.yaml
+    uses: ./.github/workflows/prepare_test_items.yaml
     id: set-matrix
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
