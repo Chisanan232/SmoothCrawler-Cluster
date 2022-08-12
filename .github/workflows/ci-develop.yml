@@ -15,7 +15,7 @@ jobs:
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
-      output_matrix_step: ${{ steps }}
+      output_matrix_job: ${{ job }}
 #    runs-on: ubuntu-latest
 #    steps:
 #      - uses: actions/checkout@v3
