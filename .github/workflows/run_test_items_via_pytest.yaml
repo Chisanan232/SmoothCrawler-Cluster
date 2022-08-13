@@ -1,0 +1,81 @@
+name: Run test items via PyTest
+
+on:
+  workflow_call:
+    inputs:
+      test_type:
+        required: true
+        type: string
+      all_test_items_paths:
+        required: true
+        type: string
+
+
+jobs:
+  run_test_items:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        python-version: [3.6,3.7,3.8,3.9,'3.10']
+        os: [ubuntu-18.04,ubuntu-20.04,ubuntu-22.04, macos-10.15,macos-11,macos-12]
+        exclude:
+          - os: ubuntu-18.04
+            python-version: 3.6
+          - os: ubuntu-18.04
+            python-version: 3.9
+          - os: ubuntu-18.04
+            python-version: '3.10'
+          - os: ubuntu-20.04
+            python-version: 3.8
+          - os: ubuntu-20.04
+            python-version: 3.9
+          - os: ubuntu-22.04
+            python-version: 3.6
+          - os: macos-10.15
+            python-version: 3.6
+          - os: macos-10.15
+            python-version: 3.8
+          - os: macos-11
+            python-version: 3.6
+          - os: macos-11
+            python-version: 3.9
+          - os: macos-12
+            python-version: 3.6
+        test-path: ${{ inputs.all_test_items_paths }}
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+#      - name: Install dependencies by cloning from GitHub MultiRunnable
+#        run: |
+#          git clone https://github.com/Chisanan232/multirunnable.git -b master ./multirunnable
+#          sudo python ./multirunnable/setup.py install
+#          pip install -r ./multirunnable/dev-requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U pip
+          pip install -U -r ./requirements/requirements.txt
+          pip install -U -r ./requirements/requirements-test.txt
+
+      - name: Run tests with pytest
+        run: pytest ${{ matrix.test-path }}
+        continue-on-error: true
+
+      - name: Rename the code coverage result file
+        run: mv ./.coverage ./.coverage.${{ inputs.test_type }}.${{ matrix.os }}-${{ matrix.python-version }}
+
+      - name: Upload code coverage result file
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: .coverage.${{ inputs.test_type }}.${{ matrix.os }}-${{ matrix.python-version }}
+          if-no-files-found: error
+
