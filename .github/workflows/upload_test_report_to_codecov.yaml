@@ -6,16 +6,13 @@ on:
       test_type:
         required: true
         type: string
-    codecov_files:
-      test_type:
+      codecov_files:
         required: true
         type: string
-    codecov_flags:
-      test_type:
+      codecov_flags:
         required: true
         type: string
-    codecov_name:
-      test_type:
+      codecov_name:
         required: true
         type: string
 
