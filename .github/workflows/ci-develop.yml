@@ -39,7 +39,7 @@ jobs:
     uses: ./.github/workflows/run_test_items_via_pytest.yaml
     with:
       test_type: unit-test
-      all_test_items_paths: ${{fromJson(needs.prep-testbed_unit-test.outputs.all_test_items)}}
+      all_test_items_paths: ${{needs.prep-testbed_unit-test.outputs.all_test_items}}
 
 #    name: Run all unit test items
 #    needs: prep-testbed_unit-test

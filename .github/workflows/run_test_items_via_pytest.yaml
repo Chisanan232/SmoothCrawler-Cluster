@@ -42,7 +42,7 @@ jobs:
             python-version: 3.9
           - os: macos-12
             python-version: 3.6
-        test-path: ${{ inputs.all_test_items_paths }}
+        test-path: ${{fromJson(inputs.all_test_items_paths)}}
 
     steps:
       - uses: actions/checkout@v2
