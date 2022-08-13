@@ -27,5 +27,5 @@ jobs:
       - id: set-matrix
         run: |
           sudo apt-get install jq
-          echo "$(bash ${{ inputs.shell_path }} ${{ inputs.shell_arg }})"
+          echo "::set-output name=all_test_items::$(bash ${{ inputs.shell_path }} ${{ inputs.shell_arg }})"
 
