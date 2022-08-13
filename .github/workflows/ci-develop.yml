@@ -112,7 +112,7 @@ jobs:
   unit-test_codecov:
     name: Organize and generate the testing report and upload it to Codecov
     needs: [run_unit-test]
-    uses: ./.github/workflows/upload_code_report_to_codacy.yaml
+    uses: ./.github/workflows/upload_test_report_to_codecov.yaml
     with:
       test_type: unit-test
       codecov_files: ./coverage.xml # optional
@@ -172,7 +172,7 @@ jobs:
   codacy_finish:
     name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov]
-    uses: ./.github/workflows/upload_test_report_to_codecov.yaml
+    uses: ./.github/workflows/upload_code_report_to_codacy.yaml
     with:
       download_path: ./
 
