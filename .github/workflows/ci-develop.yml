@@ -113,9 +113,10 @@ jobs:
 #    name: Organize and generate the testing report and upload it to Codecov
     needs: [run_unit-test]
     uses: ./.github/workflows/upload_test_report_to_codecov.yaml
+    secrets:
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
       test_type: unit-test
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
       codecov_files: ./coverage.xml # optional
       codecov_flags: unittests
       codecov_name: smoothcrawler-cluster_github-actions_test # optional
@@ -174,9 +175,10 @@ jobs:
 #    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov]
     uses: ./.github/workflows/upload_code_report_to_codacy.yaml
+    secrets:
+      codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
       download_path: ./
-      codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
 
 #    needs: unit-test_codecov
 #    runs-on: ubuntu-latest
