@@ -11,7 +11,7 @@ on:
 jobs:
 
   prep-testbed_unit-test:
-    name: Prepare all unit test items
+#    name: Prepare all unit test items
     uses: ./.github/workflows/prepare_test_items.yaml
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
@@ -34,7 +34,7 @@ jobs:
 
 
   run_unit-test:
-    name: Run all unit test items
+#    name: Run all unit test items
     needs: prep-testbed_unit-test
     uses: ./.github/workflows/run_test_items_via_pytest.yaml
     with:
@@ -110,11 +110,12 @@ jobs:
 
 
   unit-test_codecov:
-    name: Organize and generate the testing report and upload it to Codecov
+#    name: Organize and generate the testing report and upload it to Codecov
     needs: [run_unit-test]
     uses: ./.github/workflows/upload_test_report_to_codecov.yaml
     with:
       test_type: unit-test
+      codecov_token: ${{ secrets.CODECOV_TOKEN }}
       codecov_files: ./coverage.xml # optional
       codecov_flags: unittests
       codecov_name: smoothcrawler-cluster_github-actions_test # optional
@@ -170,11 +171,12 @@ jobs:
 
 
   codacy_finish:
-    name: Upload test report to Codacy to analyse and record code quality
+#    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov]
     uses: ./.github/workflows/upload_code_report_to_codacy.yaml
     with:
       download_path: ./
+      codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
 
 #    needs: unit-test_codecov
 #    runs-on: ubuntu-latest
