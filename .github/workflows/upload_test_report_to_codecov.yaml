@@ -6,10 +6,6 @@ on:
       test_type:
         required: true
         type: string
-      codecov_files:
-        required: false
-        default: ./coverage.xml
-        type: string
       codecov_flags:
         required: true
         type: string
