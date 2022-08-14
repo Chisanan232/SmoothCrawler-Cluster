@@ -10,7 +10,6 @@ on:
     secrets:
       codacy_token:
         required: true
-        type: string
 
 
 jobs:
