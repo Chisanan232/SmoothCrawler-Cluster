@@ -6,9 +6,6 @@ on:
       test_type:
         required: true
         type: string
-      codecov_token:
-        required: true
-        type: string
       codecov_files:
         required: false
         default: ./coverage.xml
@@ -17,6 +14,11 @@ on:
         required: true
         type: string
       codecov_name:
+        required: true
+        type: string
+
+    secrets:
+      codecov_token:
         required: true
         type: string
 
@@ -57,7 +59,7 @@ jobs:
       - name: Upload coverage report to platform Codecov
         uses: codecov/codecov-action@v3
         with:
-          token: ${{ inputs.codecov_token }} # not required for public repos
+          token: ${{ secrets.codecov_token }} # not required for public repos
           files: ${{ inputs.codecov_files }} # optional
           flags: ${{ inputs.codecov_flags }} # optional
           name: ${{ inputs.codecov_name }} # optional
