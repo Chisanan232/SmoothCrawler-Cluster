@@ -35,7 +35,6 @@ jobs:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
       test_type: unit-test
-      codecov_files: ./coverage.xml # optional
       codecov_flags: unittests
       codecov_name: smoothcrawler-cluster_github-actions_test # optional
 
