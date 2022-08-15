@@ -134,40 +134,40 @@ jobs:
       download_path: ./
 
 
-  pre-building_check:
-    needs: [codecov_finish, codacy_finish]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Setup Python 3.10 in Ubuntu OS
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-
-      - name: Install Python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install -U pip
-          pip3 install -U setuptools
-          pip3 install wheel
-          pip3 install requests
-          pip3 install bs4
-
-      - name: Install SmoothCrawler with by setup.py
-        run: |
-          python3 setup.py install --user || exit 1
-
-      - name: Show the Python package information
-        run: pip3 show smoothcrawler
-
-      - name: Test to run script with package 'smoothcrawler' in command lines
-        run: |
-          import smoothcrawler as mr
-          from smoothcrawler.crawler import SimpleCrawler
-          from smoothcrawler.components.data import BaseHTTPResponseParser, BaseDataHandler
-        shell: python
-
-      - name: Test to run script with package 'smoothcrawler' with Python file
-        run: python3 ./scripts/test_crawler.py
+#  pre-building_check:
+#    needs: [codecov_finish, codacy_finish]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Setup Python 3.10 in Ubuntu OS
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: '3.10'
+#
+#      - name: Install Python dependencies
+#        run: |
+#          python3 -m pip install --upgrade pip
+#          pip3 install -U pip
+#          pip3 install -U setuptools
+#          pip3 install wheel
+#          pip3 install requests
+#          pip3 install bs4
+#
+#      - name: Install SmoothCrawler with by setup.py
+#        run: |
+#          python3 setup.py install --user || exit 1
+#
+#      - name: Show the Python package information
+#        run: pip3 show smoothcrawler
+#
+#      - name: Test to run script with package 'smoothcrawler' in command lines
+#        run: |
+#          import smoothcrawler as mr
+#          from smoothcrawler.crawler import SimpleCrawler
+#          from smoothcrawler.components.data import BaseHTTPResponseParser, BaseDataHandler
+#        shell: python
+#
+#      - name: Test to run script with package 'smoothcrawler' with Python file
+#        run: python3 ./scripts/test_crawler.py
