@@ -92,6 +92,7 @@ jobs:
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
+      download_path: ./
       codecov_flags: unittests
       codecov_name: smoothcrawler-cluster_github-actions_test # optional
 
