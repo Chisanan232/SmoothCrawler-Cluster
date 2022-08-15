@@ -3,7 +3,7 @@ name: Upload test report to Codecov
 on:
   workflow_call:
     inputs:
-      test_type:
+      download_path:
         required: true
         type: string
       codecov_flags:
@@ -28,34 +28,34 @@ jobs:
       - name: Download code coverage result file
         uses: actions/download-artifact@v3
         with:
-          name: coverage
-          path: .coverage.${{ inputs.test_type }}*
+          name: project_coverage_report
+          path: ${{ inputs.download_path }}
 
-      - name: Setup Python 3.10 in Ubuntu OS
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.10'
-
-      - name: Install Python tool 'coverage'
-        run: |
-          python3 -m pip install --upgrade pip
-          pip3 install -U pip
-          pip3 install coverage
-
-      - name: Combine all code coverage result files
-        run: coverage combine .coverage.*
-
-      - name: Report testing coverage of project code
-        run: coverage report -m
-
-      - name: Generate testing report for Codacy
-        run: coverage xml
+#      - name: Setup Python 3.10 in Ubuntu OS
+#        uses: actions/setup-python@v2
+#        with:
+#          python-version: '3.10'
+#
+#      - name: Install Python tool 'coverage'
+#        run: |
+#          python3 -m pip install --upgrade pip
+#          pip3 install -U pip
+#          pip3 install coverage
+#
+#      - name: Combine all code coverage result files
+#        run: coverage combine .coverage.*
+#
+#      - name: Report testing coverage of project code
+#        run: coverage report -m
+#
+#      - name: Generate testing report for Codacy
+#        run: coverage xml
 
       - name: Upload coverage report to platform Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.codecov_token }} # not required for public repos
-          files: ${{ inputs.codecov_files }} # optional
+          files: coverage.xml # optional
           flags: ${{ inputs.codecov_flags }} # optional
           name: ${{ inputs.codecov_name }} # optional
           fail_ci_if_error: true # optional (default = false)
