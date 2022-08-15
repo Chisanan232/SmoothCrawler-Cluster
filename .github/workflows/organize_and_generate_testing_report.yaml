@@ -19,7 +19,7 @@ on:
 
 
 jobs:
-  upload_report_to_codecov:
+  organize_and_generate_test_report:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
