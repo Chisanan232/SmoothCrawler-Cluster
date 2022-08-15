@@ -1,0 +1,69 @@
+name: Upload test report to Codecov
+
+on:
+  workflow_call:
+    inputs:
+      test_type:
+        required: true
+        type: string
+#      codecov_flags:
+#        required: true
+#        type: string
+#      codecov_name:
+#        required: true
+#        type: string
+#
+#    secrets:
+#      codecov_token:
+#        required: true
+
+
+jobs:
+  organize_and_generate_test_report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Download code coverage result file
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+          path: .coverage.${{ inputs.test_type }}*
+
+      - name: Setup Python 3.10 in Ubuntu OS
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install Python tool 'coverage'
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -U pip
+          pip3 install coverage
+
+      - name: Combine all code coverage result files
+        run: coverage combine .coverage.*
+
+      - name: Report testing coverage of project code
+        run: coverage report -m
+
+      - name: Generate testing report for Codacy
+        run: coverage xml
+
+#      - name: Upload coverage report to platform Codecov
+#        uses: codecov/codecov-action@v3
+#        with:
+#          token: ${{ secrets.codecov_token }} # not required for public repos
+#          files: ${{ inputs.codecov_files }} # optional
+#          flags: ${{ inputs.codecov_flags }} # optional
+#          name: ${{ inputs.codecov_name }} # optional
+#          fail_ci_if_error: true # optional (default = false)
+#          verbose: true # optional (default = false)
+
+      - name: Upload testing coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: project_coverage_report
+          path: coverage.xml
+          if-no-files-found: error
