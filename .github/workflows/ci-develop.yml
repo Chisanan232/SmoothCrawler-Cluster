@@ -30,13 +30,14 @@ jobs:
   unit-test_codecov:
 #    name: Organize and generate the testing report and upload it to Codecov
     needs: [run_unit-test]
-    uses: ./.github/workflows/upload_test_report_to_codecov.yaml
-    secrets:
-      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+    uses: ./.github/workflows/organize_and_generate_testing_report.yaml
+#    uses: ./.github/workflows/upload_test_report_to_codecov.yaml
+#    secrets:
+#      codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
       test_type: unit-test
-      codecov_flags: unittests
-      codecov_name: smoothcrawler-cluster_github-actions_test # optional
+#      codecov_flags: unittests
+#      codecov_name: smoothcrawler-cluster_github-actions_test # optional
 
 
   codacy_finish:
