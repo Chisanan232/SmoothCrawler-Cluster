@@ -12,7 +12,7 @@ jobs:
 
   prep-testbed_unit-test:
 #    name: Prepare all unit test items
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@master
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
@@ -21,7 +21,7 @@ jobs:
   run_unit-test:
 #    name: Run all unit test items
     needs: prep-testbed_unit-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@master
     with:
       test_type: unit-test
       all_test_items_paths: ${{needs.prep-testbed_unit-test.outputs.all_test_items}}
@@ -30,7 +30,7 @@ jobs:
   unit-test_codecov:
 #    name: Organize and generate the testing report and upload it to Codecov
     needs: [run_unit-test]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_testing_report.yaml
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_testing_report.yaml@master
     with:
       test_type: unit-test
 
@@ -38,7 +38,7 @@ jobs:
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_code_report_to_codacy.yaml
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_code_report_to_codacy.yaml@master
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
