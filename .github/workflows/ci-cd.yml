@@ -81,3 +81,15 @@ jobs:
     with:
       download_path: ./
 
+
+#  pre-building_check:
+##    name: Check about it could work finely by installing the Python package with setup.py file
+#    needs: [codecov_finish, codacy_finish]
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_code_report_to_codacy.yaml
+#    with:
+#      python_package_name: smoothcrawler
+#      test_import_package_code_1: import smoothcrawler as mr
+#      test_import_package_code_2: from smoothcrawler.crawler import SimpleCrawler
+#      test_import_package_code_3: from smoothcrawler.components.data import BaseHTTPResponseParser, BaseDataHandler
+#      test_python_script: ./scripts/test_crawler.py
+
