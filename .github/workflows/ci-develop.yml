@@ -3,10 +3,27 @@ on:
   push:
     branches:
       - develop
+    paths_ignore:
+      - "docs/**"
+      - "example/**"
+      - ".gitcommitrules"
+      - ".gitignore"
+      - ".pylintrc"
+      - ".readthedocs.yaml"
+      - "LICENSE"
+      - "README.md"
   pull_request:
     branches:
       - develop
-
+    paths_ignore:
+      - "docs/**"
+      - "example/**"
+      - ".gitcommitrules"
+      - ".gitignore"
+      - ".pylintrc"
+      - ".readthedocs.yaml"
+      - "LICENSE"
+      - "README.md"
 
 jobs:
 
