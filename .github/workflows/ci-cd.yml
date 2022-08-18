@@ -59,9 +59,9 @@ jobs:
       test_type: unit-test
 
 
-  if: github.ref_name == 'release' || github.ref_name == 'master'
   codecov_finish:
 #    name: Organize and generate the testing report and upload it to Codecov
+    if: github.ref_name == 'release' || github.ref_name == 'master'
     needs: [unit-test_codecov]
     uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_report_to_codecov.yaml@master
     secrets:
