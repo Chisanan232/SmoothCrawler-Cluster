@@ -22,7 +22,6 @@ on:
       - "release"
       - "release-**"
       - "release/**"
-      - "master"
     paths_ignore:
       - "docs/**"
       - "example/**"
