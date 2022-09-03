@@ -71,7 +71,7 @@ jobs:
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
-      test_type: all-test
+      test_type: unit-test
       upload-to-codecov: true
       codecov_flags: unit,integration  # Required if 'upload-to-codecov' is true
       codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
@@ -84,7 +84,7 @@ jobs:
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
-      test_type: all-test
+      test_type: unit-test
       upload-to-codacy: true
 
 
