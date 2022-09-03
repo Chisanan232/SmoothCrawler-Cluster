@@ -40,7 +40,7 @@ env:
 jobs:
   prep-testbed_unit-test:
 #    name: Prepare all unit test items
-    uses: ${{ env.Template_Workflows }}prepare_test_items.yaml@${{env.Workflow_Version}}
+    uses: ${{env.Template_Workflows}}prepare_test_items.yaml@${{env.Workflow_Version}}
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
