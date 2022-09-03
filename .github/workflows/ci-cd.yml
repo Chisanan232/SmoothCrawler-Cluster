@@ -104,7 +104,7 @@ jobs:
 #    name: Build git tag and GitHub release if it needs
     needs: [codecov_finish, codacy_finish]
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows//build_git-tag_and_create_github-release.yaml@v2
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v2
     secrets:
       github_auth_token: ${{ secrets.GITHUB_TOKEN }}
     with:
