@@ -40,7 +40,7 @@ env:
 jobs:
   prep-testbed_unit-test:
 #    name: Prepare all unit test items
-    uses: ${{env.Template_Workflows}}prepare_test_items.yaml@${{env.Workflow_Version}}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
@@ -49,7 +49,7 @@ jobs:
   run_unit-test:
 #    name: Run all unit test items
     needs: prep-testbed_unit-test
-    uses: ${{ env.Template_Workflows }}run_test_items_via_pytest.yaml@${{ env.Workflow_Version }}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@v2
     with:
       test_type: unit-test
       all_test_items_paths: ${{needs.prep-testbed_unit-test.outputs.all_test_items}}
@@ -58,7 +58,7 @@ jobs:
   unit-test_codecov:
 #    name: Organize and generate the testing report and upload it to Codecov
     needs: run_unit-test
-    uses: ${{ env.Template_Workflows }}organize_and_generate_test_cov_reports.yaml@${{ env.Workflow_Version }}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v2
     with:
       test_type: unit-test
 
@@ -67,7 +67,7 @@ jobs:
 #    name: Organize and generate the testing report and upload it to Codecov
 #    if: github.ref_name == 'release' || github.ref_name == 'master'
     needs: [unit-test_codecov]
-    uses: ${{ env.Template_Workflows }}upload_test_cov_report.yaml@${{ env.Workflow_Version }}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
@@ -80,7 +80,7 @@ jobs:
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov]
-    uses: ${{ env.Template_Workflows }}upload_test_cov_report.yaml@${{ env.Workflow_Version }}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
@@ -91,7 +91,7 @@ jobs:
 #  pre-building_check:
 ##    name: Check about it could work finely by installing the Python package with setup.py file
 #    needs: [codecov_finish, codacy_finish]
-#    uses: ${{ env.Template_Workflows }}upload_code_report_to_codacy.yaml@${{ env.Workflow_Version }}
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_code_report_to_codacy.yaml@v2
 #    with:
 #      python_package_name: smoothcrawler
 #      test_import_package_code_1: import smoothcrawler as mr
@@ -104,7 +104,7 @@ jobs:
 #    name: Build git tag and GitHub release if it needs
     needs: [codecov_finish, codacy_finish]
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
-    uses: ${{ env.Template_Workflows }}/build_git-tag_and_create_github-release.yaml@${{ env.Workflow_Version }}
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows//build_git-tag_and_create_github-release.yaml@v2
     secrets:
       github_auth_token: ${{ secrets.GITHUB_TOKEN }}
     with:
