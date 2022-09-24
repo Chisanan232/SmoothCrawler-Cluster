@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "smoothcrawler-cluster"
+version = "0.1.0"
+description = "Develop and build web spider cluster humanly."
+authors = ["Liu, Bryant <chi10211201@cycu.org.tw>"]
+license = "Apache License 2.0"
+readme = "README.md"
+packages = [{include = "smoothcrawler_cluster"}]
+
+[tool.poetry.dependencies]
+python = "^3.6"
+smoothcrawler = "^0.2.0"
+kazoo = "^2.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^3.0.0"
+pytest-html = "^3.1.1"
+pytest-rerunfailures = "^10.2"
+coverage = "^6.2"
+codecov = "^2.1.12"
+coveralls = "^3.3.1"
+aiohttp = "^3.8.1"
+urllib3 = "^1.26.8"
+requests = "^2.27.1"
+beautifulsoup4 = "^4.10.0"
+mysql-connector-python = "^8.0.28"
+tox = "^3.25.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
