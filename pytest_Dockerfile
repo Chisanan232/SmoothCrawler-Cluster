@@ -47,3 +47,4 @@ CMD bash ./scripts/docker/run-pytest.sh $TESTING_TYPE
 
 # # For debug
 #ENTRYPOINT ["tail", "-f", "/dev/null"]
+
