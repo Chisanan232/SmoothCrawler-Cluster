@@ -1,0 +1,33 @@
+name: smoothcrawler-cluster tox test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - "tox.ini"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - "tox.ini"
+
+jobs:
+  test-tox:
+#    name: Test the tox.init is valid, and ensure that it could run finely.
+    runs-on:
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Test to run Tox command
+        run: tox -- unit-test
+
