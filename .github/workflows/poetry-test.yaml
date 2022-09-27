@@ -9,6 +9,7 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/poetry-test.yaml"
       - "pyproject.toml"
 
   pull_request:
@@ -19,12 +20,13 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/poetry-test.yaml"
       - "pyproject.toml"
 
 jobs:
   test-dockerfile:
 #    name: Test the pyproject.toml is valid, and ensure that it could run finely.
-    runs-on:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 

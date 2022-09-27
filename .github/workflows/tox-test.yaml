@@ -9,6 +9,7 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/tox-test.yaml"
       - "tox.ini"
 
   pull_request:
@@ -19,12 +20,13 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/tox-test.yaml"
       - "tox.ini"
 
 jobs:
   test-tox:
 #    name: Test the tox.init is valid, and ensure that it could run finely.
-    runs-on:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 

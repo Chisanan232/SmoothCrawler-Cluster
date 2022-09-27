@@ -9,6 +9,7 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/docker-test.yaml"
       - "*dockerfile*"
       - "*Dockerfile*"
 
@@ -20,13 +21,14 @@ on:
       - "release/**"
       - "master"
     paths:
+      - "./.github/workflows/docker-test.yaml"
       - "*dockerfile*"
       - "*Dockerfile*"
 
 jobs:
   test-dockerfile:
 #    name: Test the Dockerfile is valid, and ensure that it could run finely.
-    runs-on:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
 
