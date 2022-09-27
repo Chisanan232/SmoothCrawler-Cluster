@@ -16,6 +16,8 @@ on:
       - ".readthedocs.yaml"
       - "LICENSE"
       - "README.md"
+      - "pytest_Dockerfile"
+      - "pyproject.toml"
 
   pull_request:
     branches:
@@ -32,10 +34,8 @@ on:
       - ".readthedocs.yaml"
       - "LICENSE"
       - "README.md"
-
-env:
-  Template_Workflows: Chisanan232/GitHub-Action-Template-Python/.github/workflows/
-  Workflow_Version: v2
+      - "pytest_Dockerfile"
+      - "pyproject.toml"
 
 jobs:
   prep-testbed_unit-test:
