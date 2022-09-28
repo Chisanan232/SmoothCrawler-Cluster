@@ -8,7 +8,7 @@
 #         - Allowable values: 'unit-test', 'integration-test'
 #
 # Example running docker command line:
-# >>> docker build -t sc-cluster_pytest:v0 ./ -f ./Dockerfile_pytest
+# >>> docker build -t sc-cluster_pytest:v0 ./ -f ./pytest_Dockerfile
 # >>> docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test sc-cluster_pytest:v0
 #
 #######################################################################################
