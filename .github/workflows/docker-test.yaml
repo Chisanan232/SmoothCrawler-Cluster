@@ -36,7 +36,7 @@ jobs:
         run: |
           pwd
           ls -la
-          /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./Dockerfile_pytest
+          /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./pytest_Dockerfile
 
       - name: Activate and run the Docker container by the docker image we build
         run: /usr/bin/docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test sc-cluster_pytest:v0
