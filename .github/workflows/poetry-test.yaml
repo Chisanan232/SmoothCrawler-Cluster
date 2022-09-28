@@ -9,7 +9,7 @@ on:
       - "release/**"
       - "master"
     paths:
-      - "./.github/workflows/poetry-test.yaml"
+      - ".github/workflows/poetry-test.yaml"
       - "pyproject.toml"
 
   pull_request:
@@ -20,7 +20,7 @@ on:
       - "release/**"
       - "master"
     paths:
-      - "./.github/workflows/poetry-test.yaml"
+      - ".github/workflows/poetry-test.yaml"
       - "pyproject.toml"
 
 jobs:
@@ -37,6 +37,9 @@ jobs:
 
       - name: Install the Poetry with Python
         run: curl -sSL https://install.python-poetry.org | python3
+
+      - name: Check the version of tool 'Poetry'
+        run: poetry --version
 
       - name: Build a virtual environment by Poetry with Python3
         run: poetry env use python3
