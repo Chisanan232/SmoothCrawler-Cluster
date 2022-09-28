@@ -1,0 +1,40 @@
+name: smoothcrawler-cluster dockerfile test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/docker-test.yaml"
+      - "*dockerfile*"
+      - "*Dockerfile*"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/docker-test.yaml"
+      - "*dockerfile*"
+      - "*Dockerfile*"
+
+jobs:
+  test-dockerfile:
+#    name: Test the Dockerfile is valid, and ensure that it could run finely.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build the Docker image by the Dockerfile './Dockerfile_pytest'
+        run: /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./pytest_Dockerfile
+
+      - name: Activate and run the Docker container by the docker image we build
+        run: /usr/bin/docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test sc-cluster_pytest:v0
+

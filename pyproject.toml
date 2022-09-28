@@ -12,7 +12,7 @@ python = "^3.6"
 smoothcrawler = "^0.2.0"
 kazoo = "^2.7.0"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.dev-dependencies]
 pytest = "^7.0.0"
 pytest-cov = "^3.0.0"
 pytest-html = "^3.1.1"

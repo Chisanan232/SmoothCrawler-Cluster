@@ -1,0 +1,55 @@
+name: smoothcrawler-cluster poetry test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/poetry-test.yaml"
+      - "pyproject.toml"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/poetry-test.yaml"
+      - "pyproject.toml"
+
+jobs:
+  test-dockerfile:
+#    name: Test the pyproject.toml is valid, and ensure that it could run finely.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+
+      - name: Install the Poetry with Python
+        run: curl -sSL https://install.python-poetry.org | python3
+
+      - name: Check the version of tool 'Poetry'
+        run: poetry --version
+
+      - name: Build a virtual environment by Poetry with Python3
+        run: poetry env use python3
+
+      - name: Install the Python dependencies in Poetry virtual environment
+        run: poetry install
+
+      - name: Show the Python dependencies tree
+        run: poetry show --tree
+
+      - name: Run the testing in Poetry virtual environment
+        run: poetry run bash ./scripts/run_pytest_in_develop.sh unit-test
+
