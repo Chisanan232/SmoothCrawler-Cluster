@@ -9,7 +9,7 @@ on:
       - "release/**"
       - "master"
     paths:
-      - "./.github/workflows/docker-test.yaml"
+      - ".github/workflows/docker-test.yaml"
       - "*dockerfile*"
       - "*Dockerfile*"
 
@@ -21,7 +21,7 @@ on:
       - "release/**"
       - "master"
     paths:
-      - "./.github/workflows/docker-test.yaml"
+      - ".github/workflows/docker-test.yaml"
       - "*dockerfile*"
       - "*Dockerfile*"
 
@@ -33,7 +33,10 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build the Docker image by the Dockerfile './Dockerfile_pytest'
-        run: /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./Dockerfile_pytest
+        run: |
+          pwd
+          ls -la
+          /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./Dockerfile_pytest
 
       - name: Activate and run the Docker container by the docker image we build
         run: /usr/bin/docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test sc-cluster_pytest:v0
