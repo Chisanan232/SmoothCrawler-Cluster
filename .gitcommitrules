@@ -11,41 +11,41 @@ Format:
 
 
 Commit Topic:
-* New Feature
+* 🎉🎊🍾 New Feature
 The new features which be added currently.
 
-* Breaking Change
+* 🔧⚙️🔩 Breaking Change
 Modify codes which probably lead to it couldn't run with old version code finely.
 
-* Performance
+* 🤖⚙️🔧 Performance
 Improve any performance in anywhere of this package. It may be just a for loop, a
 searching mechanism or something else.
 
-* Bug Fix
+* 🛠🐛💣 Bug Fix
 Fix any issues in this package. But it's also probably testing codes.
 
-* Refactor
+* 🔬🧪🧬 Refactor
 Refactoring code. Sometimes, the others may lead to do it. For example, you need to
 fix some issues or modify something to let it's clear so that you would adjust the
 software architecture. About that scenario, you should mark as 'Performance + Refactor'
 or 'Performance + Bug Fix'.
 
-* Style
+* 👨‍🏫👔Style
 Modify anything which does NOT effect to any features or codes. For example, below are
 the things of 'Style':
     - Remove or add place, indentation, etc.
     - Remove or add newline.
     - The way to comment out code.
 
-* Test
+* 🔬🌡💉Test
 Modify any the codes which is testing code for this package. In this package, it's
 the directory './tests'.
 
-* Debug
+* 👨‍💻🔎🐛Debug
 Modify any the codes or configuration which for debugging. However, it CAN NOT be used
 in some scope like 'code' or 'test'.
 
-* Docs
+* 📝📑📗Docs
 Modify anything which is related with documentation of this package. In this package,
 it's the directory './docs'.
 
