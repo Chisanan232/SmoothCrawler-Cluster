@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Union, Optional, TypeVar, Generic
 from kazoo.client import KazooClient
 from kazoo.protocol.states import ZnodeStat
+from kazoo.exceptions import NodeExistsError
 
 from .converter import BaseConverter
 
@@ -181,13 +182,19 @@ class ZookeeperClient(_BaseZookeeperClient):
         return _zk_path
 
 
-    def create_path(self, path: str, value: Union[str, bytes]) -> None:
-        if type(value) is str:
-            self.__zk_client.create(path=path, value=bytes(value, "utf-8"))
-        elif type(value) is bytes:
-            self.__zk_client.create(path=path, value=value)
+    def create_path(self, path: str, value: Union[str, bytes] = None) -> str:
+        if self.exist_path(path=path) is None:
+            if value is None:
+                return self.__zk_client.create(path=path, include_data=False)
+
+            if type(value) is str:
+                return self.__zk_client.create(path=path, value=bytes(value, "utf-8"), include_data=True)
+            elif type(value) is bytes:
+                return self.__zk_client.create(path=path, value=value, include_data=True)
+            else:
+                raise TypeError("It only supports *str* or *bytes* data types.")
         else:
-            raise TypeError("It only supports *str* or *bytes* data types.")
+            raise NodeExistsError
 
 
     def remove(self, path: str) -> bool:
@@ -199,8 +206,13 @@ class ZookeeperClient(_BaseZookeeperClient):
         return _zk_path.value
 
 
-    def set_value_to_path(self, path: str, value: str) -> None:
-        self.__zk_client.set(path=path, value=value)
+    def set_value_to_path(self, path: str, value: Union[str, bytes]) -> None:
+        if type(value) is str:
+            self.__zk_client.set(path=path, value=value.encode("utf-8"))
+        elif type(value) is bytes:
+            self.__zk_client.set(path=path, value=value)
+        else:
+            raise TypeError("It only supports *str* or *bytes* data types.")
 
 
     def close(self) -> None:
