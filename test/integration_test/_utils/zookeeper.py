@@ -4,9 +4,10 @@ from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperListener
 )
 from kazoo.client import KazooClient
-from functools import wraps
+from kazoo.exceptions import NodeExistsError
 from typing import Type, TypeVar, Generic
 import pytest
+import random
 
 from ..._config import Zookeeper_Hosts
 from ..._values import Test_Zookeeper_Path, Test_Zookeeper_Not_Exist_Path, Test_Zookeeper_String_Value, Test_Zookeeper_Bytes_Value
@@ -120,6 +121,36 @@ class TestZookeeperClient:
         _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path
         assert _zk_path.value == Test_Zookeeper_String_Value
+
+
+    @_remove_path_finally
+    def test_create_path_with_already_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        assert _creating_result is not None
+
+        try:
+            _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        except NodeExistsError:
+            assert True
+        else:
+            assert False
+
+
+    def test_create_path_with_invalid_type_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
+        for _ in range(3):
+            random_value = random.choice([
+                ["this is test list"],
+                ("this is test tuple",),
+                {"this is test set"},
+                {"key": "this is test dict"},
+            ])
+
+            try:
+                _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=random_value)
+            except TypeError:
+                assert True
+            else:
+                assert False
 
 
     @_remove_path_finally
