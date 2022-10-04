@@ -4,6 +4,7 @@ from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperListener
 )
 from kazoo.client import KazooClient
+from functools import wraps
 from typing import Type, TypeVar, Generic
 import pytest
 
@@ -49,14 +50,23 @@ class TestZookeeperClient:
         return ZookeeperClient(hosts=Zookeeper_Hosts)
 
 
+    @staticmethod
+    def _remove_path_finally(test_item):
+        def _(self, zk_cli: Generic[_BaseZookeeperClientType]):
+            try:
+                test_item(self, zk_cli)
+            finally:
+                # Remove the metadata of target path in Zookeeper
+                self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
+
+        return _
+
+
+    @_remove_path_finally
     def test_exist_path_with_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
         # Test with a path which already exists ---> function should return True.
-        # zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
-        zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
         assert zk_cli.exist_path(path=Test_Zookeeper_Path) is not None
-
-        # Remove the metadata of target path in Zookeeper
-        self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
 
 
     def test_exist_path_with_not_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
@@ -64,18 +74,16 @@ class TestZookeeperClient:
         assert zk_cli.exist_path(path=Test_Zookeeper_Not_Exist_Path) is None
 
 
+    @_remove_path_finally
     def test_get_path_with_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
         # Test with a path which already exists ---> function should return a object which is _BaseZookeeperClientType type.
-        # zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
-        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
         assert _creating_result is not None
+
         _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path
         assert _zk_path.value == Test_Zookeeper_String_Value
 
-        # Remove the metadata of target path in Zookeeper
-        self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
-    
 
     def test_get_path_with_not_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
         # Test with a path which doesn't exist ---> function should
@@ -84,45 +92,58 @@ class TestZookeeperClient:
         assert _zk_path.value is None
 
 
-    def test_create_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
-        # Test with a path which doesn't exist ---> function should ...
-        # Test with a path which already exists ---> function should ...
-        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+    @_remove_path_finally
+    def test_create_path_without_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path)
         assert _creating_result is not None
+
+        _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
+        assert _zk_path.path == Test_Zookeeper_Path
+        assert _zk_path.value == ""
+
+
+    @_remove_path_finally
+    def test_create_path_with_str_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
+        assert _creating_result is not None
+
         _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path
         assert _zk_path.value == Test_Zookeeper_String_Value
 
-        # Remove the metadata of target path in Zookeeper
-        self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
 
-
-    def test_get_value_from_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
-        # Test with a path which doesn't exist ---> function should ...
-        # Test with a path which already exists ---> function should ...
+    @_remove_path_finally
+    def test_create_path_with_bytes_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
         _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
         assert _creating_result is not None
+
+        _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
+        assert _zk_path.path == Test_Zookeeper_Path
+        assert _zk_path.value == Test_Zookeeper_String_Value
+
+
+    @_remove_path_finally
+    def test_get_value_from_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
+        assert _creating_result is not None
+
         _value = zk_cli.get_value_from_path(path=Test_Zookeeper_Path)
         assert _value == Test_Zookeeper_String_Value
 
-        # Remove the metadata of target path in Zookeeper
-        self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
 
-
+    @_remove_path_finally
     def test_set_value_to_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
-        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
         assert _creating_result is not None
+
         _new_value = "new zookeeper value"
         zk_cli.set_value_to_path(path=Test_Zookeeper_Path, value=_new_value)
         assert zk_cli.get_path(path=Test_Zookeeper_Path).value == _new_value
         assert zk_cli.get_value_from_path(path=Test_Zookeeper_Path) == _new_value
 
-        # Remove the metadata of target path in Zookeeper
-        self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
-
 
     def test_remove(self, zk_cli: Generic[_BaseZookeeperClientType]):
-        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_Bytes_Value)
+        _creating_result = zk_cli.create_path(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
         assert _creating_result is not None
         _zk_path = zk_cli.get_path(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path
