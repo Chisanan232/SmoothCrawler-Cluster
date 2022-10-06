@@ -1,5 +1,5 @@
 from smoothcrawler_cluster._utils.zookeeper import (
-    _BaseZookeeperPath, ZookeeperPath,
+    _BaseZookeeperPath,
     _BaseZookeeperClient, ZookeeperClient,
     _BaseZookeeperListener
 )
@@ -16,26 +16,6 @@ from ..._values import Test_Zookeeper_Path, Test_Zookeeper_Not_Exist_Path, Test_
 _BaseZookeeperPathType = TypeVar("_BaseZookeeperPathType", bound=_BaseZookeeperPath)
 _BaseZookeeperClientType = TypeVar("_BaseZookeeperClientType", bound=_BaseZookeeperClient)
 _BaseZookeeperListenerType = TypeVar("_BaseZookeeperListenerType", bound=_BaseZookeeperListener)
-
-
-class TestZookeeperPath:
-
-    @pytest.fixture(scope="function")
-    def zk_path(self) -> ZookeeperPath:
-        return ZookeeperPath()
-
-
-    def test_path(self, zk_path: ZookeeperPath):
-        assert zk_path.path is None
-        zk_path.path = Test_Zookeeper_Path
-        assert zk_path.path == Test_Zookeeper_Path
-
-
-    def test_value(self, zk_path: ZookeeperPath):
-        assert zk_path.value is None
-        zk_path.value = Test_Zookeeper_String_Value
-        assert zk_path.value == Test_Zookeeper_String_Value
-
 
 
 class TestZookeeperClient:
