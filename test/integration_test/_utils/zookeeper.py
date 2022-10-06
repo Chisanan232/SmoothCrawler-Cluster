@@ -31,6 +31,7 @@ class TestZookeeperClient:
 
     @staticmethod
     def _remove_path_finally(test_item):
+
         def _(self, zk_cli: Generic[_BaseZookeeperClientType]):
             try:
                 test_item(self, zk_cli)
