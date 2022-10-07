@@ -10,7 +10,7 @@ from .converter import BaseConverter
 BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
 
-class _BaseZookeeperPath(metaclass=ABCMeta):
+class _BaseZookeeperNode(metaclass=ABCMeta):
     """
     The object which saving information of one specific path of Zookeeper.
     """
@@ -59,7 +59,7 @@ class _BaseZookeeperPath(metaclass=ABCMeta):
         pass
 
 
-class ZookeeperPath(_BaseZookeeperPath):
+class ZookeeperNode(_BaseZookeeperNode):
 
     __path: str = None
     __value: str = None
@@ -81,29 +81,28 @@ class ZookeeperPath(_BaseZookeeperPath):
         self.__value = val
 
 
-# _BaseZookeeperPathType = Type["_BaseZookeeperPath", _BaseZookeeperPath]
-_BaseZookeeperPathType = TypeVar("_BaseZookeeperPathType", bound=_BaseZookeeperPath)
+_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
 
 
 class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
-    def exist_path(self, path: str) -> bool:
+    def exist_node(self, path: str) -> bool:
         """
-        Check whether the target path exist or not.
+        Check whether the target node exist or not.
 
-        :param path: Target path.
+        :param path: The path of target node.
         :return: Boolean value. It returns True if the path exists, nor False.
         """
         pass
 
 
     @abstractmethod
-    def get_path(self, path: str) -> Generic[_BaseZookeeperPathType]:
+    def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
         """
-        Get one specific path in Zookeeper.
+        Get one specific node by path in Zookeeper.
 
-        :param path: Target path.
+        :param path: The path of target node.
         :return: It would return a _BaseZookeeperPathType type object.
         """
 
@@ -111,11 +110,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def create_path(self, path: str, value: Union[str, bytes]) -> None:
+    def create_node(self, path: str, value: Union[str, bytes]) -> None:
         """
         Create a path as the target path in Zookeeper.
 
-        :param path:
+        :param path: The path of target node.
         :param value:
         :return:
         """
@@ -124,11 +123,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def get_value_from_path(self, path: str) -> str:
+    def get_value_from_node(self, path: str) -> str:
         """
         Get the value directly from the Zookeeper path.
 
-        :param path: Target Zookeeper path.
+        :param path: The path of target node.
         :return: A string type value. You may need to deserialize the data if it needs.
         """
 
@@ -136,11 +135,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def set_value_to_path(self, path: str, value: str) -> bool:
+    def set_value_to_node(self, path: str, value: str) -> bool:
         """
         Set a value to the one specific Zookeeper path.
 
-        :param path: Target Zookeeper path.
+        :param path: The path of target node.
         :param value: A string type value.
         :return: Boolean type value, it would return True if it does finely without any issue, nor it returns False.
         """
@@ -156,11 +155,11 @@ class ZookeeperClient(_BaseZookeeperClient):
         self.__zk_client.start()
 
 
-    def exist_path(self, path: str) -> bool:
+    def exist_node(self, path: str) -> bool:
         return self.__zk_client.exists(path=path)
 
 
-    def get_path(self, path: str) -> Generic[_BaseZookeeperPathType]:
+    def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
 
         def _get_value() -> (bytes, ZnodeStat):
             __data = None
@@ -175,15 +174,15 @@ class ZookeeperClient(_BaseZookeeperClient):
             return __data, __state
 
         _data, _state = _get_value()
-        _zk_path = ZookeeperPath()
+        _zk_path = ZookeeperNode()
         _zk_path.path = path
         if _data is not None and type(_data) is bytes:
             _zk_path.value = _data.decode("utf-8")
         return _zk_path
 
 
-    def create_path(self, path: str, value: Union[str, bytes] = None) -> str:
-        if self.exist_path(path=path) is None:
+    def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
+        if self.exist_node(path=path) is None:
             if value is None:
                 return self.__zk_client.create(path=path, include_data=False)
 
@@ -197,16 +196,16 @@ class ZookeeperClient(_BaseZookeeperClient):
             raise NodeExistsError
 
 
-    def remove(self, path: str) -> bool:
+    def remove_node(self, path: str) -> bool:
         return self.__zk_client.delete(path=path)
 
 
-    def get_value_from_path(self, path: str) -> str:
-        _zk_path = self.get_path(path=path)
+    def get_value_from_node(self, path: str) -> str:
+        _zk_path = self.get_node(path=path)
         return _zk_path.value
 
 
-    def set_value_to_path(self, path: str, value: Union[str, bytes]) -> None:
+    def set_value_to_node(self, path: str, value: Union[str, bytes]) -> None:
         if type(value) is str:
             self.__zk_client.set(path=path, value=value.encode("utf-8"))
         elif type(value) is bytes:
