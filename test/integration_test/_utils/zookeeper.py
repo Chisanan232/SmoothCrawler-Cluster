@@ -65,7 +65,7 @@ class TestZookeeperClient:
         # Test with a path which doesn't exist ---> function should
         _zk_path = zk_cli.get_node(path=Test_Zookeeper_Not_Exist_Path)
         assert _zk_path.path is Test_Zookeeper_Not_Exist_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Not_Exist_Path}."
-        assert _zk_path.value is None, f"The value of *ZookeeperPath* should be None because it doesn't exist recently."
+        assert _zk_path.value is None, "The value of *ZookeeperPath* should be None because it doesn't exist recently."
 
     @_remove_path_finally
     def test_create_path_without_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
@@ -74,7 +74,7 @@ class TestZookeeperClient:
 
         _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Path}."
-        assert _zk_path.value == "", f"The value of *ZookeeperPath* should be equal to empty string because it created it without any value."
+        assert _zk_path.value == "", "The value of *ZookeeperPath* should be equal to empty string because it created it without any value."
 
     @_remove_path_finally
     def test_create_path_with_str_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
@@ -116,7 +116,7 @@ class TestZookeeperClient:
             ])
 
             try:
-                _creating_result = zk_cli.create_node(path=Test_Zookeeper_Path, value=random_value)
+                zk_cli.create_node(path=Test_Zookeeper_Path, value=random_value)
             except TypeError:
                 assert True, "It works finely."
             else:
@@ -137,8 +137,10 @@ class TestZookeeperClient:
 
         _new_value = "new zookeeper value"
         zk_cli.set_value_to_node(path=Test_Zookeeper_Path, value=_new_value)
-        assert zk_cli.get_node(path=Test_Zookeeper_Path).value == _new_value, f"The new value of *ZookeeperPath* should be equal to {_new_value} (by function *get_path*) because it has been modified."
-        assert zk_cli.get_value_from_node(path=Test_Zookeeper_Path) == _new_value, f"The new value of *ZookeeperPath* should be equal to {_new_value} (by function *get_value_from_path*) because it has been modified."
+        assert zk_cli.get_node(path=Test_Zookeeper_Path).value == _new_value, \
+            f"The new value of *ZookeeperPath* should be equal to {_new_value} (by function *get_path*) because it has been modified."
+        assert zk_cli.get_value_from_node(path=Test_Zookeeper_Path) == _new_value, \
+            f"The new value of *ZookeeperPath* should be equal to {_new_value} (by function *get_value_from_path*) because it has been modified."
 
     def test_remove(self, zk_cli: Generic[_BaseZookeeperClientType]):
         _creating_result = zk_cli.create_node(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value)
@@ -151,7 +153,7 @@ class TestZookeeperClient:
 
         _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Path}."
-        assert _zk_path.value is None, f"The value of *ZookeeperPath* should be None because the path be deleted."
+        assert _zk_path.value is None, "The value of *ZookeeperPath* should be None because the path be deleted."
 
 
 class TestZookeeperListener:
