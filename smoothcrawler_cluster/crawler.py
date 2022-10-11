@@ -30,6 +30,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             name = "crawler"
         self._crawler_name = name
 
+    @property
+    def zookeeper_hosts(self) -> str:
+        return self.__Default_Zookeeper_Hosts
+
+
     def register(self) -> None:
         _path = f"smoothcrawler/node/{self._crawler_name}"
         if self._Zookeeper_Client.exist_node(path=_path) is False:
