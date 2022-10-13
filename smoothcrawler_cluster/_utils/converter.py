@@ -33,37 +33,43 @@ class JsonStrConverter(BaseConverter):
     def str_to_state(self, data: str) -> State:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _state = State()
+        _state_with_value = self._convert_to_state(state=State(), data=_parsed_data)
+        return _state_with_value
 
-        _state.role = _parsed_data.get("role")
-        _state.total_crawler = _parsed_data.get("total_crawler")
-        _state.total_runner = _parsed_data.get("total_runner")
-        _state.total_backup = _parsed_data.get("total_backup")
-        _state.current_crawler = _parsed_data.get("current_crawler")
-        _state.current_runner = _parsed_data.get("current_runner")
-        _state.current_backup = _parsed_data.get("current_backup")
-        _state.standby_id = _parsed_data.get("standby_id")
-        _state.fail_crawler = _parsed_data.get("fail_crawler")
-        _state.fail_runner = _parsed_data.get("fail_runner")
-        _state.fail_backup = _parsed_data.get("fail_backup")
-
-        return _state
+    def _convert_to_state(self, state: State, data: Any) -> State:
+        data: Dict[str, Any] = data
+        state.role = data.get("role")
+        state.total_crawler = data.get("total_crawler")
+        state.total_runner = data.get("total_runner")
+        state.total_backup = data.get("total_backup")
+        state.current_crawler = data.get("current_crawler")
+        state.current_runner = data.get("current_runner")
+        state.current_backup = data.get("current_backup")
+        state.standby_id = data.get("standby_id")
+        state.fail_crawler = data.get("fail_crawler")
+        state.fail_runner = data.get("fail_runner")
+        state.fail_backup = data.get("fail_backup")
+        return state
 
     def str_to_task(self, data: str) -> Task:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _task = Task()
+        _task_with_value = self._convert_to_task(task=Task(), data=_parsed_data)
+        return _task_with_value
 
-        _task.task_content = _parsed_data.get("task_content")
-        _task.task_result = _parsed_data.get("task_result")
-
-        return _task
+    def _convert_to_task(self, task: Task, data: Any) -> Task:
+        data: Dict[str, Any] = data
+        task.task_content = data.get("task_content")
+        task.task_result = data.get("task_result")
+        return task
 
     def str_to_heartbeat(self, data: str) -> Heartbeat:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _heartbeat = Heartbeat()
+        _heartbeat_with_value = self._convert_to_heartbeat(heartbeat=Heartbeat(), data=_parsed_data)
+        return _heartbeat_with_value
 
-        _heartbeat.datetime = _parsed_data.get("datetime")
-
-        return _heartbeat
+    def _convert_to_heartbeat(self, heartbeat: Heartbeat, data: Any) -> Heartbeat:
+        data: Dict[str, Any] = data
+        heartbeat.datetime = data.get("datetime")
+        return heartbeat
