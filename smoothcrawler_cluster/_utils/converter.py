@@ -30,6 +30,12 @@ class JsonStrConverter(BaseConverter):
     def state_to_str(self, state: State) -> str:
         return self.serialize(data=str(state))
 
+    def task_to_str(self, task: Task) -> str:
+        return self.serialize(data=str(task))
+
+    def heartbeat_to_str(self, heartbeat: Heartbeat) -> str:
+        return self.serialize(data=str(heartbeat))
+
     def str_to_state(self, data: str) -> State:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         _parsed_data: Dict[str, Any] = self.deserialize(data=data)
