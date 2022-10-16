@@ -1,0 +1,67 @@
+#################################################################################################################################
+#
+# Workflow Description:
+#     Run testing to check the function of Tox in Python project.
+#
+# Workflow input parameters:
+#     * python_version: The Python version it would use in testing runtime environment.
+#     * dependency_pkgs: Install the Python dependencies (pip install by pacakge name).
+#     * requirements_path: Install the Python dependencies (pip install by requirements file).
+#     * tox_arguments: The command line option of Tox.
+#
+# Workflow running output:
+#     Nothing.
+#
+#################################################################################################################################
+
+name: Test Tox
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "The Python version it would use in testing runtime environment."
+        required: true
+        type: string
+      dependency_pkgs:
+        description: "Install the Python dependencies (pip install by pacakge name)."
+        required: false
+        type: string
+      requirements_path:
+        description: "Install the Python dependencies (pip install by requirements file)."
+        type: string
+        required: false
+      tox_arguments:
+        description: "The command line option of Tox."
+        type: string
+        required: false
+
+
+jobs:
+  test-tox:
+#    name: Test the tox.init is valid, and ensure that it could run finely.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install ${{ inputs.python_version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install the Python dependencies
+        if: ${{ inputs.dependency_pkgs != '' }}
+        run: pip3 install ${{ inputs.dependency_pkgs }}
+
+      - name: Install the Python dependencies
+        if: ${{ inputs.requirements_path != '' }}
+        run: pip3 install -r ${{ inputs.requirements_path }}
+
+      - name: Install the Python dependencies
+        if: ${{ inputs.dependency_pkgs == '' && inputs.requirements_path == '' }}
+        run: |
+          echo "❌ It should NOT be empty of both options 'dependency_pkgs' and 'requirements_path'."
+          exit 1
+
+      - name: Test to run Tox command
+        run: tox ${{ inputs.tox_arguments }}

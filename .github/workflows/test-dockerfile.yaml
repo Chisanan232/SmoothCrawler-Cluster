@@ -1,0 +1,74 @@
+#################################################################################################################################
+#
+# Workflow Description:
+#     Run testing to check the function of Dockerfile in project.
+#
+# Workflow input parameters:
+#     * docker_build_image_name: The Docker image name in building process.
+#     * docker_build_image_tag: The tag of Docker image in building process.
+#     * docker_build_context_path: The context path of the Docker image building.
+#     * docker_build_file_name: The file path of Dockerfile.
+#     * docker_run_name: The Docker container name in running process.
+#     * docker_run_option: The command line options of 'docker run'.
+#     * docker_run_image_name: The Docker image name it would use in running process.
+#     * docker_run_image_tag: The tag of Docker image it would use in running process.
+#
+# Workflow running output:
+#     Nothing.
+#
+#################################################################################################################################
+
+name: Test Dockerfile
+
+on:
+  workflow_call:
+    inputs:
+      docker_build_image_name:
+        description: "The Docker image name in building process."
+        required: true
+        type: string
+      docker_build_image_tag:
+        description: "The tag of Docker image in building process."
+        required: true
+        type: string
+      docker_build_context_path:
+        description: "The context path of the Docker image building."
+        type: string
+        required: false
+        default: ./
+      docker_build_file_name:
+        description: "The file path of Dockerfile."
+        type: string
+        required: false
+        default: ./Dockerfile
+      docker_run_name:
+        description: "The Docker container name in running process."
+        type: string
+        required: true
+      docker_run_option:
+        description: "The command line options of 'docker run'."
+        type: string
+        required: false
+      docker_run_image_name:
+        description: "The Docker image name it would use in running process."
+        type: string
+        required: true
+      docker_run_image_tag:
+        description: "The tag of Docker image it would use in running process."
+        type: string
+        required: false
+        default: latest
+
+
+jobs:
+  test-dockerfile:
+#    name: Test the Dockerfile is valid, and ensure that it could run finely.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build the Docker image by the Dockerfile './Dockerfile_pytest'
+        run: /usr/bin/docker build -t ${{ inputs.docker_build_image_name }}:${{ inputs.docker_build_image_tag }} ${{ inputs.docker_build_context_path }} -f ${{ inputs.docker_build_file_name }}
+
+      - name: Activate and run the Docker container by the docker image we build
+        run: /usr/bin/docker run --name ${{ inputs.docker_run_name }} ${{ inputs.docker_run_option }} ${{ inputs.docker_run_image_name }}:${{ inputs.docker_run_image_tag }}
