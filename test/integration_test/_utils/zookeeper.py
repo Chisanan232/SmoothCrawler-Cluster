@@ -149,7 +149,7 @@ class TestZookeeperClient:
         assert _zk_path.path == Test_Zookeeper_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Path}."
         assert _zk_path.value == Test_Zookeeper_String_Value, f"The value of *ZookeeperPath* should be equal to {Test_Zookeeper_String_Value}."
 
-        _creating_result = zk_cli.remove_node(path=Test_Zookeeper_Path)
+        _creating_result = zk_cli.delete_node(path=Test_Zookeeper_Path)
 
         _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
         assert _zk_path.path == Test_Zookeeper_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Path}."
