@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "develop"
+      - "develop/**"
       - "release"
       - "release-**"
       - "release/**"
@@ -16,6 +17,7 @@ on:
   pull_request:
     branches:
       - "develop"
+      - "develop/**"
       - "release"
       - "release-**"
       - "release/**"
@@ -28,13 +30,15 @@ on:
 jobs:
   test-dockerfile:
 #    name: Test the Dockerfile is valid, and ensure that it could run finely.
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Build the Docker image by the Dockerfile './Dockerfile_pytest'
-        run: /usr/bin/docker build -t sc-cluster_pytest:v0 ./ -f ./pytest_Dockerfile
-
-      - name: Activate and run the Docker container by the docker image we build
-        run: /usr/bin/docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test sc-cluster_pytest:v0
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
+    uses: ./.github/workflows/test-dockerfile.yaml
+    with:
+      docker_build_image_name: sc-cluster_pytest
+      docker_build_image_tag: v0
+      docker_build_context_path: ./
+      docker_build_file_name: ./pytest_Dockerfile
+      docker_run_name: sc-cluster_pytest
+      docker_run_option: -e TESTING_TYPE=unit-test
+      docker_run_image_name: sc-cluster_pytest
+      docker_run_image_tag: v0
 
