@@ -1,5 +1,6 @@
-from typing import List, Union
 from datetime import datetime as dt
+from typing import List, Union
+from abc import ABCMeta, abstractmethod
 
 from .metadata_enum import CrawlerStateRole, TaskResult
 
