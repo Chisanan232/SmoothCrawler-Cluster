@@ -10,7 +10,8 @@ import random
 
 class _MetaDataTest(metaclass=ABCMeta):
 
-    def _run_property_test(self, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
+    @classmethod
+    def _run_property_test(cls, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
         """
         Test for getting and setting the property value. It also try to operate the property with invalid value to test
         about it should NOT work finely without any issue.
@@ -47,7 +48,10 @@ class _MetaDataTest(metaclass=ABCMeta):
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
         else:
             assert True, "It works finely."
-            assert getting_func() == _test_cnt, "The value should be same as it set."
+            if type(_test_cnt) is CrawlerStateRole or type(_test_cnt) is TaskResult:
+                assert getting_func() == _test_cnt.value, "The value should be same as it set."
+            else:
+                assert getting_func() == _test_cnt, "The value should be same as it set."
 
         # Set value with normal value.
         _test_cnt = invalid_1_value
@@ -86,14 +90,14 @@ class TestState(_MetaDataTest):
         """
 
         # Test for setting the property normally. It would choice one value randomly.
-        _under_test_value = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
+        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
         try:
             state.role = _under_test_value
         except Exception:
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
         else:
             assert True, "It works finely."
-            assert state.role == _under_test_value, "The value should be same as it set."
+            assert state.role == _under_test_value.value, "The value should be same as it set."
 
         _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
         _under_test_value = random.choice(_enum_values)
@@ -378,7 +382,7 @@ class TestTask(_MetaDataTest):
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=TaskResult.Done,
-            invalid_1_value="5",
+            invalid_1_value=5,
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
