@@ -196,7 +196,7 @@ class ZookeeperClient(_BaseZookeeperClient):
             raise NodeExistsError
 
 
-    def remove_node(self, path: str) -> bool:
+    def delete_node(self, path: str) -> bool:
         return self.__zk_client.delete(path=path)
 
 
