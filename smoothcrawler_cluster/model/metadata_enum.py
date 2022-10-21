@@ -10,10 +10,17 @@ class CrawlerStateRole(Enum):
 
     For **SmoothCrawler-Cluster** realm, it has 4 different roles:
 
+    * Initial
     * Runner
     * Backup Runner
     * Dead Runner
     * Dead Backup Runner
+    """
+
+    Initial = "initial"
+    """ 
+    It only have this state in instantiating process of crawler and before runner election. And it would change this option 
+    to *Runner* or *Backup_Runner* after done runner election.
     """
 
     Runner = "runner"
@@ -44,6 +51,9 @@ class TaskResult(Enum):
     The task result means it is the result of running web spider task. The web spider task could classify to
     be 4 different states: processing, done, terminate and error.
     """
+
+    Nothing = "nothing"
+    """ When crawler just be ready for running or in instantiating process, It would be this state. """
 
     Processing = "processing"
     """ Task running in processing. """
