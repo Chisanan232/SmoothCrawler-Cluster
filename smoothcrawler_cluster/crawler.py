@@ -183,7 +183,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         state.total_crawler = self._runner + self._backup
         state.total_runner = self._runner
         state.total_backup = self._backup
-        state.current_crawler = state.current_crawler.append(self._crawler_name)
+        state.current_crawler.append(self._crawler_name)
         state.role = CrawlerStateRole.Initial
         state.standby_id = "0"
         return state
@@ -191,10 +191,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         _state = self._get_state_from_zookeeper()
         _state.role = role
+        _state.current_crawler.append(self._crawler_name)
         if role is CrawlerStateRole.Runner:
-            _state.current_runner = _state.current_runner.append(self._crawler_name)
+            _state.current_runner.append(self._crawler_name)
         elif role is CrawlerStateRole.Backup_Runner:
-            _state.current_backup = _state.current_backup.append(self._crawler_name)
+            _state.current_backup.append(self._crawler_name)
+        self._set_state_to_zookeeper(_state, create_node=False)
 
     def _initial_task(self) -> Task:
         _task = Task()
