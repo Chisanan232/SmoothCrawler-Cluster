@@ -26,7 +26,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
 
-    def __init__(self, runner: int, backup: int, name: str = "", index_sep: List[str] = ["-", "_"], zk_hosts: str = None,
+    def __init__(self, runner: int, backup: int, name: str = "", index_sep: List[str] = ["-", "_"], initial: bool = True, zk_hosts: str = None,
                  zk_converter: Type[BaseConverter] = None, election_strategy: Generic[BaseElectionType] = None):
         super().__init__()
         self._total_crawler = runner + backup
@@ -64,14 +64,17 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self._crawler_index = _crawler_name_list[-1]
             self._election_strategy.identity = self._crawler_index
 
-        # TODO: It needs create another thread to keep updating heartbeat info to signal it's alive.
-        self.register()
-        if self.is_ready(interval=0.5, timeout=-1):
-            if self.elect() is ElectionResult.Winner:
-                self._crawler_role = CrawlerStateRole.Runner
+        if initial is True:
+            # TODO: It needs create another thread to keep updating heartbeat info to signal it's alive.
+            self.register()
+            if self.is_ready(interval=0.5, timeout=-1):
+                if self.elect() is ElectionResult.Winner:
+                    self._crawler_role = CrawlerStateRole.Runner
+                else:
+                    self._crawler_role = CrawlerStateRole.Backup_Runner
+                self._update_crawler_role(self._crawler_role)
             else:
-                self._crawler_role = CrawlerStateRole.Backup_Runner
-            self._update_crawler_role(self._crawler_role)
+                raise TimeoutError("")
 
     @property
     def role(self) -> CrawlerStateRole:
@@ -197,13 +200,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         _task = Task()
         # TODO: Consider about the task assigning timing
         _task.task_result = TaskResult.Nothing
-        _task.task_content = None
+        _task.task_content = {}
         return _task
 
     def _update_task(self, task: Task) -> Task:
         # TODO: Consider about the task assigning timing
         task.task_result = TaskResult.Nothing
-        task.task_content = None
+        task.task_content = {}
         return task
 
     def _initial_heartbeat(self) -> Heartbeat:
