@@ -67,7 +67,7 @@ class _TestValue:
         return cls.__Test_Value_Instance
 
     def __init__(self):
-        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value)
+        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False)
 
     @property
     def state_zk_path(self) -> str:
@@ -158,13 +158,12 @@ _Testing_Value: _TestValue = _TestValue()
 
 class TestZookeeperCrawler(ZKTestSpec):
 
-
     @pytest.fixture(scope="function")
     def uit_object(self) -> ZookeeperCrawler:
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
-        _zk_crawler = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value)
+        _zk_crawler = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False)
 
         return _zk_crawler
 
@@ -234,6 +233,33 @@ class TestZookeeperCrawler(ZKTestSpec):
         uit_object._set_heartbeat_to_zookeeper(heartbeat=_Testing_Value.heartbeat)
         _heartbeat, _znode_state = self._get_zk_node_value(path=_Testing_Value.heartbeat_zk_path)
         assert type(_heartbeat) is not None, _Not_None_Assertion_Error
+
+
+    @ZK.reset_testing_env(path=_Testing_Value.state_zk_path)
+    @ZK.add_node_with_value_first(path=_Testing_Value.state_zk_path, value=_Testing_Value.state_data_str)
+    @ZK.remove_node_finally(path=_Testing_Value.state_zk_path)
+    def test__update_crawler_role(self, uit_object: ZookeeperCrawler):
+        # Checking initial state
+        _state = uit_object._get_state_from_zookeeper()
+        assert _state.role == CrawlerStateRole.Initial.value, \
+            "At initial process, the role of crawler instance should be *initial* (or value of *CrawlerStateRole.Initial*)."
+        assert len(_state.current_crawler) == 0, "At initial process, the length of current crawler list should be 0."
+        assert len(_state.current_runner) == 0, "At initial process, the length of current runner list should be 0."
+        assert len(_state.current_backup) == 0, "At initial process, the length of current backup list should be 0."
+
+        # Checking initial state
+        uit_object._update_crawler_role(CrawlerStateRole.Runner)
+
+        # Verify the updated state
+        _state = uit_object._get_state_from_zookeeper()
+        assert _state.role == CrawlerStateRole.Runner.value, \
+            "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
+        assert len(_state.current_crawler) == 1, \
+            "After update the *state* meta data, the length of current crawler list should be 1 because runner election done."
+        assert len(_state.current_runner) == 1, \
+            "After update the *state* meta data, the length of current crawler list should be 1 because it's *runner*."
+        assert len(_state.current_backup) == 0, \
+            "After update the *state* meta data, the length of current crawler list should be 0 because it's *runner*."
 
 
     def _get_zk_node_value(self, path: str) -> (str, ZnodeStat):
