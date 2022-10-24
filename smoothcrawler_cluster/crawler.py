@@ -183,6 +183,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         state.total_crawler = self._runner + self._backup
         state.total_runner = self._runner
         state.total_backup = self._backup
+        if state.current_crawler is None:
+            state.current_crawler = []
         state.current_crawler.append(self._crawler_name)
         state.role = CrawlerStateRole.Initial
         state.standby_id = "0"
