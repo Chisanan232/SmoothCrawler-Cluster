@@ -90,7 +90,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         # Current Answer:
         # 1. Index: get data from Zookeeper first and check the value, and it set the next index of crawler and save it to Zookeeper.
         # 2. Hardware code: Use the unique hardware code or flag to record it, i.e., the MAC address of host or something ID of container.
-        if self._Zookeeper_Client.exist_node(path=self.state_zookeeper_path) is False:
+        if self._Zookeeper_Client.exist_node(path=self.state_zookeeper_path) is None:
             _state = self._initial_state()
             self._set_state_to_zookeeper(_state, create_node=True)
         else:
@@ -99,7 +99,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self._set_state_to_zookeeper(_state)
 
         # Register attribute of Task
-        if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is False:
+        if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
             _task = self._initial_task()
             self._set_task_to_zookeeper(_task, create_node=True)
         else:
@@ -108,7 +108,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self._set_task_to_zookeeper(_task)
 
         # Register attribute of Heartbeat
-        if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is False:
+        if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
             _heartbeat = self._initial_heartbeat()
             self._set_heartbeat_to_zookeeper(_heartbeat, create_node=True)
         else:
