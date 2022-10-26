@@ -64,8 +64,9 @@ class ZK:
                 try:
                     test_item(self, uit_object)
                 finally:
-                    # Remove the metadata of target path in Zookeeper
-                    self._PyTest_ZK_Client.delete(path=path)
+                    if self._PyTest_ZK_Client.exists(path=path) is not None:
+                        # Remove the metadata of target path in Zookeeper
+                        self._PyTest_ZK_Client.delete(path=path)
             return _
         return _
 
