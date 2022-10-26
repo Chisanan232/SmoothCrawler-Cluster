@@ -17,8 +17,8 @@ class ZK:
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Delete target node in Zookeeper to guarantee that the runtime environment is clean.
-                if self._PyTest_ZK_Client.exists(path=path) is not None:
-                    self._PyTest_ZK_Client.delete(path=path)
+                if self._exist_node(path=path) is not None:
+                    self._delete_node(path=path)
                 test_item(self, uit_object)
             return _
         return _
@@ -28,7 +28,7 @@ class ZK:
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Create new node in Zookeeper
-                self._PyTest_ZK_Client.create(path=path, makepath=True, include_data=False)
+                self._create_node(path=path, include_data=False)
                 test_item(self, uit_object)
             return _
         return _
@@ -38,18 +38,18 @@ class ZK:
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Add new node with value in Zookeeper
-                if self._PyTest_ZK_Client.exists(path=path):
+                if self._exist_node(path=path):
                     if type(value) is str:
-                        self._PyTest_ZK_Client.set(path=path, value=value)
+                        self._set_value_to_node(path=path, value=value)
                     elif type(value) is bytes:
-                        self._PyTest_ZK_Client.set(path=path, value=value.encode("utf-8"))
+                        self._set_value_to_node(path=path, value=value.encode("utf-8"))
                     else:
                         raise TypeError("It only support type *str* and *bytes*.")
                 else:
                     if type(value) is str:
-                        self._PyTest_ZK_Client.create(path=path, value=bytes(value, "utf-8"), makepath=True, include_data=True)
+                        self._create_node(path=path, value=bytes(value, "utf-8"), include_data=True)
                     elif type(value) is bytes:
-                        self._PyTest_ZK_Client.create(path=path, value=value, makepath=True, include_data=True)
+                        self._create_node(path=path, value=value, include_data=True)
                     else:
                         raise TypeError("It only support type *str* and *bytes*.")
 
@@ -64,11 +64,23 @@ class ZK:
                 try:
                     test_item(self, uit_object)
                 finally:
-                    if self._PyTest_ZK_Client.exists(path=path) is not None:
+                    if self._exist_node(path=path) is not None:
                         # Remove the metadata of target path in Zookeeper
-                        self._PyTest_ZK_Client.delete(path=path)
+                        self._delete_node(path=path)
             return _
         return _
+
+    def _exist_node(self, path: str):
+        return self._PyTest_ZK_Client.exists(path=path)
+
+    def _create_node(self, path: str, value: bytes = None, include_data: bool = False) -> None:
+        self._PyTest_ZK_Client.create(path=path, value=value, makepath=True, include_data=include_data)
+
+    def _set_value_to_node(self, path: str, value: bytes) -> None:
+        self._PyTest_ZK_Client.set(path=path, value=value)
+
+    def _delete_node(self, path: str) -> None:
+        self._PyTest_ZK_Client.delete(path=path)
 
 
 class ZKTestSpec(ZK, ABC):
