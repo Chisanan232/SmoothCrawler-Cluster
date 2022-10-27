@@ -231,7 +231,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         _start = time.time()
         while True:
             _state = self._get_state_from_zookeeper()
-            if len(_state.current_crawler) == self._total_crawler:
+            if len(set(_state.current_crawler)) == self._total_crawler:
                 return True
             if timeout != -1:
                 if (time.time() - _start) >= timeout:
