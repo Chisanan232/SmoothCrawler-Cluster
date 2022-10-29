@@ -26,8 +26,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
 
-    def __init__(self, runner: int, backup: int, name: str = "", index_sep: List[str] = ["-", "_"], initial: bool = True, zk_hosts: str = None,
-                 zk_converter: Type[BaseConverter] = None, election_strategy: Generic[BaseElectionType] = None):
+    def __init__(self, runner: int, backup: int, name: str = "", group: str = "", index_sep: List[str] = ["-", "_"], initial: bool = True,
+                 zk_hosts: str = None, zk_converter: Type[BaseConverter] = None, zk_commit_timeout: int = 0.5,
+                 election_strategy: Generic[BaseElectionType] = None):
         super().__init__()
         self._total_crawler = runner + backup
         self._runner = runner
@@ -39,6 +40,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             name = "sc-crawler_1"
             self._index_sep = "_"
         self._crawler_name = name
+
+        if group == "":
+            group = "sc-crawler-cluster"
+        self._crawler_group = group
 
         if zk_hosts is None:
             zk_hosts = self.__Default_Zookeeper_Hosts
@@ -90,10 +95,14 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         # Current Answer:
         # 1. Index: get data from Zookeeper first and check the value, and it set the next index of crawler and save it to Zookeeper.
         # 2. Hardware code: Use the unique hardware code or flag to record it, i.e., the MAC address of host or something ID of container.
+        # TODO: Here is an issue about it should get the meta data about *state* synchronously.
+        # TODO: I think the solution maybe the Zookeeper distributed Lock?
         if self._Zookeeper_Client.exist_node(path=self.state_zookeeper_path) is None:
+            print(f"[DEBUG - {self._crawler_name}] It doesn't have the state meta data in Zookeeper.")
             _state = self._initial_state()
             self._set_state_to_zookeeper(_state, create_node=True)
         else:
+            print(f"[DEBUG - {self._crawler_name}] It already have the state meta data in Zookeeper.")
             _state = self._get_state_from_zookeeper()
             _state = self._update_state(state=_state)
             self._set_state_to_zookeeper(_state)
@@ -118,7 +127,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     @property
     def state_zookeeper_path(self) -> str:
-        return f"smoothcrawler/node/{self._crawler_name}/state"
+        return f"smoothcrawler/node/{self._crawler_group}/state"
 
     @property
     def task_zookeeper_path(self) -> str:
@@ -129,6 +138,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         return f"smoothcrawler/node/{self._crawler_name}/heartbeat"
 
     def _get_state_from_zookeeper(self) -> State:
+        print(f"[DEBUG] path: {self.state_zookeeper_path}")
         _value = self._Zookeeper_Client.get_value_from_node(path=self.state_zookeeper_path)
         _state = self._zk_converter.str_to_state(data=_value)
         return _state
@@ -231,6 +241,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         _start = time.time()
         while True:
             _state = self._get_state_from_zookeeper()
+            print(f"[DEBUG - {self._crawler_name}] _state: {_state}")
             if len(set(_state.current_crawler)) == self._total_crawler:
                 return True
             if timeout != -1:
