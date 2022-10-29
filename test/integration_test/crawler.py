@@ -6,6 +6,7 @@ from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
 from datetime import datetime
 from typing import TypeVar
+import threading
 import pytest
 import json
 import time
@@ -329,6 +330,69 @@ class TestZookeeperCrawler(ZKTestSpec):
         assert _result is False, "It should be *False* because the property *current_crawler* size is still only 1."
         assert _Waiting_Time <= (_func_end__time - _func_start_time) < (_Waiting_Time + 1), \
             f"The function running time should be done about {_Waiting_Time} - {_Waiting_Time + 1} seconds."
+
+
+    @pytest.mark.skip(reason="It doesn't support Zookeeper Lock feature in this package currently.")
+    def test_is_ready_in_many_crawler_instances(self):
+        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
+        self._PyTest_ZK_Client.start()
+
+        _running_flag = None
+
+        def _run_and_test(name):
+            _zk_crawler = None
+            try:
+                # Instantiate ZookeeperCrawler
+                _zk_crawler = ZookeeperCrawler(runner=_State_Total_Runner_Value, backup=_State_Total_Backup_Value, name=name, initial=False)
+
+                # Reset Zookeeper settings
+                self._delete_zk_nodes(_zk_crawler)
+
+                # Run target methods
+                _zk_crawler.register()
+
+                # Verify the running result
+                _zk_crawler_ready = _zk_crawler.is_ready(timeout=10)
+                assert _zk_crawler_ready is True, ""
+            except Exception:
+                _running_flag = False
+            else:
+                _running_flag = True
+            finally:
+                if _zk_crawler is not None:
+                    # Delete Zookeeper settings finally
+                    self._delete_zk_nodes(_zk_crawler)
+
+        _crawler_thread_1 = threading.Thread(target=_run_and_test, args=("sc-crawler_1",))
+        _crawler_thread_2 = threading.Thread(target=_run_and_test, args=("sc-crawler_2",))
+        _crawler_thread_3 = threading.Thread(target=_run_and_test, args=("sc-crawler_3",))
+        _crawler_thread_1.daemon = True
+        _crawler_thread_2.daemon = True
+        _crawler_thread_3.daemon = True
+
+        _threads_start = time.time()
+        _crawler_thread_1.start()
+        _crawler_thread_2.start()
+        _crawler_thread_3.start()
+        _threads_end = time.time()
+
+        while True:
+            if _running_flag is None:
+                if (_threads_end - _threads_start) > _Waiting_Time * 3:
+                    assert False, "Test fail, it should NOT wait too long time."
+                time.sleep(0.5)
+            else:
+                break
+
+        _crawler_thread_1.join()
+        _crawler_thread_2.join()
+        _crawler_thread_3.join()
+
+
+    def _delete_zk_nodes(self, zk_crawler: ZookeeperCrawler) -> None:
+        for _path in [zk_crawler.state_zookeeper_path, zk_crawler.task_zookeeper_path, zk_crawler.heartbeat_zookeeper_path]:
+            if self._exist_node(path=_path) is not None:
+                self._delete_node(path=_path)
 
 
     @ZK.reset_testing_env(path=[ZKNode.State, ZKNode.Task, ZKNode.Heartbeat])
