@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod
+from enum import Enum
 from typing import Any, Union, Optional, TypeVar, Generic
 from kazoo.client import KazooClient
 from kazoo.protocol.states import ZnodeStat
+from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
 from kazoo.exceptions import NodeExistsError
 
 from .converter import BaseConverter
@@ -84,6 +86,13 @@ class ZookeeperNode(_BaseZookeeperNode):
 _BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
 
 
+class ZookeeperRecipe(Enum):
+
+    ReadLock = "ReadLock"
+    WriteLock = "WriteLock"
+    Semaphore = "Semaphore"
+
+
 class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
@@ -155,8 +164,22 @@ class ZookeeperClient(_BaseZookeeperClient):
         self.__zk_client.start()
 
 
-    def exist_node(self, path: str) -> bool:
+    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Union[ReadLock, WriteLock, Semaphore]:
+        _restrict_obj = getattr(self.__zk_client, str(restrict.value))
+        if max_leases:
+            _restrict = _restrict_obj(path, identifier, max_leases)
+        else:
+            _restrict = _restrict_obj(path, identifier)
+        return _restrict
+
+
+    def exist_node(self, path: str) -> Optional[Any]:
         return self.__zk_client.exists(path=path)
+
+
+    def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
+        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
+            return self.exist_node(path)
 
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
@@ -183,6 +206,11 @@ class ZookeeperClient(_BaseZookeeperClient):
         return _zk_path
 
 
+    def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
+        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
+            return self.get_node(path)
+
+
     def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
         if self.exist_node(path=path) is None:
             if value is None:
@@ -198,12 +226,30 @@ class ZookeeperClient(_BaseZookeeperClient):
             raise NodeExistsError
 
 
+    # def restrict_create_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, value: Union[str, bytes] = None) -> str:
+    #     if restrict is not ZookeeperRecipe.WriteLock:
+    #         raise RuntimeError("It should NOT use except WriteLock for writing feature.")
+    #     _restrict = self._generate_restrict(path=path, restrict=restrict, identifier=identifier)
+    #     with _restrict:
+    #         return self.create_node(path, value)
+
+
     def delete_node(self, path: str) -> bool:
         return self.__zk_client.delete(path=path)
 
 
+    def restrict_delete_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> bool:
+        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
+            return self.delete_node(path)
+
+
     def get_value_from_node(self, path: str) -> str:
         _zk_path = self.get_node(path=path)
+        return _zk_path.value
+
+
+    def restrict_get_value_from_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> str:
+        _zk_path = self.restrict_get_node(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases)
         return _zk_path.value
 
 
@@ -214,6 +260,11 @@ class ZookeeperClient(_BaseZookeeperClient):
             self.__zk_client.set(path=path, value=value)
         else:
             raise TypeError("It only supports *str* or *bytes* data types.")
+
+
+    def restrict_set_value_to_node(self, path: str, value: Union[str, bytes], identifier: str) -> None:
+        with self.restrict(path=path, restrict=ZookeeperRecipe.WriteLock, identifier=identifier):
+            self.set_value_to_node(path, value)
 
 
     def close(self) -> None:
