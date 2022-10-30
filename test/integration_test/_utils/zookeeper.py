@@ -5,7 +5,7 @@ from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperListener
 )
 from kazoo.client import KazooClient
-from kazoo.exceptions import NodeExistsError
+from kazoo.exceptions import NodeExistsError, NoNodeError
 from typing import Type, TypeVar, Generic
 import pytest
 import random
@@ -91,9 +91,12 @@ class TestZookeeperClient:
 
     def test_get_path_with_not_exist_path(self, zk_cli: Generic[_BaseZookeeperClientType]):
         # Test with a path which doesn't exist ---> function should
-        _zk_path = zk_cli.get_node(path=Test_Zookeeper_Not_Exist_Path)
-        assert _zk_path.path is Test_Zookeeper_Not_Exist_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Not_Exist_Path}."
-        assert _zk_path.value is None, "The value of *ZookeeperPath* should be None because it doesn't exist recently."
+        try:
+            _zk_path = zk_cli.get_node(path=Test_Zookeeper_Not_Exist_Path)
+        except NoNodeError:
+            assert True, "Work finely."
+        else:
+            assert False, "It should raise an exception 'NoNodeError'."
 
     @_remove_path_finally
     def test_create_path_without_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
@@ -210,9 +213,13 @@ class TestZookeeperClient:
 
         _creating_result = zk_cli.delete_node(path=Test_Zookeeper_Path)
 
-        _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
-        assert _zk_path.path == Test_Zookeeper_Path, f"The path of *ZookeeperPath* should be equal to {Test_Zookeeper_Path}."
-        assert _zk_path.value is None, "The value of *ZookeeperPath* should be None because the path be deleted."
+        try:
+            _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
+        except NoNodeError:
+            assert True, "Work finely."
+        else:
+            assert False, "It should raise an exception 'NoNodeError'."
+
 
 
 class TestZookeeperListener:
