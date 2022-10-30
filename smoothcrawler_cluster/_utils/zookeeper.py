@@ -93,6 +93,10 @@ class ZookeeperRecipe(Enum):
 class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
+    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Union[ReadLock, WriteLock, Semaphore]:
+        pass
+
+    @abstractmethod
     def exist_node(self, path: str) -> bool:
         """
         Check whether the target node exist or not.
@@ -100,6 +104,10 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         :param path: The path of target node.
         :return: Boolean value. It returns True if the path exists, nor False.
         """
+        pass
+
+    @abstractmethod
+    def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
         pass
 
     @abstractmethod
@@ -114,6 +122,10 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
+        pass
+
+    @abstractmethod
     def create_node(self, path: str, value: Union[str, bytes]) -> None:
         """
         Create a path as the target path in Zookeeper.
@@ -123,6 +135,18 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         :return:
         """
 
+        pass
+
+    # @abstractmethod
+    # def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
+    #     pass
+
+    @abstractmethod
+    def delete_node(self, path: str) -> bool:
+        pass
+
+    @abstractmethod
+    def restrict_delete_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> bool:
         pass
 
     @abstractmethod
@@ -137,6 +161,10 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def restrict_get_value_from_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> str:
+        pass
+
+    @abstractmethod
     def set_value_to_node(self, path: str, value: str) -> bool:
         """
         Set a value to the one specific Zookeeper path.
@@ -146,6 +174,10 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         :return: Boolean type value, it would return True if it does finely without any issue, nor it returns False.
         """
 
+        pass
+
+    @abstractmethod
+    def restrict_set_value_to_node(self, path: str, value: Union[str, bytes], identifier: str) -> None:
         pass
 
 
