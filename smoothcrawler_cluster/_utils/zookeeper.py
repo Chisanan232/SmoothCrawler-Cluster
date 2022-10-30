@@ -27,7 +27,6 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
         """
         pass
 
-
     @path.setter
     @abstractmethod
     def path(self, val: str) -> None:
@@ -38,7 +37,6 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
         """
         pass
 
-
     @property
     @abstractmethod
     def value(self) -> str:
@@ -48,7 +46,6 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
         :return: A string type value. You may need to deserialize the data if it needs.
         """
         pass
-
 
     @value.setter
     @abstractmethod
@@ -105,7 +102,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         """
         pass
 
-
     @abstractmethod
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
         """
@@ -116,7 +112,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         """
 
         pass
-
 
     @abstractmethod
     def create_node(self, path: str, value: Union[str, bytes]) -> None:
@@ -130,7 +125,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
         pass
 
-
     @abstractmethod
     def get_value_from_node(self, path: str) -> str:
         """
@@ -141,7 +135,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         """
 
         pass
-
 
     @abstractmethod
     def set_value_to_node(self, path: str, value: str) -> bool:
@@ -156,13 +149,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         pass
 
 
-
 class ZookeeperClient(_BaseZookeeperClient):
 
     def __init__(self, hosts: str):
         self.__zk_client = KazooClient(hosts=hosts)
         self.__zk_client.start()
-
 
     def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Union[ReadLock, WriteLock, Semaphore]:
         _restrict_obj = getattr(self.__zk_client, str(restrict.value))
@@ -172,15 +163,12 @@ class ZookeeperClient(_BaseZookeeperClient):
             _restrict = _restrict_obj(path, identifier)
         return _restrict
 
-
     def exist_node(self, path: str) -> Optional[Any]:
         return self.__zk_client.exists(path=path)
-
 
     def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
         with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
             return self.exist_node(path)
-
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
 
@@ -205,11 +193,9 @@ class ZookeeperClient(_BaseZookeeperClient):
             _zk_path.value = _data
         return _zk_path
 
-
     def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
         with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
             return self.get_node(path)
-
 
     def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
         if self.exist_node(path=path) is None:
@@ -225,7 +211,6 @@ class ZookeeperClient(_BaseZookeeperClient):
         else:
             raise NodeExistsError
 
-
     # def restrict_create_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, value: Union[str, bytes] = None) -> str:
     #     if restrict is not ZookeeperRecipe.WriteLock:
     #         raise RuntimeError("It should NOT use except WriteLock for writing feature.")
@@ -233,25 +218,20 @@ class ZookeeperClient(_BaseZookeeperClient):
     #     with _restrict:
     #         return self.create_node(path, value)
 
-
     def delete_node(self, path: str) -> bool:
         return self.__zk_client.delete(path=path)
-
 
     def restrict_delete_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> bool:
         with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
             return self.delete_node(path)
 
-
     def get_value_from_node(self, path: str) -> str:
         _zk_path = self.get_node(path=path)
         return _zk_path.value
 
-
     def restrict_get_value_from_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> str:
         _zk_path = self.restrict_get_node(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases)
         return _zk_path.value
-
 
     def set_value_to_node(self, path: str, value: Union[str, bytes]) -> None:
         if type(value) is str:
@@ -261,15 +241,12 @@ class ZookeeperClient(_BaseZookeeperClient):
         else:
             raise TypeError("It only supports *str* or *bytes* data types.")
 
-
     def restrict_set_value_to_node(self, path: str, value: Union[str, bytes], identifier: str) -> None:
         with self.restrict(path=path, restrict=ZookeeperRecipe.WriteLock, identifier=identifier):
             self.set_value_to_node(path, value)
 
-
     def close(self) -> None:
         self.__zk_client.close()
-
 
 
 class _BaseZookeeperListener(metaclass=ABCMeta):
@@ -277,16 +254,13 @@ class _BaseZookeeperListener(metaclass=ABCMeta):
     def __init__(self, converter: BaseConverterType = None):
         self._converter = converter
 
-
     @abstractmethod
     def watch_data(self, path: str):
         pass
 
-
     @abstractmethod
     def listen_path_for_value(self, path: str, value: str) -> bool:
         pass
-
 
     @abstractmethod
     def converter(self, data: str) -> Any:
