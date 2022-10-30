@@ -203,26 +203,12 @@ class ZookeeperClient(_BaseZookeeperClient):
             return self.exist_node(path)
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
+        _data, _state = self.__zk_client.get(path=path)
 
-        def _get_value() -> (bytes, ZnodeStat):
-            __data = None
-            __state = None
-
-            @self.__zk_client.DataWatch(path)
-            def _get_value_from_path(data: bytes, state: ZnodeStat):
-                nonlocal __data, __state
-                __data = data
-                __state = state
-
-            return __data, __state
-
-        _data, _state = _get_value()
         _zk_path = ZookeeperNode()
         _zk_path.path = path
-        if _data is not None and type(_data) is bytes:
-            _zk_path.value = _data.decode("utf-8")
-        else:
-            _zk_path.value = _data
+        _zk_path.value = _data.decode("utf-8")
+
         return _zk_path
 
     def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
