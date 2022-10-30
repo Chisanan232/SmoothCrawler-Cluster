@@ -1,5 +1,3 @@
-import time
-
 from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperNode,
     ZookeeperRecipe,
@@ -9,10 +7,8 @@ from smoothcrawler_cluster._utils.zookeeper import (
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError
 from typing import Type, TypeVar, Generic
-import threading
 import pytest
 import random
-import json
 
 from ..._config import Zookeeper_Hosts
 from ..._values import Test_Zookeeper_Path, Test_Zookeeper_Not_Exist_Path, Test_Zookeeper_String_Value, Test_Zookeeper_Bytes_Value
