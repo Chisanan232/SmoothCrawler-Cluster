@@ -36,7 +36,6 @@ class TestZookeeperClient:
             try:
                 test_item(self, zk_cli)
             finally:
-                print(f"[DEBUG _reset_zk_env] self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path): {self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path)}")
                 if self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path) is not None:
                     # Remove the metadata of target path in Zookeeper
                     self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path)
@@ -48,7 +47,6 @@ class TestZookeeperClient:
             try:
                 test_item(self, zk_cli)
             finally:
-                print(f"[DEBUG _remove_path_finally] self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path): {self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path)}")
                 if self.__PyTest_ZK_Client.exists(path=Test_Zookeeper_Path) is not None:
                     # Remove the metadata of target path in Zookeeper
                     self.__PyTest_ZK_Client.delete(path=Test_Zookeeper_Path, recursive=True)
@@ -155,7 +153,8 @@ class TestZookeeperClient:
     # @_reset_zk_env
     # @_remove_path_finally
     # def test_restrict_create_path_with_str_value(self, zk_cli: Generic[_BaseZookeeperClientType]):
-    #     _creating_result = zk_cli.restrict_create_node(path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value, restrict=ZookeeperRecipe.WriteLock, identifier="pytest")
+    #     _creating_result = zk_cli.restrict_create_node(
+    #         path=Test_Zookeeper_Path, value=Test_Zookeeper_String_Value, restrict=ZookeeperRecipe.WriteLock, identifier="pytest")
     #     assert _creating_result is not None, "It should create a path (Zookeeper node) successfully."
     #
     #     _zk_path = zk_cli.get_node(path=Test_Zookeeper_Path)
