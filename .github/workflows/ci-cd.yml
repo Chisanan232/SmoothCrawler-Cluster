@@ -3,7 +3,7 @@ name: smoothcrawler-cluster ci/cd
 on:
   push:
     branches:
-      - "develop"
+      - "develop/**"
       - "release"
       - "release-**"
       - "release/**"
@@ -25,7 +25,7 @@ on:
 
   pull_request:
     branches:
-      - "develop"
+      - "develop/**"
       - "release"
       - "release-**"
       - "release/**"
