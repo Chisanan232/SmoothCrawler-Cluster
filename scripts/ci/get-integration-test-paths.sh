@@ -23,7 +23,7 @@ getalltests() {
 }
 
 init_path=./test/integration_test/
-utils_path=./test/integration_test/_utils
+utils_path=./test/integration_test/_utils/
 
 getalltests $init_path
 getalltests $utils_path
