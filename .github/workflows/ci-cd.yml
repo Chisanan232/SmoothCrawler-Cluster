@@ -48,7 +48,15 @@ on:
 jobs:
   prep-testbed_unit-test:
 #    name: Prepare all unit test items
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v3
+    with:
+      shell_path: scripts/ci/get-unit-test-paths.sh
+      shell_arg: unix
+
+
+  prep-testbed_integration-test:
+#    name: Prepare all integration test items
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v3
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
@@ -57,29 +65,47 @@ jobs:
   run_unit-test:
 #    name: Run all unit test items
     needs: prep-testbed_unit-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@v2
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@v3
     with:
       test_type: unit-test
       all_test_items_paths: ${{needs.prep-testbed_unit-test.outputs.all_test_items}}
 
 
+  run_integration-test:
+#    name: Run all integration test items
+    needs: prep-testbed_integration-test
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@v3
+    with:
+      test_type: integration-test
+      all_test_items_paths: ${{needs.prep-testbed_integration-test.outputs.all_test_items}}
+      debug_mode: true
+
+
   unit-test_codecov:
 #    name: Organize and generate the testing report and upload it to Codecov
     needs: run_unit-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v2
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v3
     with:
       test_type: unit-test
+
+
+  integration-test_codecov:
+#    name: Organize and generate the testing report and upload it to Codecov
+    needs: run_integration-test
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v3
+    with:
+      test_type: integration-test
 
 
   codecov_finish:
 #    name: Organize and generate the testing report and upload it to Codecov
 #    if: github.ref_name == 'release' || github.ref_name == 'master'
-    needs: [unit-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
+    needs: [unit-test_codecov, integration-test_codecov]
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
-      test_type: unit-test
+      test_type: all-test
       upload-to-codecov: true
       codecov_flags: unit,integration  # Required if 'upload-to-codecov' is true
       codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
@@ -87,12 +113,12 @@ jobs:
 
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
-    needs: [unit-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
+    needs: [unit-test_codecov, integration-test_codecov]
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
-      test_type: unit-test
+      test_type: all-test
       upload-to-codacy: true
 
 
@@ -112,7 +138,7 @@ jobs:
 #    name: Build git tag and GitHub release if it needs
     needs: [codecov_finish, codacy_finish]
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v2
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v3
     secrets:
       github_auth_token: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -132,7 +158,7 @@ jobs:
       RELEASE_TYPE: ${{ needs.build_git-tag_and_create_github-release.outputs.python_release_version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: For testing about getting the software version info
         run: | 
