@@ -1,82 +1,17 @@
-from smoothcrawler_cluster.model.metadata import CrawlerStateRole, TaskResult, State, Task, Heartbeat
+from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
+from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult
 
-from typing import List, Dict, Callable, TypeVar
-from enum import Enum
+from typing import List, Dict, Callable
 from abc import ABCMeta
 import traceback
 import pytest
 import random
 
 
-_EnumT = TypeVar("_EnumT", bound=Enum)
-
-
-class _EnumObjTest(metaclass=ABCMeta):
-
-    def _run_enum_value_test(self, under_test_enum: Enum, expected_value: str) -> None:
-        assert under_test_enum.value == expected_value, f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
-
-
-
-class TestCrawlerStateRole(_EnumObjTest):
-    """Test for the enum object key-value mapping."""
-
-    def test_runner_value(self) -> None:
-        _under_test_enum = CrawlerStateRole.Runner
-        _expected_value = "runner"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_backup_runner_value(self) -> None:
-        _under_test_enum = CrawlerStateRole.Backup_Runner
-        _expected_value = "backup-runner"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_dead_runner_value(self) -> None:
-        _under_test_enum = CrawlerStateRole.Dead_Runner
-        _expected_value = "dead-runner"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_dead_backup_runner_value(self) -> None:
-        _under_test_enum = CrawlerStateRole.Dead_Backup_Runner
-        _expected_value = "dead-backup-runner"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-
-class TestTaskResult(_EnumObjTest):
-    """Test for the enum object key-value mapping."""
-
-    def test_processing_value(self) -> None:
-        _under_test_enum = TaskResult.Processing
-        _expected_value = "processing"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_done_value(self) -> None:
-        _under_test_enum = TaskResult.Done
-        _expected_value = "done"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_terminate_value(self) -> None:
-        _under_test_enum = TaskResult.Terminate
-        _expected_value = "terminate"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-    def test_error_value(self) -> None:
-        _under_test_enum = TaskResult.Error
-        _expected_value = "error"
-        self._run_enum_value_test(_under_test_enum, _expected_value)
-
-
-
 class _MetaDataTest(metaclass=ABCMeta):
 
-    def _run_property_test(self, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
+    @classmethod
+    def _run_property_test(cls, setting_func: Callable, getting_func: Callable, valid_value, invalid_1_value, invalid_2_value) -> None:
         """
         Test for getting and setting the property value. It also try to operate the property with invalid value to test
         about it should NOT work finely without any issue.
@@ -113,7 +48,10 @@ class _MetaDataTest(metaclass=ABCMeta):
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
         else:
             assert True, "It works finely."
-            assert getting_func() == _test_cnt, "The value should be same as it set."
+            if type(_test_cnt) is CrawlerStateRole or type(_test_cnt) is TaskResult:
+                assert getting_func() == _test_cnt.value, "The value should be same as it set."
+            else:
+                assert getting_func() == _test_cnt, "The value should be same as it set."
 
         # Set value with normal value.
         _test_cnt = invalid_1_value
@@ -134,14 +72,12 @@ class _MetaDataTest(metaclass=ABCMeta):
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
 
 
-
 class TestState(_MetaDataTest):
     """Test for all the attributes of **State**."""
 
     @pytest.fixture(scope="function")
     def state(self) -> State:
         return State()
-
 
     def test_set_role_correctly(self, state: State) -> None:
         """
@@ -154,14 +90,14 @@ class TestState(_MetaDataTest):
         """
 
         # Test for setting the property normally. It would choice one value randomly.
-        _under_test_value = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
+        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
         try:
             state.role = _under_test_value
         except Exception:
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
         else:
             assert True, "It works finely."
-            assert state.role == _under_test_value, "The value should be same as it set."
+            assert state.role == _under_test_value.value, "The value should be same as it set."
 
         _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
         _under_test_value = random.choice(_enum_values)
@@ -172,7 +108,6 @@ class TestState(_MetaDataTest):
         else:
             assert True, "It works finely."
             assert state.role == "runner", "The value should be same as it set."
-
 
     def test_set_role_incorrectly(self, state: State) -> None:
         """
@@ -190,7 +125,6 @@ class TestState(_MetaDataTest):
             assert state.role is None, "The value should be None because it got fail when it set the value."
         else:
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-
 
     def test_total_crawler(self, state: State) -> None:
         """
@@ -214,7 +148,6 @@ class TestState(_MetaDataTest):
             invalid_2_value=5.5
         )
 
-
     def test_total_runner(self, state: State) -> None:
         """
         Test for the property *total_runner* of **State**.
@@ -236,7 +169,6 @@ class TestState(_MetaDataTest):
             invalid_1_value="5",
             invalid_2_value=5.5
         )
-
 
     def test_total_backup(self, state: State) -> None:
         """
@@ -260,7 +192,6 @@ class TestState(_MetaDataTest):
             invalid_2_value=5.5
         )
 
-
     def test_current_crawler(self, state: State) -> None:
         """
         Test for the property *current_crawler* of **State**.
@@ -282,7 +213,6 @@ class TestState(_MetaDataTest):
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
-
 
     def test_current_runner(self, state: State) -> None:
         """
@@ -306,7 +236,6 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-
     def test_current_backup(self, state: State) -> None:
         """
         Test for the property *current_backup* of **State**.
@@ -328,7 +257,6 @@ class TestState(_MetaDataTest):
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
-
 
     def test_standby_id(self, state: State) -> None:
         """
@@ -352,7 +280,6 @@ class TestState(_MetaDataTest):
             invalid_2_value=["iron_man_1"]
         )
 
-
     def test_fail_crawler(self, state: State) -> None:
         """
         Test for the property *fail_crawler* of **State**.
@@ -375,7 +302,6 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-
     def test_fail_runner(self, state: State) -> None:
         """
         Test for the property *fail_runner* of **State**.
@@ -397,7 +323,6 @@ class TestState(_MetaDataTest):
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
-
 
     def test_fail_backup(self, state: State) -> None:
         """
@@ -422,14 +347,12 @@ class TestState(_MetaDataTest):
         )
 
 
-
 class TestTask(_MetaDataTest):
     """Test for all the attributes of **Task**."""
 
     @pytest.fixture(scope="function")
     def task(self) -> Task:
         return Task()
-
 
     def test_task_content(self, task: Task) -> None:
 
@@ -447,7 +370,6 @@ class TestTask(_MetaDataTest):
             invalid_2_value=["spider_1"]
         )
 
-
     def test_task_result(self, task: Task) -> None:
 
         def _get_func() -> TaskResult:
@@ -460,10 +382,9 @@ class TestTask(_MetaDataTest):
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value=TaskResult.Done,
-            invalid_1_value="5",
+            invalid_1_value=5,
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
-
 
 
 class TestHeartbeat(_MetaDataTest):
@@ -472,7 +393,6 @@ class TestHeartbeat(_MetaDataTest):
     @pytest.fixture(scope="function")
     def heartbeat(self) -> Heartbeat:
         return Heartbeat()
-
 
     def test_datetime(self, heartbeat: Heartbeat) -> None:
 
