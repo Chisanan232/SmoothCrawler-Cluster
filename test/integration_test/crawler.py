@@ -168,7 +168,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
-        return ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False)
+        return ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False, zk_hosts=Zookeeper_Hosts)
 
 
     @ZK.reset_testing_env(path=ZKNode.State)
@@ -366,7 +366,8 @@ class TestZookeeperCrawler(ZKTestSpec):
                     runner=_State_Total_Runner_Value,
                     backup=_State_Total_Backup_Value,
                     name=_name,
-                    initial=False
+                    initial=False,
+                    zk_hosts=Zookeeper_Hosts
                 )
                 nonlocal _state_path
                 if _state_path == "":
@@ -476,7 +477,8 @@ class TestZookeeperCrawler(ZKTestSpec):
                     initial=True,
                     ensure_initial=True,
                     ensure_timeout=10,
-                    ensure_wait=0.5
+                    ensure_wait=0.5,
+                    zk_hosts=Zookeeper_Hosts
                 )
                 nonlocal _state_path
                 if _state_path == "":
