@@ -225,6 +225,7 @@ jobs:
           set -o allexport
           source ${{ inputs.env_file }}
           echo "PYTEST_TARGET_URL_DOMAIN - $PYTEST_TARGET_URL_DOMAIN"
+          echo "PYTEST_ZOOKEEPER_HOSTS - $PYTEST_ZOOKEEPER_HOSTS"
           echo "✅ Set environment variables successfully!"
 
           echo "Start to run PyTest ..."
