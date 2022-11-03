@@ -78,7 +78,7 @@ jobs:
     with:
       test_type: integration-test
       all_test_items_paths: ${{needs.prep-testbed_integration-test.outputs.all_test_items}}
-      debug_mode: true
+#      debug_mode: true
 
 
   unit-test_codecov:
