@@ -2,7 +2,6 @@ from abc import ABCMeta, abstractmethod
 from enum import Enum
 from typing import Any, Union, Optional, TypeVar, Generic
 from kazoo.client import KazooClient
-from kazoo.protocol.states import ZnodeStat
 from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
 from kazoo.exceptions import NodeExistsError
 
