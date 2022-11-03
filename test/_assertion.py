@@ -16,8 +16,14 @@ if (_python_version[0], _python_version[1]) >= (3, 10):
 
         _search_char_result = re.search(regex, str(target))
         assert _search_char_result is not None, f"Its format is not correct. It should be like '{regex}'."
-else:
+elif (3, 6) < (_python_version[0], _python_version[1]) < (3, 10):
     def ValueFormatAssertion(target: str, regex: re.Pattern) -> None:
+        assert target is not None, "The path value should not be None."
+
+        _search_char_result = re.search(regex, str(target))
+        assert _search_char_result is not None, f"Its format is not correct. It should be like '{regex}'."
+else:
+    def ValueFormatAssertion(target: str, regex) -> None:
         assert target is not None, "The path value should not be None."
 
         _search_char_result = re.search(regex, str(target))
