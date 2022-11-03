@@ -173,7 +173,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     @property
     def state_zookeeper_path(self) -> str:
-        return f"smoothcrawler/node/{self._crawler_group}/state"
+        return f"smoothcrawler/group/{self._crawler_group}/state"
 
     @property
     def task_zookeeper_path(self) -> str:

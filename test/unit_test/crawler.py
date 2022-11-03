@@ -24,7 +24,7 @@ class TestZookeeperCrawler:
         _path = zk_crawler.state_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=_path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
+        ValueFormatAssertion(target=_path, regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
 
     def test_property_task_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
