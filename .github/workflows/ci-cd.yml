@@ -141,7 +141,7 @@ jobs:
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov, integration-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
