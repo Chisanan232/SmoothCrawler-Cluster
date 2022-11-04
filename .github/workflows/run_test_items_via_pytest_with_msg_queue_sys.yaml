@@ -82,6 +82,8 @@ jobs:
       # Zookeeper is necessary for Kafka.
       pytest_zookeeper:
         image: zookeeper:latest
+        env:
+          ZOO_MAX_CLIENT_CNXNS: 1000
         ports:
           - 2181:2181
           - 2888:2888
@@ -98,7 +100,8 @@ jobs:
     strategy:
       matrix:
         python-version: [3.6,3.7,3.8,3.9,'3.10',3.11]
-        os: [ubuntu-latest,macos-latest]
+        os: [ubuntu-latest]
+#        os: [ubuntu-latest,macos-latest]
         test-path: ${{fromJson(inputs.all_test_items_paths)}}
 
     steps:
@@ -160,14 +163,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.10']
-        os: [ubuntu-22.04]
+        python-version: ['3.10',3.11]
+        os: [ubuntu-latest]
         test-path: ${{fromJson(inputs.all_test_items_paths)}}
 
     services:
       # Zookeeper is necessary for Kafka.
       pytest_zookeeper:
         image: zookeeper:latest
+        env:
+          ZOO_MAX_CLIENT_CNXNS: 1000
         ports:
           - 2181:2181
           - 2888:2888
@@ -236,7 +241,7 @@ jobs:
         run: mv ./.coverage ./.coverage.${{ inputs.test_type }}.${{ matrix.os }}-${{ matrix.python-version }}
 
       - name: Upload code coverage result file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: coverage
           path: .coverage.${{ inputs.test_type }}.${{ matrix.os }}-${{ matrix.python-version }}

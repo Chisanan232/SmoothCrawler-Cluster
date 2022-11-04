@@ -1,6 +1,8 @@
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
 from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult
+from kazoo.client import KazooClient
+from unittest.mock import patch
 import pytest
 
 from .._assertion import (
@@ -17,14 +19,17 @@ class TestZookeeperCrawler:
 
     @pytest.fixture(scope="function")
     def zk_crawler(self) -> ZookeeperCrawler:
-        return ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False)
+        with patch.object(KazooClient, "start", return_value=None) as mock_zk_cli:
+            _zk_crawler = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False, zk_hosts="1.1.1.1:8080")
+            mock_zk_cli.assert_called_once()
+        return _zk_crawler
 
     def test_property_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         _path = zk_crawler.state_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=_path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
+        ValueFormatAssertion(target=_path, regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
 
     def test_property_task_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
