@@ -150,7 +150,8 @@ jobs:
 
   build_git-tag_and_create_github-release:
 #    name: Build git tag and GitHub release if it needs
-    needs: [codecov_finish, codacy_finish]
+#    needs: [codecov_finish, codacy_finish]
+    needs: [unit-codecov_finish, integration-codecov_finish, codacy_finish]
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v3
     secrets:
