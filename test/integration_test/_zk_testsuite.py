@@ -85,7 +85,7 @@ class ZK:
         for _path in _paths:
             _path_str = getattr(zk_crawler, str(_path.value))
             zk_function(_path_str)
-            test_item(self, zk_crawler)
+        test_item(self, zk_crawler)
 
     @staticmethod
     def remove_node_finally(path: Union[ZKNode, List[ZKNode]]):
