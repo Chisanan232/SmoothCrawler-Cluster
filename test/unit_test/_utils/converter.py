@@ -1,5 +1,5 @@
 from smoothcrawler_cluster._utils.converter import JsonStrConverter
-from smoothcrawler_cluster.model.metadata import CrawlerStateRole, TaskResult, State, Task,  Heartbeat
+from smoothcrawler_cluster.model.metadata import CrawlerStateRole, TaskResult, HeartState, State, Task,  Heartbeat
 import pytest
 import json
 
@@ -29,7 +29,13 @@ _Test_Task_Data = {
 }
 
 _Test_Heartbeat_Data = {
-    "datetime": "2022-07-15 08:42:59"
+    "heart_rhythm_time": "2022-07-15 08:42:59",
+    "time_format": "%Y-%m-%d %H:%M:%S",
+    "update_time": "2s",
+    "update_timeout": "4s",
+    "heart_rhythm_timeout": "3",
+    "healthy_state": HeartState.Healthy.value,
+    "task_state": TaskResult.Processing.value
 }
 
 
@@ -58,7 +64,13 @@ def setup_task() -> Task:
 
 def setup_heartbeat() -> Heartbeat:
     _heartbeat = Heartbeat()
-    _heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["datetime"]
+    _heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["heart_rhythm_time"]
+    _heartbeat.time_format = _Test_Heartbeat_Data["time_format"]
+    _heartbeat.update_time = _Test_Heartbeat_Data["update_time"]
+    _heartbeat.update_timeout = _Test_Heartbeat_Data["update_timeout"]
+    _heartbeat.heart_rhythm_timeout = _Test_Heartbeat_Data["heart_rhythm_timeout"]
+    _heartbeat.healthy_state = _Test_Heartbeat_Data["healthy_state"]
+    _heartbeat.task_state = _Test_Heartbeat_Data["task_state"]
     return _heartbeat
 
 
