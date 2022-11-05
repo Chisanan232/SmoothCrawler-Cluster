@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult
+from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 from enum import Enum
 from abc import ABCMeta
 
@@ -55,4 +55,23 @@ class TestTaskResult(_EnumObjTest):
     def test_error_value(self) -> None:
         _under_test_enum = TaskResult.Error
         _expected_value = "error"
+        self._run_enum_value_test(_under_test_enum, _expected_value)
+
+
+class TestHeartState(_EnumObjTest):
+    """Test for the enum object key-value mapping."""
+
+    def test_healthy_value(self) -> None:
+        _under_test_enum = HeartState.Healthy
+        _expected_value = "Healthy"
+        self._run_enum_value_test(_under_test_enum, _expected_value)
+
+    def test_arrhythmia_value(self) -> None:
+        _under_test_enum = HeartState.Arrhythmia
+        _expected_value = "Arrhythmia"
+        self._run_enum_value_test(_under_test_enum, _expected_value)
+
+    def test_asystole_value(self) -> None:
+        _under_test_enum = HeartState.Asystole
+        _expected_value = "Asystole"
         self._run_enum_value_test(_under_test_enum, _expected_value)
