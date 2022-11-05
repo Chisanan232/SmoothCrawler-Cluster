@@ -131,7 +131,7 @@ class _TestValue:
     def heartbeat(self) -> Heartbeat:
         if self.__Testing_Heartbeat is None:
             _heartbeat = Heartbeat()
-            _heartbeat.datetime = _Heartbeat_Value
+            _heartbeat.heart_rhythm_time = _Heartbeat_Value
             self.__Testing_Heartbeat = _heartbeat
 
         global _Expected_Heartbeat
@@ -207,8 +207,8 @@ class TestZookeeperCrawler(ZKTestSpec):
     def test__get_heartbeat_from_zookeeper(self, uit_object: ZookeeperCrawler):
         _heartbeat = uit_object._get_heartbeat_from_zookeeper()
         assert type(_heartbeat) is Heartbeat, _Type_Not_Correct_Assertion_Error_Message(Heartbeat)
-        assert _heartbeat.datetime == _Heartbeat_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.datetime, _Heartbeat_Value)
+        assert _heartbeat.heart_rhythm_time == _Heartbeat_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Heartbeat_Value)
 
 
     @ZK.reset_testing_env(path=ZKNode.State)
@@ -312,7 +312,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         assert _task_json["task_content"] == {}, _assertion
 
         _heartbeat_json = json.loads(_heartbeat)
-        assert _heartbeat_json["datetime"] is not None, _assertion
+        assert _heartbeat_json["heart_rhythm_time"] is not None, _assertion
 
 
     @ZK.reset_testing_env(path=[ZKNode.State, ZKNode.Task, ZKNode.Heartbeat])

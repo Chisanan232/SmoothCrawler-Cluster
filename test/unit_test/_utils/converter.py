@@ -58,7 +58,7 @@ def setup_task() -> Task:
 
 def setup_heartbeat() -> Heartbeat:
     _heartbeat = Heartbeat()
-    _heartbeat.datetime = _Test_Heartbeat_Data["datetime"]
+    _heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["datetime"]
     return _heartbeat
 
 

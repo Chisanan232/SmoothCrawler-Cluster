@@ -92,5 +92,5 @@ class JsonStrConverter(BaseConverter):
     def _convert_to_heartbeat(self, heartbeat: Heartbeat, data: Any) -> Heartbeat:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         data: Dict[str, Any] = data
-        heartbeat.datetime = data.get("datetime")
+        heartbeat.heart_rhythm_time = data.get("heart_rhythm_time")
         return heartbeat

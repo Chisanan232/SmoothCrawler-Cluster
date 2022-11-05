@@ -401,7 +401,13 @@ class Heartbeat(_BaseMetaData):
     * Example value at node *heartbeat*:
 
     {
-        "datetime": "2022-07-15 08:42:59"
+        "heart_rhythm_time": "2022-07-15 08:42:59",
+        "time_format": "%Y-%m-%d %H:%M:%S",
+        "update_time": "2s",
+        "update_timeout": "4s",
+        "heart_rhythm_timeout": "3",
+        "healthy_state": "Healthy",
+        "task_state": "2s",
     }
 
     """
@@ -411,13 +417,13 @@ class Heartbeat(_BaseMetaData):
 
     def to_readable_object(self) -> dict:
         _dict_format_data = {
-            "datetime": self.datetime
+            "heart_rhythm_time": self.heart_rhythm_time
         }
         return _dict_format_data
 
 
     @property
-    def datetime(self) -> str:
+    def heart_rhythm_time(self) -> str:
         """
         The datetime value of currently heartbeat of one specific **Runner** web spider.
 
@@ -427,8 +433,8 @@ class Heartbeat(_BaseMetaData):
         return self._datetime
 
 
-    @datetime.setter
-    def datetime(self, datetime: str) -> None:
+    @heart_rhythm_time.setter
+    def heart_rhythm_time(self, datetime: str) -> None:
         if type(datetime) is not str:
             raise ValueError("Property *datetime* only accept str type value.")
 

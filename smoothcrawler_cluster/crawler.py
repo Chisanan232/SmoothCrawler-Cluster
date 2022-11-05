@@ -289,12 +289,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     def _initial_heartbeat(self) -> Heartbeat:
         _heartbeat = Heartbeat()
         # TODO: How to assign heartbeat value?
-        _heartbeat.datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _heartbeat.heart_rhythm_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return _heartbeat
 
     def _update_heartbeat(self, heartbeat: Heartbeat) -> Heartbeat:
         # TODO: How to assign heartbeat value?
-        heartbeat.datetime = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        heartbeat.heart_rhythm_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         return heartbeat
 
     def is_ready(self, interval: float = 0.5, timeout: float = -1) -> bool:

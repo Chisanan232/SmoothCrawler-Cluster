@@ -397,10 +397,10 @@ class TestHeartbeat(_MetaDataTest):
     def test_datetime(self, heartbeat: Heartbeat) -> None:
 
         def _get_func() -> str:
-            return heartbeat.datetime
+            return heartbeat.heart_rhythm_time
 
         def _set_func(value) -> None:
-            heartbeat.datetime = value
+            heartbeat.heart_rhythm_time = value
 
         self._run_property_test(
             getting_func=_get_func,
