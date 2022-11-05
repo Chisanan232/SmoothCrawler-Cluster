@@ -1,72 +1,24 @@
 from datetime import datetime as dt
 from typing import List, Union
-from enum import Enum
+from abc import ABCMeta, abstractmethod
+
+from .metadata_enum import CrawlerStateRole, TaskResult
+
+
+class _BaseMetaData(metaclass=ABCMeta):
+
+    def __str__(self):
+        _dict_format_data = self.to_readable_object()
+        return str(_dict_format_data)
+
+
+    @abstractmethod
+    def to_readable_object(self) -> dict:
+        pass
 
 
 
-class CrawlerStateRole(Enum):
-    """
-    This role is NOT the role of *SmoothCrawler-AppIntegration*. They're very different. The role in
-    *SmoothCrawler-AppIntegration* means source site (or producer) of application or processor site
-    (or consumer) of application. But the role in meta-data in *SmoothCrawler-Cluster* means it is
-    active runner to run task or backup of that active runner.
-
-    For **SmoothCrawler-Cluster** realm, it has 4 different roles:
-
-    * Runner
-    * Backup Runner
-    * Dead Runner
-    * Dead Backup Runner
-    """
-
-    Runner = "runner"
-    """ Literally, **Runner** role is the major element to run web spider tasks. """
-
-    Backup_Runner = "backup-runner"
-    """
-    **Backup Runner** role is the backup of **Runner**. It would activate (base on the setting, it may 
-    activate immediately) and run the web spider task if it still not finish. 
-    A **Backup Runner** would keep checking the heartbeat info of **Runner**, standby and ready to run 
-    in anytime for any one of **Runner** does not keep updating its own heartbeat info (and it would turn 
-    to **Dead Runner** at that time).
-    """
-
-    Dead_Runner = "dead-runner"
-    """ 
-    If **Runner** cannot work finely, like the entire VM be shutdown where the crawler runtime environment 
-    in. It would turn to be **Dead Runner** from **Runner**. In other words, it must to be **Dead Runner** 
-    if it cannot keep updating its own heartbeat info.
-    """
-
-    Dead_Backup_Runner = "dead-backup-runner"
-    """ **Dead Backup Runner** is same as **Dead Runner** but it's for **Backup Runner**. """
-
-
-
-class TaskResult(Enum):
-    """
-    The task result means it is the result of running web spider task. The web spider task could classify to
-    be 4 different states: processing, done, terminate and error.
-    """
-
-    Processing = "processing"
-    """ Task running in processing. """
-
-    Done = "done"
-    """ Finish the task and it works finely without any exceptions. """
-
-    Terminate = "terminate"
-    """ 
-    Web spider task running has been terminated so that it cannot finish all processes, but it doesn't occur 
-    any exceptions except KeyboardInterrupt.
-    """
-
-    Error = "error"
-    """ If it raise any exceptions in web spider task running, its result would be error. """
-
-
-
-class State:
+class State(_BaseMetaData):
     """
     One of the meta-data of *SmoothCrawler-Cluster*. It saves info about which VMs (web spider name) are **Runner**
     and another VMs are **Backup Runner**. The cluster would check the content of this info to run **Runner Election**
@@ -119,6 +71,23 @@ class State:
     _fail_backup: List[str] = None
 
 
+    def to_readable_object(self) -> dict:
+        _dict_format_data = {
+            "role": self._role,
+            "total_crawler": self.total_crawler,
+            "total_runner": self.total_runner,
+            "total_backup": self.total_backup,
+            "standby_id": self.standby_id,
+            "current_crawler": self.current_crawler,
+            "current_runner": self.current_runner,
+            "current_backup": self.current_backup,
+            "fail_crawler": self.fail_crawler,
+            "fail_runner": self.fail_runner,
+            "fail_backup": self.fail_backup
+        }
+        return _dict_format_data
+
+
     @property
     def role(self) -> CrawlerStateRole:
         """
@@ -143,6 +112,7 @@ class State:
             if type(role) is not CrawlerStateRole:
                 raise ValueError("The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*.")
 
+        role = role.value if type(role) is CrawlerStateRole else role
         self._role = role
 
 
@@ -328,7 +298,7 @@ class State:
 
 
 
-class Task:
+class Task(_BaseMetaData):
     """
     The current web spider task **Runner** member got. It's the record for **Runner** or **Backup Runner** in different
     scenarios to do different things.
@@ -364,6 +334,15 @@ class Task:
     _task_content: dict = None
     _task_result: TaskResult = None
 
+
+    def to_readable_object(self) -> dict:
+        _dict_format_data = {
+            "task_content": self.task_content,
+            "task_result": self.task_result
+        }
+        return _dict_format_data
+
+
     @property
     def task_content(self) -> dict:
         """
@@ -395,14 +374,15 @@ class Task:
 
 
     @task_result.setter
-    def task_result(self, task_result: TaskResult) -> None:
-        if type(task_result) is not TaskResult:
-            raise ValueError("Property *task_result* only accept *TaskResult* type value.")
+    def task_result(self, task_result: Union[TaskResult, str]) -> None:
+        if type(task_result) is not str and type(task_result) is not TaskResult:
+            raise ValueError("Property *task_result* only accept *str* or *TaskResult* type value.")
+        task_result = task_result.value if type(task_result) is TaskResult else task_result
         self._task_result = task_result
 
 
 
-class Heartbeat:
+class Heartbeat(_BaseMetaData):
     """
     The cluster member of **Backup Runner** would use this info to determine the member of **Runner** is health or not.
     It only has one thing in this section --- *datetime*. The *datetime* is the stamp of **Runner** heartbeat to display
@@ -427,6 +407,14 @@ class Heartbeat:
     """
 
     _datetime: str = None
+
+
+    def to_readable_object(self) -> dict:
+        _dict_format_data = {
+            "datetime": self.datetime
+        }
+        return _dict_format_data
+
 
     @property
     def datetime(self) -> str:
