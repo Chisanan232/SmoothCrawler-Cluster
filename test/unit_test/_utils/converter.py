@@ -1,77 +1,11 @@
 from smoothcrawler_cluster._utils.converter import JsonStrConverter
-from smoothcrawler_cluster.model.metadata import CrawlerStateRole, TaskResult, HeartState, State, Task,  Heartbeat
 import pytest
 import json
 
-
-_Test_State_Data = {
-    "role": CrawlerStateRole.Runner.value,
-    "total_crawler": 3,
-    "total_runner": 2,
-    "total_backup": 1,
-    "standby_id": "3",
-    "current_crawler": ["spider_1", "spider_2", "spider_3"],
-    "current_runner": ["spider_1", "spider_2"],
-    "current_backup": ["spider_3"],
-    "fail_crawler": [],
-    "fail_runner": [],
-    "fail_backup": []
-}
-
-_Test_Task_Data = {
-    "task_content": {
-        "url": "xxx",
-        "method": "GET",
-        "parameter": "",
-        "body": ""
-    },
-    "task_result": TaskResult.Done.value
-}
-
-_Test_Heartbeat_Data = {
-    "heart_rhythm_time": "2022-07-15 08:42:59",
-    "time_format": "%Y-%m-%d %H:%M:%S",
-    "update_time": "2s",
-    "update_timeout": "4s",
-    "heart_rhythm_timeout": "3",
-    "healthy_state": HeartState.Healthy.value,
-    "task_state": TaskResult.Processing.value
-}
-
-
-def setup_state() -> State:
-    _state = State()
-    _state.role = _Test_State_Data["role"]
-    _state.total_crawler = _Test_State_Data["total_crawler"]
-    _state.total_runner = _Test_State_Data["total_runner"]
-    _state.total_backup = _Test_State_Data["total_backup"]
-    _state.current_crawler = _Test_State_Data["current_crawler"]
-    _state.current_runner = _Test_State_Data["current_runner"]
-    _state.current_backup = _Test_State_Data["current_backup"]
-    _state.fail_crawler = _Test_State_Data["fail_crawler"]
-    _state.fail_runner = _Test_State_Data["fail_runner"]
-    _state.fail_backup = _Test_State_Data["fail_backup"]
-    _state.standby_id = _Test_State_Data["standby_id"]
-    return _state
-
-
-def setup_task() -> Task:
-    _task = Task()
-    _task.task_content = _Test_Task_Data["task_content"]
-    _task.task_result = _Test_Task_Data["task_result"]
-    return _task
-
-
-def setup_heartbeat() -> Heartbeat:
-    _heartbeat = Heartbeat()
-    _heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["heart_rhythm_time"]
-    _heartbeat.time_format = _Test_Heartbeat_Data["time_format"]
-    _heartbeat.update_time = _Test_Heartbeat_Data["update_time"]
-    _heartbeat.update_timeout = _Test_Heartbeat_Data["update_timeout"]
-    _heartbeat.heart_rhythm_timeout = _Test_Heartbeat_Data["heart_rhythm_timeout"]
-    _heartbeat.healthy_state = _Test_Heartbeat_Data["healthy_state"]
-    _heartbeat.task_state = _Test_Heartbeat_Data["task_state"]
-    return _heartbeat
+from ..._values import (
+    _Test_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
+    setup_state, setup_task, setup_heartbeat
+)
 
 
 class TestJsonStrConverter:
