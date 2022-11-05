@@ -1,11 +1,10 @@
 from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
-from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
+from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
-from datetime import datetime
-from typing import List, Dict, TypeVar
+from typing import List, Dict
 import threading
 import pytest
 import json
@@ -13,27 +12,18 @@ import time
 
 from ._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from .._config import Zookeeper_Hosts
-
-
-# TODO: Move this testing variable into a module to manage,
-_Runner_Value: int = 2
-_Backup_Value: int = 1
-
-_ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
-
-_State_Role_Value: CrawlerStateRole = CrawlerStateRole.Initial
-_State_Total_Crawler_Value: int = 3
-_State_Total_Runner_Value: int = 2
-_State_Total_Backup_Value: int = 1
-_State_Standby_ID_Value: str = "0"
-_State_List_Value: list = []
-
-_Task_Result_Value: TaskResult = TaskResult.Nothing
-_Task_Content_Value: dict = {}
-
-_Heartbeat_Value: str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-_Waiting_Time: int = 5
+from .._values import (
+    # Crawler
+    _Waiting_Time,
+    # State
+    _Runner_Crawler_Value, _Backup_Crawler_Value, _Total_Crawler_Value, _Crawler_Role_Value, _State_Standby_ID_Value,
+    # Task
+    _Task_Content_Value, _Task_Result_Value,
+    # Heartbeat
+    _Time_Value, _Time_Format_Value,
+    # common functions
+    setup_state, setup_task, setup_heartbeat
+)
 
 
 def _Type_Not_Correct_Assertion_Error_Message(obj) -> str:
@@ -52,13 +42,13 @@ class _TestValue:
 
     __Test_Value_Instance = None
 
-    _State_ZK_Path: str = ""
-    _Task_ZK_Path: str = ""
-    _Heartbeat_ZK_Path: str = ""
+    __State_ZK_Path: str = ""
+    __Task_ZK_Path: str = ""
+    __Heartbeat_ZK_Path: str = ""
 
-    _Testing_State_Data_Str: str = ""
-    _Testing_Task_Data_Str: str = ""
-    _Testing_Heartbeat_Data_Str: str = ""
+    __Testing_State_Data_Str: str = ""
+    __Testing_Task_Data_Str: str = ""
+    __Testing_Heartbeat_Data_Str: str = ""
 
     __Testing_State: State = None
     __Testing_Task: Task = None
@@ -70,87 +60,61 @@ class _TestValue:
         return cls.__Test_Value_Instance
 
     def __init__(self):
-        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False)
+        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False)
 
     @property
     def state_zk_path(self) -> str:
-        if self._Task_ZK_Path == "":
-            self._Task_ZK_Path = self._zk_client_inst.state_zookeeper_path
-        return self._Task_ZK_Path
+        if self.__Task_ZK_Path == "":
+            self.__Task_ZK_Path = self._zk_client_inst.state_zookeeper_path
+        return self.__Task_ZK_Path
 
     @property
     def task_zk_path(self) -> str:
-        if self._State_ZK_Path == "":
-            self._State_ZK_Path = self._zk_client_inst.task_zookeeper_path
-        return self._State_ZK_Path
+        if self.__State_ZK_Path == "":
+            self.__State_ZK_Path = self._zk_client_inst.task_zookeeper_path
+        return self.__State_ZK_Path
 
     @property
     def heartbeat_zk_path(self) -> str:
-        if self._Heartbeat_ZK_Path == "":
-            self._Heartbeat_ZK_Path = self._zk_client_inst.heartbeat_zookeeper_path
-        return self._Heartbeat_ZK_Path
+        if self.__Heartbeat_ZK_Path == "":
+            self.__Heartbeat_ZK_Path = self._zk_client_inst.heartbeat_zookeeper_path
+        return self.__Heartbeat_ZK_Path
 
     @property
     def state(self) -> State:
         if self.__Testing_State is None:
-            _state = State()
-            _state.role = _State_Role_Value
-            _state.total_crawler = _State_Total_Crawler_Value
-            _state.total_runner = _State_Total_Runner_Value
-            _state.total_backup = _State_Total_Backup_Value
-            _state.standby_id = _State_Standby_ID_Value
-            _state.current_crawler = _State_List_Value
-            _state.current_runner = _State_List_Value
-            _state.current_backup = _State_List_Value
-            _state.fail_crawler = _State_List_Value
-            _state.fail_runner = _State_List_Value
-            _state.fail_backup = _State_List_Value
-            self.__Testing_State = _state
-
+            self.__Testing_State = setup_state(reset=True)
         return self.__Testing_State
 
     @property
     def task(self) -> Task:
         if self.__Testing_Task is None:
-            _task = Task()
-            _task.task_result = _Task_Result_Value
-            _task.task_content = _Task_Content_Value
-            self.__Testing_Task = _task
-
+            self.__Testing_Task = setup_task()
         return self.__Testing_Task
 
     @property
     def heartbeat(self) -> Heartbeat:
         if self.__Testing_Heartbeat is None:
-            _heartbeat = Heartbeat()
-            _heartbeat.heart_rhythm_time = _Heartbeat_Value
-            _heartbeat.time_format = "%Y-%m-%d %H:%M:%S"
-            _heartbeat.update_time = "2s"
-            _heartbeat.update_timeout = "4s"
-            _heartbeat.heart_rhythm_timeout = "3"
-            _heartbeat.healthy_state = HeartState.Healthy.value
-            _heartbeat.task_state = TaskResult.Processing.value
-            self.__Testing_Heartbeat = _heartbeat
-
+            self.__Testing_Heartbeat = setup_heartbeat()
         return self.__Testing_Heartbeat
 
     @property
     def state_data_str(self) -> str:
-        if self._Testing_State_Data_Str == "":
-            self._Testing_State_Data_Str = json.dumps(self.state.to_readable_object())
-        return self._Testing_State_Data_Str
+        if self.__Testing_State_Data_Str == "":
+            self.__Testing_State_Data_Str = json.dumps(self.state.to_readable_object())
+        return self.__Testing_State_Data_Str
 
     @property
     def task_data_str(self) -> str:
-        if self._Testing_Task_Data_Str == "":
-            self._Testing_Task_Data_Str = json.dumps(self.task.to_readable_object())
-        return self._Testing_Task_Data_Str
+        if self.__Testing_Task_Data_Str == "":
+            self.__Testing_Task_Data_Str = json.dumps(self.task.to_readable_object())
+        return self.__Testing_Task_Data_Str
 
     @property
     def heartbeat_data_str(self) -> str:
-        if self._Testing_Heartbeat_Data_Str == "":
-            self._Testing_Heartbeat_Data_Str = json.dumps(self.heartbeat.to_readable_object())
-        return self._Testing_Heartbeat_Data_Str
+        if self.__Testing_Heartbeat_Data_Str == "":
+            self.__Testing_Heartbeat_Data_Str = json.dumps(self.heartbeat.to_readable_object())
+        return self.__Testing_Heartbeat_Data_Str
 
 
 _Testing_Value: _TestValue = _TestValue()
@@ -163,7 +127,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
-        return ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False, zk_hosts=Zookeeper_Hosts)
+        return ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts=Zookeeper_Hosts)
 
 
     @ZK.reset_testing_env(path=ZKNode.State)
@@ -172,14 +136,14 @@ class TestZookeeperCrawler(ZKTestSpec):
     def test__get_state_from_zookeeper(self, uit_object: ZookeeperCrawler):
         _state = uit_object._get_state_from_zookeeper()
         assert type(_state) is State, _Type_Not_Correct_Assertion_Error_Message(State)
-        assert _state.role == _State_Role_Value.value, \
-            _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _State_Role_Value)
-        assert _state.total_crawler == _State_Total_Crawler_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_crawler", _state.total_crawler, _State_Total_Crawler_Value)
-        assert _state.total_runner == _State_Total_Runner_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_runner", _state.total_runner, _State_Total_Runner_Value)
-        assert _state.total_backup == _State_Total_Backup_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_backup", _state.total_backup, _State_Total_Backup_Value)
+        assert _state.role == _Crawler_Role_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _Crawler_Role_Value)
+        assert _state.total_crawler == _Total_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_crawler", _state.total_crawler, _Total_Crawler_Value)
+        assert _state.total_runner == _Runner_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_runner", _state.total_runner, _Runner_Crawler_Value)
+        assert _state.total_backup == _Backup_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_backup", _state.total_backup, _Backup_Crawler_Value)
         assert _state.standby_id == _State_Standby_ID_Value, \
             _Value_Not_Correct_Assertion_Error_Message("standby_id", _state.standby_id, _State_Standby_ID_Value)
 
@@ -190,7 +154,7 @@ class TestZookeeperCrawler(ZKTestSpec):
     def test__get_task_from_zookeeper(self, uit_object: ZookeeperCrawler):
         _task = uit_object._get_task_from_zookeeper()
         assert type(_task) is Task, _Type_Not_Correct_Assertion_Error_Message(Task)
-        assert _task.task_result == _Task_Result_Value.value, \
+        assert _task.task_result == _Task_Result_Value, \
             _Value_Not_Correct_Assertion_Error_Message("task_result", _task.task_result, _Task_Result_Value)
         assert _task.task_content == _Task_Content_Value, \
             _Value_Not_Correct_Assertion_Error_Message("task_content", _task.task_content, _Task_Content_Value)
@@ -202,8 +166,8 @@ class TestZookeeperCrawler(ZKTestSpec):
     def test__get_heartbeat_from_zookeeper(self, uit_object: ZookeeperCrawler):
         _heartbeat = uit_object._get_heartbeat_from_zookeeper()
         assert type(_heartbeat) is Heartbeat, _Type_Not_Correct_Assertion_Error_Message(Heartbeat)
-        assert _heartbeat.heart_rhythm_time == _Heartbeat_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Heartbeat_Value)
+        assert _heartbeat.heart_rhythm_time == _Time_Value.strftime(_Time_Format_Value), \
+            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Time_Value)
 
 
     @ZK.reset_testing_env(path=ZKNode.State)
@@ -296,14 +260,14 @@ class TestZookeeperCrawler(ZKTestSpec):
 
         _assertion = "The value should be the same."
         _state_json = json.loads(_state)
-        assert _state_json["role"] == _State_Role_Value.value, _assertion
-        assert _state_json["total_crawler"] == _State_Total_Crawler_Value, _assertion
-        assert _state_json["total_runner"] == _State_Total_Runner_Value, _assertion
-        assert _state_json["total_backup"] == _State_Total_Backup_Value, _assertion
-        assert _state_json["standby_id"] == _State_Standby_ID_Value, _assertion
+        assert _state_json["role"] == _Crawler_Role_Value, _assertion
+        assert _state_json["total_crawler"] == _Total_Crawler_Value, _assertion
+        assert _state_json["total_runner"] == _Runner_Crawler_Value, _assertion
+        assert _state_json["total_backup"] == _Backup_Crawler_Value, _assertion
+        assert _state_json["standby_id"] == "0", _assertion
 
         _task_json = json.loads(_task)
-        assert _task_json["task_result"] == _Task_Result_Value.value, _assertion
+        assert _task_json["task_result"] == _Task_Result_Value, _assertion
         assert _task_json["task_content"] == {}, _assertion
 
         _heartbeat_json = json.loads(_heartbeat)
@@ -358,8 +322,8 @@ class TestZookeeperCrawler(ZKTestSpec):
             try:
                 # Instantiate ZookeeperCrawler
                 _zk_crawler = ZookeeperCrawler(
-                    runner=_State_Total_Runner_Value,
-                    backup=_State_Total_Backup_Value,
+                    runner=_Runner_Crawler_Value,
+                    backup=_Backup_Crawler_Value,
                     name=_name,
                     initial=False,
                     zk_hosts=Zookeeper_Hosts
@@ -406,7 +370,7 @@ class TestZookeeperCrawler(ZKTestSpec):
 
     def _run_multi_threads(self, target_function, index_sep_char: str) -> None:
         _threads = []
-        for i in range(1, _State_Total_Crawler_Value + 1):
+        for i in range(1, _Total_Crawler_Value + 1):
             _crawler_thread = threading.Thread(target=target_function, args=(f"sc-crawler{index_sep_char}{i}",))
             _threads.append(_crawler_thread)
 
@@ -426,8 +390,8 @@ class TestZookeeperCrawler(ZKTestSpec):
         _current_crawler = json_data["current_crawler"]
         assert _current_crawler is not None, "Attribute *current_crawler* should NOT be None."
         assert type(_current_crawler) is list, "The data type of attribute *current_crawler* should NOT be list."
-        assert len(_current_crawler) == _State_Total_Crawler_Value, \
-            f"The size of attribute *current_crawler* should NOT be '{_State_Total_Crawler_Value}'."
+        assert len(_current_crawler) == _Total_Crawler_Value, \
+            f"The size of attribute *current_crawler* should NOT be '{_Total_Crawler_Value}'."
         assert len(_current_crawler) == len(set(_current_crawler)), \
             "Attribute *current_crawler* should NOT have any element is repeated."
         for _crawler_name in running_flag.keys():
@@ -435,17 +399,17 @@ class TestZookeeperCrawler(ZKTestSpec):
                 f"The element '{_crawler_name}' should be one of attribute *current_crawler*."
 
     def _check_is_ready_flags(self, is_ready_flag: Dict[str, bool]) -> None:
-        assert len(is_ready_flag.keys()) == _State_Total_Crawler_Value, \
-            f"The size of *is_ready* feature checksum should be {_State_Total_Crawler_Value}."
+        assert len(is_ready_flag.keys()) == _Total_Crawler_Value, \
+            f"The size of *is_ready* feature checksum should be {_Total_Crawler_Value}."
         assert False not in is_ready_flag, \
             "It should NOT exist any checksum element is False (it means crawler doesn't ready for running election)."
 
     def _check_election_results(self, election_results: Dict[str, ElectionResult], index_sep_char: str) -> None:
-        assert len(election_results.keys()) == _State_Total_Crawler_Value, \
-            f"The size of *elect* feature checksum should be {_State_Total_Crawler_Value}."
+        assert len(election_results.keys()) == _Total_Crawler_Value, \
+            f"The size of *elect* feature checksum should be {_Total_Crawler_Value}."
         for _crawler_name, _election_result in election_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
-            if _crawler_index <= _State_Total_Runner_Value:
+            if _crawler_index <= _Runner_Crawler_Value:
                 assert _election_result is ElectionResult.Winner, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
             else:
                 assert _election_result is ElectionResult.Loser, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
@@ -466,8 +430,8 @@ class TestZookeeperCrawler(ZKTestSpec):
             try:
                 # Instantiate ZookeeperCrawler
                 _zk_crawler = ZookeeperCrawler(
-                    runner=_State_Total_Runner_Value,
-                    backup=_State_Total_Backup_Value,
+                    runner=_Runner_Crawler_Value,
+                    backup=_Backup_Crawler_Value,
                     name=_name,
                     initial=True,
                     ensure_initial=True,
@@ -507,29 +471,29 @@ class TestZookeeperCrawler(ZKTestSpec):
 
     def _check_current_runner(self, json_data, index_sep_char: str) -> None:
         _current_runner = json_data["current_runner"]
-        assert len(_current_runner) == _State_Total_Runner_Value, f"The size of attribute *current_runner* should be same as {_State_Total_Runner_Value}."
+        assert len(_current_runner) == _Runner_Crawler_Value, f"The size of attribute *current_runner* should be same as {_Runner_Crawler_Value}."
         _runer_checksum_list = list(
-            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= _State_Total_Runner_Value,
+            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= _Runner_Crawler_Value,
                 _current_runner))
-        assert False not in _runer_checksum_list, f"The index of all crawler name should be <= {_State_Total_Runner_Value} (the count of runner)."
+        assert False not in _runer_checksum_list, f"The index of all crawler name should be <= {_Runner_Crawler_Value} (the count of runner)."
 
     def _check_current_backup_and_standby_id(self, json_data, index_sep_char: str) -> None:
         _current_backup = json_data["current_backup"]
-        assert len(_current_backup) == _State_Total_Backup_Value, f"The size of attribute *current_backup* should be same as {_State_Total_Backup_Value}."
+        assert len(_current_backup) == _Backup_Crawler_Value, f"The size of attribute *current_backup* should be same as {_Backup_Crawler_Value}."
         _backup_checksum_list = list(
-            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > _State_Total_Runner_Value, _current_backup))
-        assert False not in _backup_checksum_list, f"The index of all crawler name should be > {_State_Total_Runner_Value} (the count of runner)."
+            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > _Backup_Crawler_Value, _current_backup))
+        assert False not in _backup_checksum_list, f"The index of all crawler name should be > {_Backup_Crawler_Value} (the count of runner)."
 
         _standby_id = json_data["standby_id"]
         _standby_id_checksum_list = list(map(lambda _crawler: _standby_id in _crawler, _current_backup))
         assert True in _standby_id_checksum_list, "The standby ID (the index of crawler name) should be included in the one name of backup crawlers list."
 
     def _check_role(self, role_results: Dict[str, CrawlerStateRole], index_sep_char: str) -> None:
-        assert len(role_results.keys()) == _State_Total_Crawler_Value, \
-            f"The size of *role* attribute checksum should be {_State_Total_Crawler_Value}."
+        assert len(role_results.keys()) == _Total_Crawler_Value, \
+            f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."
         for _crawler_name, _role in role_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
-            if _crawler_index <= _State_Total_Runner_Value:
+            if _crawler_index <= _Runner_Crawler_Value:
                 assert _role is CrawlerStateRole.Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Runner}'."
             else:
                 assert _role is CrawlerStateRole.Backup_Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Backup_Runner}'."
