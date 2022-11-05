@@ -573,7 +573,7 @@ class Heartbeat(_BaseMetaData):
     def healthy_state(self, healthy_state: Union[str, HeartState]) -> None:
         if type(healthy_state) is not str and type(healthy_state) is not HeartState:
             raise ValueError("Property *heart_rhythm_time* only accept str type value.")
-        if type(healthy_state) is str and healthy_state not in HeartState.value:
+        if type(healthy_state) is str and healthy_state not in [i.value for i in HeartState]:
             raise ValueError("The value of property *healthy_state* should be as *HeartState* value.")
         healthy_state = healthy_state.value if type(healthy_state) is HeartState else healthy_state
         self._healthy_state = healthy_state
@@ -592,7 +592,7 @@ class Heartbeat(_BaseMetaData):
     def task_state(self, task_state: Union[str, TaskResult]) -> None:
         if type(task_state) is not str and type(task_state) is not TaskResult:
             raise ValueError("Property *task_state* only accept *str* or *TaskResult* type value.")
-        if type(task_state) is str and task_state not in TaskResult.value:
+        if type(task_state) is str and task_state not in [i.value for i in TaskResult]:
             raise ValueError("The value of property *task_state* should be as *TaskResult* value.")
         task_state = task_state.value if type(task_state) is TaskResult else task_state
         self._task_state = task_state
