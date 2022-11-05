@@ -9,10 +9,7 @@ from .._assertion import (
     WorkingTime,
     ObjectIsNoneOrNotAssertion, ValueAssertion, ListSizeAssertion, ValueFormatAssertion
 )
-
-
-_Runner_Value: int = 2
-_Backup_Value: int = 1
+from .._values import _Runner_Crawler_Value, _Backup_Crawler_Value
 
 
 class TestZookeeperCrawler:
@@ -20,7 +17,7 @@ class TestZookeeperCrawler:
     @pytest.fixture(scope="function")
     def zk_crawler(self) -> ZookeeperCrawler:
         with patch.object(KazooClient, "start", return_value=None) as mock_zk_cli:
-            _zk_crawler = ZookeeperCrawler(runner=_Runner_Value, backup=_Backup_Value, initial=False, zk_hosts="1.1.1.1:8080")
+            _zk_crawler = ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts="1.1.1.1:8080")
             mock_zk_cli.assert_called_once()
         return _zk_crawler
 
@@ -54,9 +51,9 @@ class TestZookeeperCrawler:
 
         ValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
 
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_crawler", expected_value=_Runner_Value + _Backup_Value)
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_runner", expected_value=_Runner_Value)
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_backup", expected_value=_Backup_Value)
+        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_crawler", expected_value=_Runner_Crawler_Value + _Backup_Crawler_Value)
+        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_runner", expected_value=_Runner_Crawler_Value)
+        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_backup", expected_value=_Backup_Crawler_Value)
 
         ValueAssertion(WorkingTime.AtInitial, _state, metadata="standby_id", expected_value="0")
 
@@ -78,9 +75,9 @@ class TestZookeeperCrawler:
         # Verify values
         ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
 
-        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_crawler", expected_value=_Runner_Value + _Backup_Value)
-        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_runner", expected_value=_Runner_Value)
-        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_backup", expected_value=_Backup_Value)
+        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_crawler", expected_value=_Runner_Crawler_Value + _Backup_Crawler_Value)
+        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_runner", expected_value=_Runner_Crawler_Value)
+        ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="total_backup", expected_value=_Backup_Crawler_Value)
 
         ValueAssertion(WorkingTime.AfterUpdateInInitial, _updated_state, metadata="standby_id", expected_value="0")
 
