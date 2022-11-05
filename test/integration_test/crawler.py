@@ -15,14 +15,11 @@ from ._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from .._config import Zookeeper_Hosts
 
 
+# TODO: Move this testing variable into a module to manage,
 _Runner_Value: int = 2
 _Backup_Value: int = 1
 
 _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
-
-_Expected_State: State = None
-_Expected_Task: Task = None
-_Expected_Heartbeat: Heartbeat = None
 
 _State_Role_Value: CrawlerStateRole = CrawlerStateRole.Initial
 _State_Total_Crawler_Value: int = 3
@@ -50,6 +47,7 @@ def _Value_Not_Correct_Assertion_Error_Message(value_meaning, current_value, exp
 _Not_None_Assertion_Error: str = "It should not be None object."
 
 
+# TODO: Consider that this class should be managed in a module or not
 class _TestValue:
 
     __Test_Value_Instance = None
@@ -109,9 +107,6 @@ class _TestValue:
             _state.fail_backup = _State_List_Value
             self.__Testing_State = _state
 
-        global _Expected_State
-        _Expected_State = self.__Testing_State
-
         return self.__Testing_State
 
     @property
@@ -121,9 +116,6 @@ class _TestValue:
             _task.task_result = _Task_Result_Value
             _task.task_content = _Task_Content_Value
             self.__Testing_Task = _task
-
-        global _Expected_Task
-        _Expected_Task = self.__Testing_Task
 
         return self.__Testing_Task
 
@@ -139,9 +131,6 @@ class _TestValue:
             _heartbeat.healthy_state = HeartState.Healthy.value
             _heartbeat.task_state = TaskResult.Processing.value
             self.__Testing_Heartbeat = _heartbeat
-
-        global _Expected_Heartbeat
-        _Expected_Heartbeat = self.__Testing_Heartbeat
 
         return self.__Testing_Heartbeat
 
