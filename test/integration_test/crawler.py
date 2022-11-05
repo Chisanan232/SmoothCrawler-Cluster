@@ -1,5 +1,5 @@
 from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
-from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult
+from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.protocol.states import ZnodeStat
@@ -132,6 +132,12 @@ class _TestValue:
         if self.__Testing_Heartbeat is None:
             _heartbeat = Heartbeat()
             _heartbeat.heart_rhythm_time = _Heartbeat_Value
+            _heartbeat.time_format = "%Y-%m-%d %H:%M:%S"
+            _heartbeat.update_time = "2s"
+            _heartbeat.update_timeout = "4s"
+            _heartbeat.heart_rhythm_timeout = "3"
+            _heartbeat.healthy_state = HeartState.Healthy.value
+            _heartbeat.task_state = TaskResult.Processing.value
             self.__Testing_Heartbeat = _heartbeat
 
         global _Expected_Heartbeat
