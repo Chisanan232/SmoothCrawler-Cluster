@@ -1,7 +1,9 @@
 from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult
+from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
+from datetime import datetime
 from typing import List, Dict, Callable
+from enum import Enum
 from abc import ABCMeta
 import traceback
 import pytest
@@ -48,8 +50,10 @@ class _MetaDataTest(metaclass=ABCMeta):
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
         else:
             assert True, "It works finely."
-            if type(_test_cnt) is CrawlerStateRole or type(_test_cnt) is TaskResult:
+            if isinstance(_test_cnt, Enum) is True:
                 assert getting_func() == _test_cnt.value, "The value should be same as it set."
+            elif type(_test_cnt) is datetime:
+                assert getting_func() == _test_cnt.strftime("%Y-%m-%d %H:%M:%S"), "The value should be same as it set."
             else:
                 assert getting_func() == _test_cnt, "The value should be same as it set."
 
@@ -394,7 +398,7 @@ class TestHeartbeat(_MetaDataTest):
     def heartbeat(self) -> Heartbeat:
         return Heartbeat()
 
-    def test_datetime(self, heartbeat: Heartbeat) -> None:
+    def test_heart_rhythm_time_with_string(self, heartbeat: Heartbeat) -> None:
 
         def _get_func() -> str:
             return heartbeat.heart_rhythm_time
@@ -406,6 +410,118 @@ class TestHeartbeat(_MetaDataTest):
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value="2022-07-20 07:46:43",
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_heart_rhythm_time_with_datetime(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.heart_rhythm_time
+
+        def _set_func(value) -> None:
+            heartbeat.heart_rhythm_time = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=datetime.now(),
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_time_format(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.time_format
+
+        def _set_func(value) -> None:
+            heartbeat.time_format = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="%Y-%m-%d %H:%M:%S",
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_update_time(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.update_time
+
+        def _set_func(value) -> None:
+            heartbeat.update_time = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="2s",
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_update_timeout(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.update_timeout
+
+        def _set_func(value) -> None:
+            heartbeat.update_timeout = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="4s",
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_heart_rhythm_timeout(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.heart_rhythm_timeout
+
+        def _set_func(value) -> None:
+            heartbeat.heart_rhythm_timeout = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="3",
+            invalid_1_value="5s",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_healthy_state(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.healthy_state
+
+        def _set_func(value) -> None:
+            heartbeat.healthy_state = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=HeartState.Healthy,
+            invalid_1_value="5",
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_task_state(self, heartbeat: Heartbeat) -> None:
+
+        def _get_func() -> str:
+            return heartbeat.task_state
+
+        def _set_func(value) -> None:
+            heartbeat.task_state = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=TaskResult.Processing,
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
