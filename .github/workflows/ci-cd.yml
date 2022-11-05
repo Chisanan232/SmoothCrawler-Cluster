@@ -135,7 +135,7 @@ jobs:
       test_type: all-test
       upload-to-codecov: true
       codecov_flags: unit,integration  # Required if 'upload-to-codecov' is true
-      codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
+      codecov_name: smoothcrawler-cluster  # Required if 'upload-to-codecov' is true
 
 
   codacy_finish:
