@@ -193,7 +193,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def _get_state_from_zookeeper(self) -> State:
         _value = self._Zookeeper_Client.get_value_from_node(path=self.state_zookeeper_path)
-        if _value is not None and _value != "":
+        if ZookeeperCrawler._value_is_not_empty(_value):
             _state = self._zk_converter.str_to_state(data=_value)
             return _state
         else:
@@ -201,7 +201,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def _get_task_from_zookeeper(self) -> Task:
         _value = self._Zookeeper_Client.get_value_from_node(path=self.task_zookeeper_path)
-        if _value is not None and _value != "":
+        if ZookeeperCrawler._value_is_not_empty(_value):
             _task = self._zk_converter.str_to_task(data=_value)
             return _task
         else:
@@ -209,32 +209,33 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def _get_heartbeat_from_zookeeper(self) -> Heartbeat:
         _value = self._Zookeeper_Client.get_value_from_node(path=self.heartbeat_zookeeper_path)
-        if _value is not None and _value != "":
+        if ZookeeperCrawler._value_is_not_empty(_value):
             _heartbeat = self._zk_converter.str_to_heartbeat(data=_value)
             return _heartbeat
         else:
             return Empty.heartbeat()
 
+    @staticmethod
+    def _value_is_not_empty(_value) -> bool:
+        return _value is not None and _value != ""
+
     def _set_state_to_zookeeper(self, state: State, create_node: bool = False) -> None:
         _state_str = self._zk_converter.state_to_str(state=state)
-        if create_node is True:
-            self._Zookeeper_Client.create_node(path=self.state_zookeeper_path, value=_state_str)
-        else:
-            self._Zookeeper_Client.set_value_to_node(path=self.state_zookeeper_path, value=_state_str)
+        self.__set_value_to_zookeeper(path=self.state_zookeeper_path, value=_state_str, create_node=create_node)
 
     def _set_task_to_zookeeper(self, task: Task, create_node: bool = False) -> None:
         _task_str = self._zk_converter.task_to_str(task=task)
-        if create_node is True:
-            self._Zookeeper_Client.create_node(path=self.task_zookeeper_path, value=_task_str)
-        else:
-            self._Zookeeper_Client.set_value_to_node(path=self.task_zookeeper_path, value=_task_str)
+        self.__set_value_to_zookeeper(path=self.task_zookeeper_path, value=_task_str, create_node=create_node)
 
     def _set_heartbeat_to_zookeeper(self, heartbeat: Heartbeat, create_node: bool = False) -> None:
         _heartbeat_str = self._zk_converter.heartbeat_to_str(heartbeat=heartbeat)
+        self.__set_value_to_zookeeper(path=self.heartbeat_zookeeper_path, value=_heartbeat_str, create_node=create_node)
+
+    def __set_value_to_zookeeper(self, path: str, value: str, create_node: bool) -> None:
         if create_node is True:
-            self._Zookeeper_Client.create_node(path=self.heartbeat_zookeeper_path, value=_heartbeat_str)
+            self._Zookeeper_Client.create_node(path=path, value=value)
         else:
-            self._Zookeeper_Client.set_value_to_node(path=self.heartbeat_zookeeper_path, value=_heartbeat_str)
+            self._Zookeeper_Client.set_value_to_node(path=path, value=value)
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
