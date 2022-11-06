@@ -362,6 +362,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             # Verify the running result by the value from Zookeeper
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
+            print(f"[DEBUG] _json_data: {_json_data}")
             self._check_current_crawler(_json_data, _running_flag)
             self._check_is_ready_flags(_is_ready_flag)
             self._check_election_results(_election_results, _index_sep_char)
@@ -462,6 +463,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             # Verify the running result by the value from Zookeeper
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
+            print(f"[DEBUG] _json_data: {_json_data}")
             self._check_current_crawler(_json_data, _running_flag)
             self._check_current_runner(_json_data, _index_sep_char)
             self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
