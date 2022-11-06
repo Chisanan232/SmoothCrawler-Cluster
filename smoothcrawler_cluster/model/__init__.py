@@ -128,7 +128,7 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def state(state: State, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
-              role: CrawlerStateRole = None, standby_id: str = "0", append_current_crawler: List[str] = [],
+              role: CrawlerStateRole = None, standby_id: str = None, append_current_crawler: List[str] = [],
               append_current_runner: List[str] = [], append_current_backup: List[str] = [], append_fail_crawler: List[str] = [],
               append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> State:
 
