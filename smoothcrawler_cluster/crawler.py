@@ -144,6 +144,48 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         self._register_task_to_zookeeper()
         self._register_heartbeat_to_zookeeper()
 
+    def is_ready(self, interval: float = 0.5, timeout: float = -1) -> bool:
+        if timeout < -1:
+            raise ValueError("The option *timeout* value is incorrect. Please configure more than -1, and -1 means it never timeout.")
+
+        _start = time.time()
+        while True:
+            _state = self._get_state_from_zookeeper()
+            if len(set(_state.current_crawler)) == self._total_crawler:
+                return True
+            if timeout != -1:
+                if (time.time() - _start) >= timeout:
+                    return False
+            time.sleep(interval)
+
+    def elect(self) -> ElectionResult:
+        _state = self._get_state_from_zookeeper()
+        return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler, index_sep=self._index_sep, spot=self._runner)
+
+    def run(self):
+        if self._crawler_role is CrawlerStateRole.Runner:
+            self.wait_for_task()
+            self.run_task()
+        elif self._crawler_role is CrawlerStateRole.Backup_Runner:
+            self.wait_and_standby()
+            self.discover()
+            self.activate()
+
+    def wait_for_task(self):
+        pass
+
+    def wait_and_standby(self):
+        pass
+
+    def run_task(self):
+        pass
+
+    def discover(self):
+        pass
+
+    def activate(self):
+        pass
+
     def _register_state_to_zookeeper(self) -> None:
         for _ in range(self._ensure_timeout):
             with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
@@ -257,45 +299,3 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                 raise ValueError(f"It doesn't support {role} recently.")
 
             self._set_state_to_zookeeper(_updated_state, create_node=False)
-
-    def is_ready(self, interval: float = 0.5, timeout: float = -1) -> bool:
-        if timeout < -1:
-            raise ValueError("The option *timeout* value is incorrect. Please configure more than -1, and -1 means it never timeout.")
-
-        _start = time.time()
-        while True:
-            _state = self._get_state_from_zookeeper()
-            if len(set(_state.current_crawler)) == self._total_crawler:
-                return True
-            if timeout != -1:
-                if (time.time() - _start) >= timeout:
-                    return False
-            time.sleep(interval)
-
-    def elect(self) -> ElectionResult:
-        _state = self._get_state_from_zookeeper()
-        return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler, index_sep=self._index_sep, spot=self._runner)
-
-    def run(self):
-        if self._crawler_role is CrawlerStateRole.Runner:
-            self.wait_for_task()
-            self.run_task()
-        elif self._crawler_role is CrawlerStateRole.Backup_Runner:
-            self.wait_and_standby()
-            self.discover()
-            self.activate()
-
-    def wait_for_task(self):
-        pass
-
-    def wait_and_standby(self):
-        pass
-
-    def run_task(self):
-        pass
-
-    def discover(self):
-        pass
-
-    def activate(self):
-        pass
