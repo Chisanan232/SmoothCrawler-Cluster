@@ -17,6 +17,7 @@ Test_Zookeeper_Bytes_Value = b"This is test value in zookeeper"
 
 # # # # For feature related crawler
 # # Related state settings
+_Crawler_Name_Value: str = "sc-crawler_1"
 _Crawler_Role_Value: str = CrawlerStateRole.Initial.value
 _Runner_Crawler_Value: int = 2
 _Backup_Crawler_Value: int = 1
