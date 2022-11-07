@@ -60,7 +60,7 @@ class Empty(_BaseDataObjectUtils):
         _heartbeat.update_time = "2s"
         _heartbeat.update_timeout = "4s"
         _heartbeat.heart_rhythm_timeout = "3"
-        _heartbeat.healthy_state = HeartState.Healthy
+        _heartbeat.healthy_state = HeartState.Newborn
         _heartbeat.task_state = TaskResult.Nothing
         return _heartbeat
 
@@ -113,7 +113,7 @@ class Initial(_BaseDataObjectUtils):
         _heartbeat.update_timeout = update_timeout
         _heartbeat.heart_rhythm_timeout = heart_rhythm_timeout
         if healthy_state is None:
-            healthy_state = HeartState.Healthy
+            healthy_state = HeartState.Newborn
         _heartbeat.healthy_state = healthy_state
         if task_state is None:
             task_state = TaskResult.Nothing
