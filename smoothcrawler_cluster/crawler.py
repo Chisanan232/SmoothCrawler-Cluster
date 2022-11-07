@@ -1,8 +1,11 @@
+from datetime import datetime
 from typing import List, Type, TypeVar, Generic
 from abc import ABCMeta
+import threading
 import time
+import re
 
-from .model import Empty, Initial, Update, CrawlerStateRole, State, Task, Heartbeat
+from .model import Empty, Initial, Update, CrawlerStateRole, HeartState, State, Task, Heartbeat
 from .election import BaseElection, IndexElection, ElectionResult
 from ._utils.converter import BaseConverter, JsonStrConverter
 from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
@@ -23,6 +26,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
+
+    __Updating_Exception = None
 
     def __init__(self, runner: int, backup: int, name: str = "", group: str = "", index_sep: List[str] = ["-", "_"], initial: bool = True,
                  ensure_initial: bool = False, ensure_timeout: int = 3, ensure_wait: float = 0.5, zk_hosts: str = None,
@@ -82,6 +87,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         if initial is True:
             # TODO: It needs create another thread to keep updating heartbeat info to signal it's alive.
             self.register()
+            self._run_updating_heartbeat_thread()
             if self.is_ready(interval=0.5, timeout=-1):
                 if self.elect() is ElectionResult.Winner:
                     self._crawler_role = CrawlerStateRole.Runner
@@ -299,3 +305,42 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                 raise ValueError(f"It doesn't support {role} recently.")
 
             self._set_state_to_zookeeper(_updated_state, create_node=False)
+
+    def _run_updating_heartbeat_thread(self) -> None:
+        _updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
+        _updating_heartbeat_thread.daemon = True
+        _updating_heartbeat_thread.start()
+        _updating_heartbeat_thread.join()
+        if self.__Updating_Exception is not None:
+            raise self.__Updating_Exception
+
+    def _update_heartbeat(self) -> None:
+        while True:
+            try:
+                # Get *Task* and *Heartbeat* info
+                _task = self._get_task_from_zookeeper()
+                _heartbeat = self._get_heartbeat_from_zookeeper()
+
+                # Update the values
+                _heartbeat = Update.heartbeat(_heartbeat, heart_rhythm_time=datetime.now(), healthy_state=HeartState.Healthy, task_state=_task.task_result)
+                self._set_heartbeat_to_zookeeper(heartbeat=_heartbeat)
+
+                # Sleep ...
+                time.sleep(self._get_sleep_time(_heartbeat.update_timeout))
+            except Exception as e:
+                self.__Updating_Exception = e
+                break
+
+    @classmethod
+    def _get_sleep_time(cls, timer: str) -> int:
+        _time = int(timer[:-1])
+        _time_unit = timer[-1]
+        if _time_unit == "s":
+            _sleep_time = _time
+        elif _time_unit == "m":
+            _sleep_time = _time * 60
+        elif _time_unit == "h":
+            _sleep_time = _time * 60 * 60
+        else:
+            raise ValueError("It only supports 's' (seconds), 'm' (minutes) or 'h' (hours) setting value.")
+        return _sleep_time
