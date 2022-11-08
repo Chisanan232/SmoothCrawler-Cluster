@@ -61,6 +61,11 @@ class TestTaskResult(_EnumObjTest):
 class TestHeartState(_EnumObjTest):
     """Test for the enum object key-value mapping."""
 
+    def test_newborn_value(self) -> None:
+        _under_test_enum = HeartState.Newborn
+        _expected_value = "Newborn"
+        self._run_enum_value_test(_under_test_enum, _expected_value)
+
     def test_healthy_value(self) -> None:
         _under_test_enum = HeartState.Healthy
         _expected_value = "Healthy"
@@ -74,4 +79,9 @@ class TestHeartState(_EnumObjTest):
     def test_asystole_value(self) -> None:
         _under_test_enum = HeartState.Asystole
         _expected_value = "Asystole"
+        self._run_enum_value_test(_under_test_enum, _expected_value)
+
+    def test_apparent_death_value(self) -> None:
+        _under_test_enum = HeartState.ApparentDeath
+        _expected_value = "Apparent Death"
         self._run_enum_value_test(_under_test_enum, _expected_value)

@@ -76,6 +76,12 @@ class HeartState(Enum):
     The heartbeat state.
     """
 
+    Newborn = "Newborn"
+    """ 
+    The initialized heartbeat state of a crawler instance which just be created, in other words, crawler instance's heartbeat 
+    state would be this before it run updating heartbeat process. 
+    """
+
     Healthy = "Healthy"
     """ This means that current crawler instance runs finely without any issue. """
 
@@ -91,3 +97,5 @@ class HeartState(Enum):
     alive crawler instances. So the dead crawler instance won't run anymore and list to *fail_xxx* property in *State*.
     """
 
+    ApparentDeath = "Apparent Death"
+    """ It would be this state if the crawler instance would be stopped or killed manually. """

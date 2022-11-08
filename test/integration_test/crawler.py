@@ -1,7 +1,8 @@
-from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
+from smoothcrawler_cluster.model.metadata import TaskResult, HeartState, State, Task, Heartbeat
 from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from datetime import datetime
 from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
 from typing import List, Dict
@@ -362,7 +363,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             # Verify the running result by the value from Zookeeper
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG] _json_data: {_json_data}")
+            print(f"[DEBUG] _state_path: {_state_path}, _json_data: {_json_data}")
             self._check_current_crawler(_json_data, _running_flag)
             self._check_is_ready_flags(_is_ready_flag)
             self._check_election_results(_election_results, _index_sep_char)
@@ -373,6 +374,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         _threads = []
         for i in range(1, _Total_Crawler_Value + 1):
             _crawler_thread = threading.Thread(target=target_function, args=(f"sc-crawler{index_sep_char}{i}",))
+            _crawler_thread.daemon = True
             _threads.append(_crawler_thread)
 
         for _thread in _threads:
@@ -460,16 +462,34 @@ class TestZookeeperCrawler(ZKTestSpec):
             self._run_multi_threads(target_function=_run_and_test, index_sep_char=_index_sep_char)
             self._check_running_status(_running_flag)
 
+            # Verify the heartbeat info
+            _heartbeat_paths = filter(lambda _path: "heartbeat" in _path, _all_paths)
+            self._check_heartbeat_info(list(_heartbeat_paths))
+
             # Verify the running result by the value from Zookeeper
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG] _json_data: {_json_data}")
+            print(f"[DEBUG] _state_path: {_state_path}, _json_data: {_json_data}")
             self._check_current_crawler(_json_data, _running_flag)
             self._check_current_runner(_json_data, _index_sep_char)
             self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
             self._check_role(_role_results, _index_sep_char)
         finally:
             self._delete_zk_nodes(_all_paths)
+
+    def _check_heartbeat_info(self, heartbeat_paths: List[str]) -> None:
+        for _path in heartbeat_paths:
+            _task, _state = self._PyTest_ZK_Client.get(path=_path)
+            print(f"[DEBUG] _path: {_path}, _task: {_task}")
+            _task_json_data = json.loads(_task.decode("utf-8"))
+            assert _task_json_data["time_format"] == "%Y-%m-%d %H:%M:%S", ""
+            _heart_rhythm_time = _task_json_data["heart_rhythm_time"]
+            _heart_rhythm_datetime = datetime.strptime(_heart_rhythm_time, _task_json_data["time_format"])
+            _now_datetime = datetime.now()
+            _diff_datetime = _now_datetime - _heart_rhythm_datetime
+            assert _diff_datetime.total_seconds() < 2, ""
+            assert _task_json_data["healthy_state"] == HeartState.Healthy.value, ""
+            assert _task_json_data["task_state"] == TaskResult.Nothing.value, ""
 
     def _check_current_runner(self, json_data, index_sep_char: str) -> None:
         _current_runner = json_data["current_runner"]
