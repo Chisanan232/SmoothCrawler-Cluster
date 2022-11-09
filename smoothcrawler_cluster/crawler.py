@@ -193,8 +193,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
                 self.wait_and_standby()
             else:
-                # Wait for to be a standby one
-                pass
+                self.wait_for_to_be_standby()
 
     def wait_for_task(self):
         pass
@@ -225,6 +224,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                         self.activate(node_path=_heartbeat_path, task=_task_of_dead_crawler)
 
             time.sleep(3)
+
+    def wait_for_to_be_standby(self):
+        pass
 
     def run_task(self):
         pass
