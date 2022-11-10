@@ -107,7 +107,7 @@ class Initial(_BaseDataObjectUtils):
                   update_timeout: str = "4s", heart_rhythm_timeout: str = "3", healthy_state: HeartState = None,
                   task_state: TaskResult = None) -> Heartbeat:
         _heartbeat = Heartbeat()
-        _heartbeat.heart_rhythm_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        _heartbeat.heart_rhythm_time = datetime.now().strftime(time_format)
         _heartbeat.time_format = time_format
         _heartbeat.update_time = update_time
         _heartbeat.update_timeout = update_timeout
