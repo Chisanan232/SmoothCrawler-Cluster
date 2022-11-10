@@ -236,8 +236,14 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             # TODO: Parameterize this value for sleep a little bit while.
             time.sleep(2)
 
-    def wait_for_to_be_standby(self):
-        pass
+    def wait_for_to_be_standby(self) -> bool:
+        while True:
+            _state = self._get_state_from_zookeeper()
+            if self._crawler_name.split(self._index_sep)[-1] == _state.standby_id:
+                # Start to do wait_and_standby
+                return True
+            # TODO: Parameterize this value for sleep a little bit while.
+            time.sleep(2)
 
     def run_task(self):
         pass
