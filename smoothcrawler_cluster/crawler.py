@@ -4,8 +4,9 @@ from abc import ABCMeta
 import threading
 import time
 
-from .model import Empty, Initial, Update, CrawlerStateRole, HeartState, State, Task, Heartbeat
+from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, State, Task, Heartbeat
 from .election import BaseElection, IndexElection, ElectionResult
+from .exceptions import ZookeeperCrawlerNotReady
 from ._utils.converter import BaseConverter, JsonStrConverter
 from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
 
@@ -37,6 +38,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         self._total_crawler = runner + backup
         self._runner = runner
         self._backup = backup
+        self._current_total_crawler: List[str] = None
+        self._current_total_runner: List[str] = None
+        self._current_total_backup: List[str] = None
+        self._standby_id: str = None
         self._crawler_role: CrawlerStateRole = None
         self._index_sep = ""
         self._ensure_register = ensure_initial
@@ -131,15 +136,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     @property
     def state_zookeeper_path(self) -> str:
-        return f"smoothcrawler/group/{self._crawler_group}/state"
+        return f"{self.__generate_path(self._crawler_group, is_group=True)}/state"
 
     @property
     def task_zookeeper_path(self) -> str:
-        return f"smoothcrawler/node/{self._crawler_name}/task"
+        return f"{self.__generate_path(self._crawler_name)}/task"
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
-        return f"smoothcrawler/node/{self._crawler_name}/heartbeat"
+        return f"{self.__generate_path(self._crawler_name)}/heartbeat"
+
+    def __generate_path(self, crawler_name: str, is_group: bool = False) -> str:
+        if is_group is True:
+            return f"smoothcrawler/group/{crawler_name}"
+        else:
+            return f"smoothcrawler/node/{crawler_name}"
 
     def register(self) -> None:
         # Question: How could it name the web crawler with number?
@@ -160,7 +171,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         _start = time.time()
         while True:
             _state = self._get_state_from_zookeeper()
-            if len(set(_state.current_crawler)) == self._total_crawler:
+            if len(_state.current_crawler) == self._total_crawler:
+                self._current_total_crawler = _state.current_crawler
+                self._current_total_runner = _state.current_runner
+                self._current_total_backup = _state.current_backup
+                self._standby_id = _state.standby_id
                 return True
             if timeout != -1:
                 if (time.time() - _start) >= timeout:
@@ -176,24 +191,88 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self.wait_for_task()
             self.run_task()
         elif self._crawler_role is CrawlerStateRole.Backup_Runner:
-            self.wait_and_standby()
-            self.discover()
-            self.activate()
+            if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
+                self.wait_and_standby()
+            else:
+                self.wait_for_to_be_standby()
 
     def wait_for_task(self):
         pass
 
-    def wait_and_standby(self):
+    def wait_and_standby(self) -> None:
+        if self._current_total_runner is None or len(self._current_total_runner) == 0:
+            raise ZookeeperCrawlerNotReady
+
+        _timeout_record = {}
+
+        def _chk_current_runner_heartbeat(runner_name) -> bool:
+            _heartbeat_path = f"{self.__generate_path(runner_name)}/heartbeat"
+            # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
+            _value = self._Zookeeper_Client.get_value_from_node(path=_heartbeat_path)
+            _heartbeat = self._zk_converter.str_to_heartbeat(_value)
+
+            _heart_rhythm_time = _heartbeat.heart_rhythm_time
+            _time_format = _heartbeat.time_format
+            _update_timeout = _heartbeat.update_timeout
+            _heart_rhythm_timeout = _heartbeat.heart_rhythm_timeout
+
+            _diff_datetime = datetime.now() - datetime.strptime(_heart_rhythm_time, _time_format)
+            if _diff_datetime.total_seconds() > self._get_sleep_time(_update_timeout):
+                # It should start to pay attention on it
+                _runner_update_timeout = _timeout_record.get(runner_name, 0)
+                _timeout_record[runner_name] = _runner_update_timeout + 1
+                if _timeout_record[runner_name] > int(_heart_rhythm_timeout):
+                    # It should mark the runner as dead and try to activate itself.
+                    _task_of_dead_crawler = self.discover(node_path=_heartbeat_path, heartbeat=_heartbeat)
+                    self.activate(crawler_name=runner_name, task=_task_of_dead_crawler)
+                    return True
+            return False
+
+        while True:
+            _current_runners_heartbeat = map(_chk_current_runner_heartbeat, self._current_total_runner)
+            if True in list(_current_runners_heartbeat):
+                break
+
+            # TODO: Parameterize this value for sleep a little bit while.
+            time.sleep(2)
+
+    def wait_for_to_be_standby(self):
         pass
 
     def run_task(self):
         pass
 
-    def discover(self):
-        pass
+    def discover(self, node_path: str, heartbeat: Heartbeat) -> Task:
+        # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
+        _value = self._Zookeeper_Client.get_value_from_node(path=node_path.replace("heartbeat", "task"))
+        _task = self._zk_converter.str_to_task(_value)
 
-    def activate(self):
-        pass
+        heartbeat.healthy_state = HeartState.Asystole
+        heartbeat.task_state = _task.task_result
+        self._Zookeeper_Client.set_value_to_node(path=node_path, value=self._zk_converter.heartbeat_to_str(heartbeat))
+
+        return _task
+
+    def activate(self, crawler_name: str, task: Task):
+        # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
+        with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
+            _state = self._get_state_from_zookeeper()
+
+            _state.current_runner.remove(crawler_name)
+            _state.current_runner.append(self._crawler_name)
+            _state.current_backup.remove(self._crawler_name)
+            _state.fail_crawler.append(crawler_name)
+            _state.fail_runner.append(crawler_name)
+            _state.standby_id = str(int(_state.standby_id) + 1)
+
+            self._set_state_to_zookeeper(_state)
+
+        if task.task_result == TaskResult.Processing.value:
+            # TODO: Run task content ?
+            pass
+        else:
+            # TODO: Do something else to handle?
+            pass
 
     def _register_state_to_zookeeper(self) -> None:
         for _ in range(self._ensure_timeout):

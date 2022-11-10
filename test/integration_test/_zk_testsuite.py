@@ -120,6 +120,9 @@ class ZK:
     def _set_value_to_node(self, path: str, value: bytes) -> None:
         self._PyTest_ZK_Client.set(path=path, value=value)
 
+    def _get_value_from_node(self, path: str) -> tuple:
+        return self._PyTest_ZK_Client.get(path=path)
+
     def _delete_node(self, path: str) -> None:
         self._PyTest_ZK_Client.delete(path=path)
 
