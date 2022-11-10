@@ -213,7 +213,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
             _heart_rhythm_time = _heartbeat.heart_rhythm_time
             _time_format = _heartbeat.time_format
-            _update_time = _heartbeat.update_time
             _update_timeout = _heartbeat.update_timeout
             _heart_rhythm_timeout = _heartbeat.heart_rhythm_timeout
 

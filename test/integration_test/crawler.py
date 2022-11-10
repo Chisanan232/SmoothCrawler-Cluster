@@ -561,7 +561,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         # Run the function which target to test
         try:
             uit_object.wait_and_standby()
-        except ZookeeperCrawlerNotReady as e:
+        except ZookeeperCrawlerNotReady:
             # assert str(e) == "Current crawler instance is not ready for running. Its *current_runner* still be empty.", ""
             assert True, "It works finely!"
         else:
