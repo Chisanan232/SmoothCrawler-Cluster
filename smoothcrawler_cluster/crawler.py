@@ -187,6 +187,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler, index_sep=self._index_sep, spot=self._runner)
 
     def run(self):
+        # TODO: Change to be a unlimited loop to keep running?
         if self._crawler_role is CrawlerStateRole.Runner:
             self.wait_for_task()
             self.run_task()
