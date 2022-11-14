@@ -19,7 +19,7 @@ class _BaseMetaData(metaclass=ABCMeta):
         pass
 
 
-class State(_BaseMetaData):
+class GroupState(_BaseMetaData):
     """
     One of the meta-data of *SmoothCrawler-Cluster*. It saves info about which VMs (web spider name) are **Runner**
     and another VMs are **Backup Runner**. The cluster would check the content of this info to run **Runner Election**
@@ -34,7 +34,7 @@ class State(_BaseMetaData):
 
     * Zookeeper node path:
 
-    /smoothcrawler/node/<crawler name>/state/
+    /smoothcrawler/group/<crawler group name>/state/
 
 
     * Example info at node *state*:

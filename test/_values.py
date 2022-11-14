@@ -2,7 +2,7 @@
 Here are some global variables for testing.
 """
 
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, State, Task, Heartbeat
+from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, GroupState, Task, Heartbeat
 from datetime import datetime
 
 
@@ -79,8 +79,8 @@ _Test_Heartbeat_Data = {
 }
 
 
-def setup_state(reset: bool = False) -> State:
-    _state = State()
+def setup_state(reset: bool = False) -> GroupState:
+    _state = GroupState()
     _state.role = _Test_State_Data["role"]
     _state.total_crawler = _Test_State_Data["total_crawler"]
     _state.total_runner = _Test_State_Data["total_runner"]

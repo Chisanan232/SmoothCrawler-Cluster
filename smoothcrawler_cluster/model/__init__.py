@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Union
 from abc import ABCMeta, abstractmethod
 
-from .metadata import State, Task, Heartbeat
+from .metadata import GroupState, Task, Heartbeat
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 
@@ -10,7 +10,7 @@ class _BaseDataObjectUtils(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def state(*args, **kwargs) -> State:
+    def state(*args, **kwargs) -> GroupState:
         pass
 
     @staticmethod
@@ -30,8 +30,8 @@ class Empty(_BaseDataObjectUtils):
     """
 
     @staticmethod
-    def state() -> State:
-        _state = State()
+    def state() -> GroupState:
+        _state = GroupState()
         _state.total_crawler = 0
         _state.total_runner = 0
         _state.total_backup = 0
@@ -73,8 +73,8 @@ class Initial(_BaseDataObjectUtils):
     @staticmethod
     def state(crawler_name: str, total_crawler: int, total_runner: int, total_backup: int, role: CrawlerStateRole = None,
               standby_id: str = "0", current_crawler: List[str] = [], current_runner: List[str] = [], current_backup: List[str] = [],
-              fail_crawler: List[str] = [], fail_runner: List[str] = [], fail_backup: List[str] = []) -> State:
-        _state = State()
+              fail_crawler: List[str] = [], fail_runner: List[str] = [], fail_backup: List[str] = []) -> GroupState:
+        _state = GroupState()
         _state.total_crawler = total_crawler
         _state.total_runner = total_runner
         _state.total_backup = total_backup
@@ -127,10 +127,10 @@ class Update(_BaseDataObjectUtils):
     """
 
     @staticmethod
-    def state(state: State, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
+    def state(state: GroupState, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
               role: CrawlerStateRole = None, standby_id: str = None, append_current_crawler: List[str] = [],
               append_current_runner: List[str] = [], append_current_backup: List[str] = [], append_fail_crawler: List[str] = [],
-              append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> State:
+              append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> GroupState:
 
         def _update_ele_if_not_none(prop: str, new_val: Union[int, str, CrawlerStateRole]):
             if new_val is not None:
