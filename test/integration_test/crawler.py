@@ -603,3 +603,67 @@ class TestZookeeperCrawler(ZKTestSpec):
             if self._exist_node(path=_crawler_0_heartbeat_path):
                 self._delete_node(path=_crawler_0_heartbeat_path)
 
+    def test_wait_for_to_be_standby(self):
+        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
+        self._PyTest_ZK_Client.start()
+
+        # # Prepare the meta data
+        # Instantiate a ZookeeperCrawler for testing
+        _zk_crawler = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value,
+            backup=_Backup_Crawler_Value,
+            name="sc-crawler_2",
+            initial=False,
+            zk_hosts=Zookeeper_Hosts
+        )
+
+        # Set a *State* with only 2 crawlers and standby ID is '1'
+        _state = Initial.state(
+            crawler_name="sc-crawler_0",
+            total_crawler=3,
+            total_runner=2,
+            total_backup=1,
+            role=CrawlerStateRole.Runner,
+            standby_id="1",
+            current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
+            current_runner=["sc-crawler_0"],
+            current_backup=["sc-crawler_1", "sc-crawler_2"]
+        )
+        if self._exist_node(path=_zk_crawler.state_zookeeper_path) is None:
+            _state_data_str = json.dumps(_state.to_readable_object())
+            self._create_node(path=_zk_crawler.state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
+
+        _result = None
+        _start = None
+        _end = None
+
+        def _update_state_standby_id():
+            time.sleep(5)
+            _state.standby_id = "2"
+            _new_state_data_str = json.dumps(_state.to_readable_object())
+            self._set_value_to_node(path=_zk_crawler.state_zookeeper_path, value=bytes(_new_state_data_str, "utf-8"))
+
+        def _run_target_test_func():
+            try:
+                nonlocal _result, _start, _end
+                _start = time.time()
+                # # Run target function
+                _result = _zk_crawler.wait_for_to_be_standby()
+                _end = time.time()
+            finally:
+                if self._exist_node(path=_zk_crawler.state_zookeeper_path):
+                    self._delete_node(path=_zk_crawler.state_zookeeper_path)
+
+        _updating_thread = threading.Thread(target=_update_state_standby_id)
+        _run_target_thread = threading.Thread(target=_run_target_test_func)
+
+        _updating_thread.start()
+        _run_target_thread.start()
+
+        _updating_thread.join()
+        _run_target_thread.join()
+
+        # # Verify the result
+        assert _result is True, "It should be True after it detect the stand ID to be '2'."
+        assert 5 < int(_end - _start) <= 6, "It should NOT run more than 6 seconds."
+
