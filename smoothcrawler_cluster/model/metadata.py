@@ -40,7 +40,6 @@ class GroupState(_BaseMetaData):
     * Example info at node *state*:
 
     {
-        "role": "runner",
         "total_crawler": 3,
         "total_runner": 2,
         "total_backup": 1,
@@ -54,8 +53,6 @@ class GroupState(_BaseMetaData):
     }
 
     """
-
-    _role: CrawlerStateRole = None
 
     _total_crawlers: int = None
     _total_runner: int = None
@@ -73,7 +70,6 @@ class GroupState(_BaseMetaData):
 
     def to_readable_object(self) -> dict:
         _dict_format_data = {
-            "role": self._role,
             "total_crawler": self.total_crawler,
             "total_runner": self.total_runner,
             "total_backup": self.total_backup,
@@ -86,33 +82,6 @@ class GroupState(_BaseMetaData):
             "fail_backup": self.fail_backup
         }
         return _dict_format_data
-
-    @property
-    def role(self) -> CrawlerStateRole:
-        """
-        Role of *SmoothCrawler-Cluster*. It recommends that use enum object **CrawlerStateRole** to configure this
-        property. But it still could use string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-runner')
-        to do it.
-
-        :return: The enumerate object *CrawlerStateRole* or string type value.
-        """
-
-        return self._role
-
-    @role.setter
-    def role(self, role: Union[CrawlerStateRole, str]) -> None:
-        if type(role) is str:
-            _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
-            if role not in _enum_values:
-                raise ValueError("The value of attribute *role* is incorrect. It recommends that using enum object "
-                                 f"*CrawlerStateRole*, but you also could use string which is valid if it in list {_enum_values}.")
-        else:
-            if type(role) is not CrawlerStateRole:
-                raise ValueError(
-                    "The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*.")
-
-        role = role.value if type(role) is CrawlerStateRole else role
-        self._role = role
 
     @property
     def total_crawler(self) -> int:
@@ -274,6 +243,77 @@ class GroupState(_BaseMetaData):
         if type(fail_backup) is not list:
             raise ValueError("Property *fail_backup* only accept list type value.")
         self._fail_backup = fail_backup
+
+
+class NodeState(_BaseMetaData):
+    """
+    _GroupState_ is a state info for multiple nodes which also in same **group**. _NodeState_ is the state info for one
+    specific crawler instance. It would save some more detail info of the crawler instance of the cluster.
+
+    * Zookeeper node path:
+
+    /smoothcrawler/node/<crawler name>/state/
+
+
+    * Example info at node *state*:
+
+    {
+        "role": "runner",
+        "group": "sc-crawler-cluster"
+    }
+
+    """
+
+    _group: str = None
+    _role: CrawlerStateRole = None
+
+    def to_readable_object(self) -> dict:
+        return {
+            "group": self.group,
+            "role": self._role
+        }
+
+    @property
+    def group(self) -> str:
+        """
+        The name of group current crawler instance in.
+
+        :return: group name.
+        """
+        return self._group
+
+    @group.setter
+    def group(self, group: str) -> None:
+        if type(group) is not str:
+            raise ValueError("Property *group* only accept 'str' type value.")
+        self._group = group
+
+    @property
+    def role(self) -> CrawlerStateRole:
+        """
+        Role of *SmoothCrawler-Cluster*. It recommends that use enum object **CrawlerStateRole** to configure this
+        property. But it still could use string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-runner')
+        to do it.
+
+        :return: The enumerate object *CrawlerStateRole* or string type value.
+        """
+
+        return self._role
+
+    @role.setter
+    def role(self, role: Union[CrawlerStateRole, str]) -> None:
+        if type(role) is str:
+            _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
+            if role not in _enum_values:
+                raise ValueError("The value of attribute *role* is incorrect. It recommends that using enum object "
+                                 f"*CrawlerStateRole*, but you also could use string which is valid if it in list {_enum_values}.")
+        else:
+            if type(role) is not CrawlerStateRole:
+                raise ValueError(
+                    "The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*.")
+
+        role = role.value if type(role) is CrawlerStateRole else role
+        self._role = role
 
 
 class Task(_BaseMetaData):
