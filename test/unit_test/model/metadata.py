@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model.metadata import GroupState, Task, Heartbeat
+from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
 from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 from datetime import datetime
@@ -77,58 +77,11 @@ class _MetaDataTest(metaclass=ABCMeta):
 
 
 class TestGroupState(_MetaDataTest):
-    """Test for all the attributes of **State**."""
+    """Test for all the attributes of **GroupState**."""
 
     @pytest.fixture(scope="function")
     def state(self) -> GroupState:
         return GroupState()
-
-    def test_set_role_correctly(self, state: GroupState) -> None:
-        """
-        Test for the setting process should work finely without any issue because it works with normal value
-        like enum object **CrawlerStateRole** or valid string type value like ['runner', 'backup-runner',
-        'dead-runner', 'dead-backup-runner'].
-
-        :param state: The instance of the object **State** with nothing settings.
-        :return: None
-        """
-
-        # Test for setting the property normally. It would choice one value randomly.
-        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
-        try:
-            state.role = _under_test_value
-        except Exception:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-        else:
-            assert True, "It works finely."
-            assert state.role == _under_test_value.value, "The value should be same as it set."
-
-        _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
-        _under_test_value = random.choice(_enum_values)
-        try:
-            state.role = "runner"
-        except Exception:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-        else:
-            assert True, "It works finely."
-            assert state.role == "runner", "The value should be same as it set."
-
-    def test_set_role_incorrectly(self, state: GroupState) -> None:
-        """
-        Test for setting the property *role* with invalid string value.
-
-        :param state: The instance of the object **State** with nothing settings.
-        :return: None
-        """
-
-        # Test for setting the property with incorrect string type value.
-        try:
-            state.role = "python-hello-world"
-        except Exception:
-            assert True, "It works finely."
-            assert state.role is None, "The value should be None because it got fail when it set the value."
-        else:
-            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
 
     def test_total_crawler(self, state: GroupState) -> None:
         """
@@ -349,6 +302,77 @@ class TestGroupState(_MetaDataTest):
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
+
+
+class TestNodeState(_MetaDataTest):
+    """Test for all the attributes of **NodeState**."""
+
+    @pytest.fixture(scope="function")
+    def state(self) -> NodeState:
+        return NodeState()
+
+    def test_group(self, state: NodeState) -> None:
+
+        def _get_func() -> str:
+            return state.group
+
+        def _set_func(value) -> None:
+            state.group = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="test-group",
+            invalid_1_value=5,
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_set_role_correctly(self, state: NodeState) -> None:
+        """
+        Test for the setting process should work finely without any issue because it works with normal value
+        like enum object **CrawlerStateRole** or valid string type value like ['runner', 'backup-runner',
+        'dead-runner', 'dead-backup-runner'].
+
+        :param state: The instance of the object **State** with nothing settings.
+        :return: None
+        """
+
+        # Test for setting the property normally. It would choice one value randomly.
+        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
+        try:
+            state.role = _under_test_value
+        except Exception:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+        else:
+            assert True, "It works finely."
+            assert state.role == _under_test_value.value, "The value should be same as it set."
+
+        _enum_values = list(map(lambda a: a.value, CrawlerStateRole))
+        _under_test_value = random.choice(_enum_values)
+        try:
+            state.role = "runner"
+        except Exception:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+        else:
+            assert True, "It works finely."
+            assert state.role == "runner", "The value should be same as it set."
+
+    def test_set_role_incorrectly(self, state: NodeState) -> None:
+        """
+        Test for setting the property *role* with invalid string value.
+
+        :param state: The instance of the object **State** with nothing settings.
+        :return: None
+        """
+
+        # Test for setting the property with incorrect string type value.
+        try:
+            state.role = "python-hello-world"
+        except Exception:
+            assert True, "It works finely."
+            assert state.role is None, "The value should be None because it got fail when it set the value."
+        else:
+            assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
 
 
 class TestTask(_MetaDataTest):
