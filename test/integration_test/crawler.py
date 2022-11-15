@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model import Initial, CrawlerStateRole, TaskResult, HeartState, State, Task, Heartbeat
+from smoothcrawler_cluster.model import Initial, CrawlerStateRole, TaskResult, HeartState, GroupState, Task, Heartbeat
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from smoothcrawler_cluster.exceptions import ZookeeperCrawlerNotReady
@@ -51,7 +51,7 @@ class _TestValue:
     __Testing_Task_Data_Str: str = ""
     __Testing_Heartbeat_Data_Str: str = ""
 
-    __Testing_State: State = None
+    __Testing_State: GroupState = None
     __Testing_Task: Task = None
     __Testing_Heartbeat: Heartbeat = None
 
@@ -82,7 +82,7 @@ class _TestValue:
         return self.__Heartbeat_ZK_Path
 
     @property
-    def state(self) -> State:
+    def state(self) -> GroupState:
         if self.__Testing_State is None:
             self.__Testing_State = setup_state(reset=True)
         return self.__Testing_State
@@ -136,7 +136,7 @@ class TestZookeeperCrawler(ZKTestSpec):
     @ZK.remove_node_finally(path=ZKNode.State)
     def test__get_state_from_zookeeper(self, uit_object: ZookeeperCrawler):
         _state = uit_object._get_state_from_zookeeper()
-        assert type(_state) is State, _Type_Not_Correct_Assertion_Error_Message(State)
+        assert type(_state) is GroupState, _Type_Not_Correct_Assertion_Error_Message(GroupState)
         assert _state.role == _Crawler_Role_Value, \
             _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _Crawler_Role_Value)
         assert _state.total_crawler == _Total_Crawler_Value, \

@@ -4,7 +4,7 @@ from abc import ABCMeta
 import threading
 import time
 
-from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, State, Task, Heartbeat
+from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, Task, Heartbeat
 from .election import BaseElection, IndexElection, ElectionResult
 from .exceptions import ZookeeperCrawlerNotReady
 from ._utils.converter import BaseConverter, JsonStrConverter
@@ -328,7 +328,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             _heartbeat = Initial.heartbeat()
             self._set_heartbeat_to_zookeeper(_heartbeat, create_node=True)
 
-    def _get_state_from_zookeeper(self) -> State:
+    def _get_state_from_zookeeper(self) -> GroupState:
         _value = self._Zookeeper_Client.get_value_from_node(path=self.state_zookeeper_path)
         if ZookeeperCrawler._value_is_not_empty(_value):
             _state = self._zk_converter.str_to_state(data=_value)
@@ -356,7 +356,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     def _value_is_not_empty(_value) -> bool:
         return _value is not None and _value != ""
 
-    def _set_state_to_zookeeper(self, state: State, create_node: bool = False) -> None:
+    def _set_state_to_zookeeper(self, state: GroupState, create_node: bool = False) -> None:
         _state_str = self._zk_converter.state_to_str(state=state)
         self.__set_value_to_zookeeper(path=self.state_zookeeper_path, value=_state_str, create_node=create_node)
 

@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model.metadata import State, Task, Heartbeat
+from smoothcrawler_cluster.model.metadata import GroupState, Task, Heartbeat
 from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 from datetime import datetime
@@ -76,14 +76,14 @@ class _MetaDataTest(metaclass=ABCMeta):
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
 
 
-class TestState(_MetaDataTest):
+class TestGroupState(_MetaDataTest):
     """Test for all the attributes of **State**."""
 
     @pytest.fixture(scope="function")
-    def state(self) -> State:
-        return State()
+    def state(self) -> GroupState:
+        return GroupState()
 
-    def test_set_role_correctly(self, state: State) -> None:
+    def test_set_role_correctly(self, state: GroupState) -> None:
         """
         Test for the setting process should work finely without any issue because it works with normal value
         like enum object **CrawlerStateRole** or valid string type value like ['runner', 'backup-runner',
@@ -113,7 +113,7 @@ class TestState(_MetaDataTest):
             assert True, "It works finely."
             assert state.role == "runner", "The value should be same as it set."
 
-    def test_set_role_incorrectly(self, state: State) -> None:
+    def test_set_role_incorrectly(self, state: GroupState) -> None:
         """
         Test for setting the property *role* with invalid string value.
 
@@ -130,7 +130,7 @@ class TestState(_MetaDataTest):
         else:
             assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
 
-    def test_total_crawler(self, state: State) -> None:
+    def test_total_crawler(self, state: GroupState) -> None:
         """
         Test for the property *total_crawler* of **State**.
 
@@ -152,7 +152,7 @@ class TestState(_MetaDataTest):
             invalid_2_value=5.5
         )
 
-    def test_total_runner(self, state: State) -> None:
+    def test_total_runner(self, state: GroupState) -> None:
         """
         Test for the property *total_runner* of **State**.
 
@@ -174,7 +174,7 @@ class TestState(_MetaDataTest):
             invalid_2_value=5.5
         )
 
-    def test_total_backup(self, state: State) -> None:
+    def test_total_backup(self, state: GroupState) -> None:
         """
         Test for the property *total_backup* of **State**.
 
@@ -196,7 +196,7 @@ class TestState(_MetaDataTest):
             invalid_2_value=5.5
         )
 
-    def test_current_crawler(self, state: State) -> None:
+    def test_current_crawler(self, state: GroupState) -> None:
         """
         Test for the property *current_crawler* of **State**.
 
@@ -218,7 +218,7 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-    def test_current_runner(self, state: State) -> None:
+    def test_current_runner(self, state: GroupState) -> None:
         """
         Test for the property *current_runner* of **State**.
 
@@ -240,7 +240,7 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-    def test_current_backup(self, state: State) -> None:
+    def test_current_backup(self, state: GroupState) -> None:
         """
         Test for the property *current_backup* of **State**.
 
@@ -262,7 +262,7 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-    def test_standby_id(self, state: State) -> None:
+    def test_standby_id(self, state: GroupState) -> None:
         """
         Test for the property *standby_id* of **State**.
 
@@ -284,7 +284,7 @@ class TestState(_MetaDataTest):
             invalid_2_value=["iron_man_1"]
         )
 
-    def test_fail_crawler(self, state: State) -> None:
+    def test_fail_crawler(self, state: GroupState) -> None:
         """
         Test for the property *fail_crawler* of **State**.
 
@@ -306,7 +306,7 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-    def test_fail_runner(self, state: State) -> None:
+    def test_fail_runner(self, state: GroupState) -> None:
         """
         Test for the property *fail_runner* of **State**.
 
@@ -328,7 +328,7 @@ class TestState(_MetaDataTest):
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
 
-    def test_fail_backup(self, state: State) -> None:
+    def test_fail_backup(self, state: GroupState) -> None:
         """
         Test for the property *fail_backup* of **State**.
 
