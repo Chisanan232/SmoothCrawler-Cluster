@@ -2,7 +2,7 @@
 Here are some global variables for testing.
 """
 
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, GroupState, Task, Heartbeat
+from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from datetime import datetime
 
 
@@ -17,6 +17,7 @@ Test_Zookeeper_Bytes_Value = b"This is test value in zookeeper"
 
 # # # # For feature related crawler
 # # Related state settings
+_Crawler_Group_Name_Value: str = "sc-crawler-cluster"
 _Crawler_Name_Value: str = "sc-crawler_1"
 _Crawler_Role_Value: str = CrawlerStateRole.Initial.value
 _Runner_Crawler_Value: int = 2
@@ -46,9 +47,8 @@ def generate_crawler_list(index: int) -> list:
 
 
 # # # # For data objects: *State*, *Task*, *Heartbeat*
-# # *State*
-_Test_State_Data = {
-    "role": _Crawler_Role_Value,
+# # *GroupState*
+_Test_Group_State_Data = {
     "total_crawler": _Total_Crawler_Value,
     "total_runner": _Runner_Crawler_Value,
     "total_backup": _Backup_Crawler_Value,
@@ -59,6 +59,12 @@ _Test_State_Data = {
     "fail_crawler": _Empty_List_Value,
     "fail_runner": _Empty_List_Value,
     "fail_backup": _Empty_List_Value
+}
+
+# # *NodeState*
+_Test_Node_State_Data = {
+    "group": _Crawler_Group_Name_Value,
+    "role": _Crawler_Role_Value
 }
 
 # # *Task*
@@ -79,24 +85,31 @@ _Test_Heartbeat_Data = {
 }
 
 
-def setup_state(reset: bool = False) -> GroupState:
+def setup_group_state(reset: bool = False) -> GroupState:
     _state = GroupState()
-    _state.role = _Test_State_Data["role"]
-    _state.total_crawler = _Test_State_Data["total_crawler"]
-    _state.total_runner = _Test_State_Data["total_runner"]
-    _state.total_backup = _Test_State_Data["total_backup"]
+    # _state.role = _Test_Group_State_Data["role"]
+    _state.total_crawler = _Test_Group_State_Data["total_crawler"]
+    _state.total_runner = _Test_Group_State_Data["total_runner"]
+    _state.total_backup = _Test_Group_State_Data["total_backup"]
     if reset is True:
         _state.current_crawler = _Empty_List_Value
         _state.current_runner = _Empty_List_Value
         _state.current_backup = _Empty_List_Value
     else:
-        _state.current_crawler = _Test_State_Data["current_crawler"]
-        _state.current_runner = _Test_State_Data["current_runner"]
-        _state.current_backup = _Test_State_Data["current_backup"]
-    _state.fail_crawler = _Test_State_Data["fail_crawler"]
-    _state.fail_runner = _Test_State_Data["fail_runner"]
-    _state.fail_backup = _Test_State_Data["fail_backup"]
-    _state.standby_id = _Test_State_Data["standby_id"]
+        _state.current_crawler = _Test_Group_State_Data["current_crawler"]
+        _state.current_runner = _Test_Group_State_Data["current_runner"]
+        _state.current_backup = _Test_Group_State_Data["current_backup"]
+    _state.fail_crawler = _Test_Group_State_Data["fail_crawler"]
+    _state.fail_runner = _Test_Group_State_Data["fail_runner"]
+    _state.fail_backup = _Test_Group_State_Data["fail_backup"]
+    _state.standby_id = _Test_Group_State_Data["standby_id"]
+    return _state
+
+
+def setup_node_state() -> NodeState:
+    _state = NodeState()
+    _state.group = _Test_Node_State_Data["group"]
+    _state.role = _Test_Node_State_Data["role"]
     return _state
 
 
