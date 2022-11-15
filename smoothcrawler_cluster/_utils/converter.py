@@ -2,7 +2,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Dict, Any, TypeVar, Generic
 import json
 
-from ..model.metadata import _BaseMetaData, GroupState, Task, Heartbeat
+from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, Heartbeat
 
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
@@ -18,7 +18,10 @@ class BaseConverter(metaclass=ABCMeta):
     def deserialize(self, data: str) -> Any:
         pass
 
-    def state_to_str(self, state: GroupState) -> str:
+    def group_state_to_str(self, state: GroupState) -> str:
+        return self.serialize(data=self._convert_to_readable_object(obj=state))
+
+    def node_state_to_str(self, state: NodeState) -> str:
         return self.serialize(data=self._convert_to_readable_object(obj=state))
 
     def task_to_str(self, task: Task) -> str:
@@ -31,13 +34,22 @@ class BaseConverter(metaclass=ABCMeta):
     def _convert_to_readable_object(self, obj: Generic[_BaseMetaDataType]) -> Any:
         pass
 
-    def str_to_state(self, data: str) -> GroupState:
+    def str_to_group_state(self, data: str) -> GroupState:
         _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _state_with_value = self._convert_to_state(state=GroupState(), data=_parsed_data)
+        _state_with_value = self._convert_to_group_state(state=GroupState(), data=_parsed_data)
         return _state_with_value
 
     @abstractmethod
-    def _convert_to_state(self, state: GroupState, data: Any) -> GroupState:
+    def _convert_to_group_state(self, state: GroupState, data: Any) -> GroupState:
+        pass
+
+    def str_to_node_state(self, data: str) -> NodeState:
+        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
+        _state_with_value = self._convert_to_node_state(state=NodeState(), data=_parsed_data)
+        return _state_with_value
+
+    @abstractmethod
+    def _convert_to_node_state(self, state: NodeState, data: Any) -> NodeState:
         pass
 
     def str_to_task(self, data: str) -> Task:
@@ -75,10 +87,9 @@ class JsonStrConverter(BaseConverter):
         #  1. Rename the function name to be more clear
         return obj.to_readable_object()
 
-    def _convert_to_state(self, state: GroupState, data: Any) -> GroupState:
+    def _convert_to_group_state(self, state: GroupState, data: Any) -> GroupState:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         data: Dict[str, Any] = data
-        state.role = data.get("role")
         state.total_crawler = data.get("total_crawler")
         state.total_runner = data.get("total_runner")
         state.total_backup = data.get("total_backup")
@@ -89,6 +100,12 @@ class JsonStrConverter(BaseConverter):
         state.fail_crawler = data.get("fail_crawler")
         state.fail_runner = data.get("fail_runner")
         state.fail_backup = data.get("fail_backup")
+        return state
+
+    def _convert_to_node_state(self, state: NodeState, data: Any) -> NodeState:
+        data: Dict[str, Any] = data
+        state.group = data.get("group")
+        state.role = data.get("role")
         return state
 
     def _convert_to_task(self, task: Task, data: Any) -> Task:
