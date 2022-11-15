@@ -11,12 +11,10 @@ class TestInitial:
 
     def test__initial_state(self):
         # Operate target method for testing
-        _state = Initial.state(crawler_name=_Crawler_Name_Value, total_crawler=_Total_Crawler_Value, total_runner=_Runner_Crawler_Value, total_backup=_Backup_Crawler_Value)
+        _state = Initial.group_state(crawler_name=_Crawler_Name_Value, total_crawler=_Total_Crawler_Value, total_runner=_Runner_Crawler_Value, total_backup=_Backup_Crawler_Value)
 
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
-
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
 
         ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_crawler", expected_value=_Runner_Crawler_Value + _Backup_Crawler_Value)
         ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_runner", expected_value=_Runner_Crawler_Value)
@@ -33,6 +31,16 @@ class TestInitial:
         ListSizeAssertion(WorkingTime.AtInitial, _state, metadata="fail_crawler", expected_value=0)
         ListSizeAssertion(WorkingTime.AtInitial, _state, metadata="fail_runner", expected_value=0)
         ListSizeAssertion(WorkingTime.AtInitial, _state, metadata="fail_backup", expected_value=0)
+
+    def test__initial_node_state(self):
+        # Operate target method for testing
+        _state = Initial.node_state(group="test-group")
+
+        # Verify values
+        ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
+
+        ValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value="test-group")
+        ValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
 
     def test__initial_task(self):
         # Operate target method for testing
