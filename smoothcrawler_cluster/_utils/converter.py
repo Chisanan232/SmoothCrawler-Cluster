@@ -15,7 +15,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def deserialize(self, data: str) -> Any:
+    def _convert_from_str(self, data: str) -> Any:
         pass
 
     def group_state_to_str(self, state: GroupState) -> str:
@@ -35,7 +35,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_group_state(self, data: str) -> GroupState:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _state_with_value = self._convert_to_group_state(state=GroupState(), data=_parsed_data)
         return _state_with_value
 
@@ -44,7 +44,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_node_state(self, data: str) -> NodeState:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _state_with_value = self._convert_to_node_state(state=NodeState(), data=_parsed_data)
         return _state_with_value
 
@@ -53,7 +53,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_task(self, data: str) -> Task:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _task_with_value = self._convert_to_task(task=Task(), data=_parsed_data)
         return _task_with_value
 
@@ -62,7 +62,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_heartbeat(self, data: str) -> Heartbeat:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _heartbeat_with_value = self._convert_to_heartbeat(heartbeat=Heartbeat(), data=_parsed_data)
         return _heartbeat_with_value
 
@@ -78,7 +78,7 @@ class JsonStrConverter(BaseConverter):
         _data = json.dumps(data)
         return _data
 
-    def deserialize(self, data: str) -> Any:
+    def _convert_from_str(self, data: str) -> Any:
         _parsed_data: Dict[str, Any] = json.loads(data)
         return _parsed_data
 

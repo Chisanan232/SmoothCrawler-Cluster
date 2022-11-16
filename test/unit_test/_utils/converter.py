@@ -26,7 +26,7 @@ class TestJsonStrConverter:
 
     def test_deserialize(self, converter: JsonStrConverter):
         # Run target testing function
-        _deserialized_data: dict = converter.deserialize(data=json.dumps(_Test_Group_State_Data))
+        _deserialized_data: dict = converter._convert_from_str(data=json.dumps(_Test_Group_State_Data))
 
         # Verify running result
         self._verify_deserialize_result(deserialized_data=_deserialized_data, expected_data=_Test_Group_State_Data)
