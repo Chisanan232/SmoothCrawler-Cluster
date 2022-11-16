@@ -4,7 +4,7 @@ from abc import ABCMeta
 import threading
 import time
 
-from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, Task, Heartbeat
+from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from .election import BaseElection, IndexElection, ElectionResult
 from .exceptions import ZookeeperCrawlerNotReady
 from ._utils.converter import BaseConverter, JsonStrConverter
@@ -135,8 +135,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         self._ensure_wait = wait
 
     @property
-    def state_zookeeper_path(self) -> str:
+    def group_state_zookeeper_path(self) -> str:
         return f"{self.__generate_path(self._crawler_group, is_group=True)}/state"
+
+    @property
+    def node_state_zookeeper_path(self) -> str:
+        return f"{self.__generate_path(self._crawler_name)}/state"
 
     @property
     def task_zookeeper_path(self) -> str:
@@ -157,7 +161,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         # Current Answer:
         # 1. Index: get data from Zookeeper first and check the value, and it set the next index of crawler and save it to Zookeeper.
         # 2. Hardware code: Use the unique hardware code or flag to record it, i.e., the MAC address of host or something ID of container.
-        self._register_state_to_zookeeper()
+        self._register_group_state_to_zookeeper()
+        self._register_node_to_zookeeper()
         self._register_task_to_zookeeper()
         self._register_heartbeat_to_zookeeper()
 
@@ -170,7 +175,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
         _start = time.time()
         while True:
-            _state = self._get_state_from_zookeeper()
+            _state = self._get_group_state_from_zookeeper()
             if len(_state.current_crawler) == self._total_crawler:
                 self._current_total_crawler = _state.current_crawler
                 self._current_total_runner = _state.current_runner
@@ -183,7 +188,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             time.sleep(interval)
 
     def elect(self) -> ElectionResult:
-        _state = self._get_state_from_zookeeper()
+        _state = self._get_group_state_from_zookeeper()
         return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler, index_sep=self._index_sep, spot=self._runner)
 
     def run(self):
@@ -239,7 +244,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def wait_for_to_be_standby(self) -> bool:
         while True:
-            _state = self._get_state_from_zookeeper()
+            _state = self._get_group_state_from_zookeeper()
             if self._crawler_name.split(self._index_sep)[-1] == _state.standby_id:
                 # Start to do wait_and_standby
                 return True
@@ -262,8 +267,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def activate(self, crawler_name: str, task: Task):
         # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
-        with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
-            _state = self._get_state_from_zookeeper()
+        with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
+            _state = self._get_group_state_from_zookeeper()
 
             _state.current_runner.remove(crawler_name)
             _state.current_runner.append(self._crawler_name)
@@ -272,7 +277,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             _state.fail_runner.append(crawler_name)
             _state.standby_id = str(int(_state.standby_id) + 1)
 
-            self._set_state_to_zookeeper(_state)
+            self._set_group_state_to_zookeeper(_state)
 
         if task.task_result == TaskResult.Processing.value:
             # TODO: Run task content ?
@@ -281,35 +286,35 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             # TODO: Do something else to handle?
             pass
 
-    def _register_state_to_zookeeper(self) -> None:
+    def _register_group_state_to_zookeeper(self) -> None:
         for _ in range(self._ensure_timeout):
-            with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
-                if self._Zookeeper_Client.exist_node(path=self.state_zookeeper_path) is None:
-                    _state = Initial.state(
+            with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
+                if self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path) is None:
+                    _state = Initial.group_state(
                         crawler_name=self._crawler_name,
                         total_crawler=self._runner + self._backup,
                         total_runner=self._runner,
                         total_backup=self._backup
                     )
-                    self._set_state_to_zookeeper(_state, create_node=True)
+                    self._set_group_state_to_zookeeper(_state, create_node=True)
                 else:
-                    _state = self._get_state_from_zookeeper()
+                    _state = self._get_group_state_from_zookeeper()
                     if _state.current_crawler is None or self._crawler_name not in _state.current_crawler:
-                        _state = Update.state(
+                        _state = Update.group_state(
                             _state,
-                            role=CrawlerStateRole.Initial,
+                            # role=CrawlerStateRole.Initial,
                             total_crawler=self._runner + self._backup,
                             total_runner=self._runner,
                             total_backup=self._backup,
                             append_current_crawler=[self._crawler_name],
                             standby_id="0"
                         )
-                        self._set_state_to_zookeeper(_state)
+                        self._set_group_state_to_zookeeper(_state)
 
             if self._ensure_register is False:
                 break
 
-            _state = self._get_state_from_zookeeper()
+            _state = self._get_group_state_from_zookeeper()
             assert _state is not None, "The meta data *State* should NOT be None."
             if len(set(_state.current_crawler)) == self._total_crawler and self._crawler_name in _state.current_crawler:
                 break
@@ -317,6 +322,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                 time.sleep(self._ensure_wait)
         else:
             raise TimeoutError(f"It gets timeout of registering meta data *State* to Zookeeper cluster '{self.zookeeper_hosts}'.")
+
+    def _register_node_to_zookeeper(self) -> None:
+        if self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path) is None:
+            _state = Initial.node_state(group=self._crawler_group)
+            self._set_node_state_to_zookeeper(_state, create_node=True)
 
     def _register_task_to_zookeeper(self) -> None:
         if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
@@ -328,13 +338,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             _heartbeat = Initial.heartbeat()
             self._set_heartbeat_to_zookeeper(_heartbeat, create_node=True)
 
-    def _get_state_from_zookeeper(self) -> GroupState:
-        _value = self._Zookeeper_Client.get_value_from_node(path=self.state_zookeeper_path)
+    def _get_group_state_from_zookeeper(self) -> GroupState:
+        _value = self._Zookeeper_Client.get_value_from_node(path=self.group_state_zookeeper_path)
         if ZookeeperCrawler._value_is_not_empty(_value):
-            _state = self._zk_converter.str_to_state(data=_value)
+            _state = self._zk_converter.str_to_group_state(data=_value)
             return _state
         else:
-            return Empty.state()
+            return Empty.group_state()
+
+    def _get_node_state_from_zookeeper(self) -> NodeState:
+        _value = self._Zookeeper_Client.get_value_from_node(path=self.node_state_zookeeper_path)
+        if ZookeeperCrawler._value_is_not_empty(_value):
+            _state = self._zk_converter.str_to_node_state(data=_value)
+            return _state
+        else:
+            return Empty.node_state()
 
     def _get_task_from_zookeeper(self) -> Task:
         _value = self._Zookeeper_Client.get_value_from_node(path=self.task_zookeeper_path)
@@ -356,9 +374,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     def _value_is_not_empty(_value) -> bool:
         return _value is not None and _value != ""
 
-    def _set_state_to_zookeeper(self, state: GroupState, create_node: bool = False) -> None:
-        _state_str = self._zk_converter.state_to_str(state=state)
-        self.__set_value_to_zookeeper(path=self.state_zookeeper_path, value=_state_str, create_node=create_node)
+    def _set_group_state_to_zookeeper(self, state: GroupState, create_node: bool = False) -> None:
+        _state_str = self._zk_converter.group_state_to_str(state=state)
+        self.__set_value_to_zookeeper(path=self.group_state_zookeeper_path, value=_state_str, create_node=create_node)
+
+    def _set_node_state_to_zookeeper(self, state: NodeState, create_node: bool = False) -> None:
+        _state_str = self._zk_converter.node_state_to_str(state=state)
+        self.__set_value_to_zookeeper(path=self.node_state_zookeeper_path, value=_state_str, create_node=create_node)
 
     def _set_task_to_zookeeper(self, task: Task, create_node: bool = False) -> None:
         _task_str = self._zk_converter.task_to_str(task=task)
@@ -375,25 +397,29 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self._Zookeeper_Client.set_value_to_node(path=path, value=value)
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
-        with self._Zookeeper_Client.restrict(path=self.state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
-            _state = self._get_state_from_zookeeper()
+        _node_state = self._get_node_state_from_zookeeper()
+        _updated_node_state = Update.node_state(node_state=_node_state, role=role)
+        self._set_node_state_to_zookeeper(_updated_node_state, create_node=False)
+
+        with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
+            _state = self._get_group_state_from_zookeeper()
             if role is CrawlerStateRole.Runner:
-                _updated_state = Update.state(
+                _updated_state = Update.group_state(
                     _state,
-                    role=role,
+                    # role=role,
                     append_current_runner=[self._crawler_name],
                 )
             elif role is CrawlerStateRole.Backup_Runner:
-                _updated_state = Update.state(
+                _updated_state = Update.group_state(
                     _state,
-                    role=role,
+                    # role=role,
                     append_current_backup=[self._crawler_name],
                     standby_id=self._crawler_name.split(self._index_sep)[-1]
                 )
             else:
                 raise ValueError(f"It doesn't support {role} recently.")
 
-            self._set_state_to_zookeeper(_updated_state, create_node=False)
+            self._set_group_state_to_zookeeper(_updated_state, create_node=False)
 
     def _run_updating_heartbeat_thread(self) -> None:
         _updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
