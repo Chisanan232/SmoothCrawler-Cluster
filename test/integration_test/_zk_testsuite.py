@@ -11,7 +11,8 @@ _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
 
 class ZKNode(Enum):
 
-    State = "state_zookeeper_path"
+    GroupState = "group_state_zookeeper_path"
+    NodeState = "node_state_zookeeper_path"
     Task = "task_zookeeper_path"
     Heartbeat = "heartbeat_zookeeper_path"
 

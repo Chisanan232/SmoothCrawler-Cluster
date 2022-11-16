@@ -3,8 +3,8 @@ import pytest
 import json
 
 from ..._values import (
-    _Test_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
-    setup_state, setup_task, setup_heartbeat
+    _Test_Group_State_Data, _Test_Node_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
+    setup_group_state, setup_node_state, setup_task, setup_heartbeat
 )
 
 
@@ -16,27 +16,37 @@ class TestJsonStrConverter:
 
     def test_serialize(self, converter: JsonStrConverter):
         # Initial process
-        _state = setup_state()
+        _state = setup_group_state()
 
         # Run target testing function
         _serialized_data = converter.serialize(data=_state.to_readable_object())
 
         # Verify running result
-        self._verify_serialize_result(serialized_data=_serialized_data, expected_data=json.dumps(_Test_State_Data))
+        self._verify_serialize_result(serialized_data=_serialized_data, expected_data=json.dumps(_Test_Group_State_Data))
 
     def test_deserialize(self, converter: JsonStrConverter):
         # Run target testing function
-        _deserialized_data: dict = converter.deserialize(data=json.dumps(_Test_State_Data))
+        _deserialized_data: dict = converter.deserialize(data=json.dumps(_Test_Group_State_Data))
 
         # Verify running result
-        self._verify_deserialize_result(deserialized_data=_deserialized_data, expected_data=_Test_State_Data)
+        self._verify_deserialize_result(deserialized_data=_deserialized_data, expected_data=_Test_Group_State_Data)
 
-    def test_state_to_str(self, converter: JsonStrConverter):
+    def test_group_state_to_str(self, converter: JsonStrConverter):
         # Initial process
-        _state = setup_state()
+        _state = setup_group_state()
 
         # Run target testing function
-        _state_str = converter.state_to_str(state=_state)
+        _state_str = converter.group_state_to_str(state=_state)
+
+        # Verify running result
+        self._verify_serialize_result(serialized_data=_state_str, expected_data=json.dumps(_state.to_readable_object()))
+
+    def test_node_state_to_str(self, converter: JsonStrConverter):
+        # Initial process
+        _state = setup_node_state()
+
+        # Run target testing function
+        _state_str = converter.node_state_to_str(state=_state)
 
         # Verify running result
         self._verify_serialize_result(serialized_data=_state_str, expected_data=json.dumps(_state.to_readable_object()))
@@ -61,15 +71,25 @@ class TestJsonStrConverter:
         # Verify running result
         self._verify_serialize_result(serialized_data=_heartbeat_str, expected_data=json.dumps(_heartbeat.to_readable_object()))
 
-    def test_str_to_state(self, converter: JsonStrConverter):
+    def test_str_to_group_state(self, converter: JsonStrConverter):
         # Initial process
-        _test_state_str = json.dumps(_Test_State_Data)
+        _test_state_str = json.dumps(_Test_Group_State_Data)
 
         # Run target testing function
-        _state = converter.str_to_state(data=_test_state_str)
+        _state = converter.str_to_group_state(data=_test_state_str)
 
         # Verify running result
-        self._verify_deserialize_result(deserialized_data=_state.to_readable_object(), expected_data=_Test_State_Data)
+        self._verify_deserialize_result(deserialized_data=_state.to_readable_object(), expected_data=_Test_Group_State_Data)
+
+    def test_str_to_node_state(self, converter: JsonStrConverter):
+        # Initial process
+        _test_state_str = json.dumps(_Test_Node_State_Data)
+
+        # Run target testing function
+        _state = converter.str_to_node_state(data=_test_state_str)
+
+        # Verify running result
+        self._verify_deserialize_result(deserialized_data=_state.to_readable_object(), expected_data=_Test_Node_State_Data)
 
     def test_str_to_task(self, converter: JsonStrConverter):
         # Initial process

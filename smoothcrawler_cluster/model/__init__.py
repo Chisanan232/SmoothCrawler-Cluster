@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Union
 from abc import ABCMeta, abstractmethod
 
-from .metadata import GroupState, Task, Heartbeat
+from .metadata import GroupState, NodeState, Task, Heartbeat
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 
@@ -10,7 +10,12 @@ class _BaseDataObjectUtils(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def state(*args, **kwargs) -> GroupState:
+    def group_state(*args, **kwargs) -> GroupState:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def node_state(*args, **kwargs) -> NodeState:
         pass
 
     @staticmethod
@@ -30,12 +35,11 @@ class Empty(_BaseDataObjectUtils):
     """
 
     @staticmethod
-    def state() -> GroupState:
+    def group_state() -> GroupState:
         _state = GroupState()
         _state.total_crawler = 0
         _state.total_runner = 0
         _state.total_backup = 0
-        _state.role = CrawlerStateRole.Initial
         _state.current_crawler = []
         _state.current_runner = []
         _state.current_backup = []
@@ -44,6 +48,13 @@ class Empty(_BaseDataObjectUtils):
         _state.fail_runner = []
         _state.fail_backup = []
         return _state
+
+    @staticmethod
+    def node_state() -> NodeState:
+        _node_state = NodeState()
+        _node_state.group = ""
+        _node_state.role = CrawlerStateRole.Initial
+        return _node_state
 
     @staticmethod
     def task() -> Task:
@@ -71,16 +82,13 @@ class Initial(_BaseDataObjectUtils):
     """
 
     @staticmethod
-    def state(crawler_name: str, total_crawler: int, total_runner: int, total_backup: int, role: CrawlerStateRole = None,
-              standby_id: str = "0", current_crawler: List[str] = [], current_runner: List[str] = [], current_backup: List[str] = [],
-              fail_crawler: List[str] = [], fail_runner: List[str] = [], fail_backup: List[str] = []) -> GroupState:
+    def group_state(crawler_name: str, total_crawler: int, total_runner: int, total_backup: int, standby_id: str = "0",
+                    current_crawler: List[str] = [], current_runner: List[str] = [], current_backup: List[str] = [],
+                    fail_crawler: List[str] = [], fail_runner: List[str] = [], fail_backup: List[str] = []) -> GroupState:
         _state = GroupState()
         _state.total_crawler = total_crawler
         _state.total_runner = total_runner
         _state.total_backup = total_backup
-        if role is None:
-            role = CrawlerStateRole.Initial
-        _state.role = role
         current_crawler = list(set(current_crawler))
         if len(current_crawler) == 0 or crawler_name not in set(current_crawler):
             current_crawler.append(crawler_name)
@@ -92,6 +100,16 @@ class Initial(_BaseDataObjectUtils):
         _state.fail_runner = fail_crawler
         _state.fail_backup = fail_backup
         return _state
+
+    @staticmethod
+    def node_state(group: str = None, role: CrawlerStateRole = None) -> NodeState:
+        _node_state = NodeState()
+        if group is not None:
+            _node_state.group = group
+        if role is None:
+            role = CrawlerStateRole.Initial
+        _node_state.role = role
+        return _node_state
 
     @staticmethod
     def task(task_result: TaskResult = None, task_content: dict = {}) -> Task:
@@ -127,65 +145,62 @@ class Update(_BaseDataObjectUtils):
     """
 
     @staticmethod
-    def state(state: GroupState, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
-              role: CrawlerStateRole = None, standby_id: str = None, append_current_crawler: List[str] = [],
-              append_current_runner: List[str] = [], append_current_backup: List[str] = [], append_fail_crawler: List[str] = [],
-              append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> GroupState:
+    def group_state(state: GroupState, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
+                    role: CrawlerStateRole = None, standby_id: str = None, append_current_crawler: List[str] = [],
+                    append_current_runner: List[str] = [], append_current_backup: List[str] = [], append_fail_crawler: List[str] = [],
+                    append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> GroupState:
 
-        def _update_ele_if_not_none(prop: str, new_val: Union[int, str, CrawlerStateRole]):
-            if new_val is not None:
-                setattr(state, prop, new_val)
+        Update._update_ele_if_not_none(data_obj=state, prop="total_crawler", new_val=total_crawler)
+        Update._update_ele_if_not_none(data_obj=state, prop="total_runner", new_val=total_runner)
+        Update._update_ele_if_not_none(data_obj=state, prop="total_backup", new_val=total_backup)
 
-        def _append_ele_if_not_none(prop: str, new_val: List[str]):
-            if new_val is not None:
-                _prop_value = getattr(state, prop)
-                if _prop_value is None:
-                    _prop_value = []
-                _prop_value += list(set(new_val))
-                setattr(state, prop, _prop_value)
+        Update._append_ele_if_not_none(data_obj=state, prop="current_crawler", new_val=append_current_crawler)
+        Update._append_ele_if_not_none(data_obj=state, prop="current_runner", new_val=append_current_runner)
+        Update._append_ele_if_not_none(data_obj=state, prop="current_backup", new_val=append_current_backup)
 
-        _update_ele_if_not_none(prop="total_crawler", new_val=total_crawler)
-        _update_ele_if_not_none(prop="total_runner", new_val=total_runner)
-        _update_ele_if_not_none(prop="total_backup", new_val=total_backup)
+        Update._update_ele_if_not_none(data_obj=state, prop="standby_id", new_val=standby_id)
 
-        _update_ele_if_not_none(prop="role", new_val=role)
-
-        _append_ele_if_not_none(prop="current_crawler", new_val=append_current_crawler)
-        _append_ele_if_not_none(prop="current_runner", new_val=append_current_runner)
-        _append_ele_if_not_none(prop="current_backup", new_val=append_current_backup)
-
-        _update_ele_if_not_none(prop="standby_id", new_val=standby_id)
-
-        _append_ele_if_not_none(prop="fail_crawler", new_val=append_fail_crawler)
-        _append_ele_if_not_none(prop="fail_runner", new_val=append_fail_crawler)
-        _append_ele_if_not_none(prop="fail_backup", new_val=append_fail_backup)
+        Update._append_ele_if_not_none(data_obj=state, prop="fail_crawler", new_val=append_fail_crawler)
+        Update._append_ele_if_not_none(data_obj=state, prop="fail_runner", new_val=append_fail_crawler)
+        Update._append_ele_if_not_none(data_obj=state, prop="fail_backup", new_val=append_fail_backup)
 
         return state
 
     @staticmethod
+    def node_state(node_state: NodeState, group: str = None, role: CrawlerStateRole = None) -> NodeState:
+        Update._update_ele_if_not_none(data_obj=node_state, prop="group", new_val=group)
+        Update._update_ele_if_not_none(data_obj=node_state, prop="role", new_val=role)
+        return node_state
+
+    @staticmethod
     def task(task: Task, task_result: TaskResult = None, task_content: dict = {}) -> Task:
-        if task_result is not None:
-            task.task_result = task_result
-        if task_content is not None:
-            task.task_content = {}
+        Update._update_ele_if_not_none(data_obj=task, prop="task_result", new_val=task_result)
+        Update._update_ele_if_not_none(data_obj=task, prop="task_content", new_val=task_content)
         return task
 
     @staticmethod
     def heartbeat(heartbeat: Heartbeat, heart_rhythm_time: datetime = None, time_format: str = "%Y-%m-%d %H:%M:%S",
                   update_time: str = "2s", update_timeout: str = "4s", heart_rhythm_timeout: str = "3",
                   healthy_state: HeartState = None, task_state: TaskResult = None) -> Heartbeat:
-        if heart_rhythm_time is not None:
-            heartbeat.heart_rhythm_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        if time_format is not None:
-            heartbeat.time_format = time_format
-        if update_time is not None:
-            heartbeat.update_time = update_time
-        if update_timeout is not None:
-            heartbeat.update_timeout = update_timeout
-        if heart_rhythm_timeout is not None:
-            heartbeat.heart_rhythm_timeout = heart_rhythm_timeout
-        if healthy_state is not None:
-            heartbeat.healthy_state = healthy_state
-        if task_state is not None:
-            heartbeat.task_state = task_state
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="heart_rhythm_time", new_val=heart_rhythm_time)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="time_format", new_val=time_format)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="update_time", new_val=update_time)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="update_timeout", new_val=update_timeout)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="heart_rhythm_timeout", new_val=heart_rhythm_timeout)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="healthy_state", new_val=healthy_state)
+        Update._update_ele_if_not_none(data_obj=heartbeat, prop="task_state", new_val=task_state)
         return heartbeat
+
+    @staticmethod
+    def _update_ele_if_not_none(data_obj, prop: str, new_val: Union[int, str, dict, datetime, CrawlerStateRole, TaskResult, HeartState]):
+        if new_val is not None:
+            setattr(data_obj, prop, new_val)
+
+    @staticmethod
+    def _append_ele_if_not_none(data_obj, prop: str, new_val: List[str]):
+        if new_val is not None:
+            _prop_value = getattr(data_obj, prop)
+            if _prop_value is None:
+                _prop_value = []
+            _prop_value += list(set(new_val))
+            setattr(data_obj, prop, _prop_value)
