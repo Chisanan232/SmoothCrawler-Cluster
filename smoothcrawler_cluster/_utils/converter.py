@@ -11,7 +11,7 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 class BaseConverter(metaclass=ABCMeta):
 
     @abstractmethod
-    def serialize(self, data: Any) -> str:
+    def _convert_to_str(self, data: Any) -> str:
         pass
 
     @abstractmethod
@@ -19,16 +19,16 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def group_state_to_str(self, state: GroupState) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=state))
+        return self._convert_to_str(data=self._convert_to_readable_object(obj=state))
 
     def node_state_to_str(self, state: NodeState) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=state))
+        return self._convert_to_str(data=self._convert_to_readable_object(obj=state))
 
     def task_to_str(self, task: Task) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=task))
+        return self._convert_to_str(data=self._convert_to_readable_object(obj=task))
 
     def heartbeat_to_str(self, heartbeat: Heartbeat) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=heartbeat))
+        return self._convert_to_str(data=self._convert_to_readable_object(obj=heartbeat))
 
     @abstractmethod
     def _convert_to_readable_object(self, obj: Generic[_BaseMetaDataType]) -> Any:
@@ -73,7 +73,7 @@ class BaseConverter(metaclass=ABCMeta):
 
 class JsonStrConverter(BaseConverter):
 
-    def serialize(self, data: Any) -> str:
+    def _convert_to_str(self, data: Any) -> str:
         # data maybe a str type value or a dict type value
         _data = json.dumps(data)
         return _data

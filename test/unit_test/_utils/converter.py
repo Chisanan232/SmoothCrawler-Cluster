@@ -19,7 +19,7 @@ class TestJsonStrConverter:
         _state = setup_group_state()
 
         # Run target testing function
-        _serialized_data = converter.serialize(data=_state.to_readable_object())
+        _serialized_data = converter._convert_to_str(data=_state.to_readable_object())
 
         # Verify running result
         self._verify_serialize_result(serialized_data=_serialized_data, expected_data=json.dumps(_Test_Group_State_Data))
