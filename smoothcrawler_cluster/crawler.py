@@ -254,8 +254,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         pass
 
     def discover(self, node_path: str, heartbeat: Heartbeat) -> Task:
-        _task = self._get_metadata_from_zookeeper(path=node_path.replace("heartbeat", "task"), as_obj=Task)
+        _node_state_path = node_path.replace("heartbeat", "state")
+        _node_state = self._get_metadata_from_zookeeper(path=_node_state_path, as_obj=NodeState)
+        _node_state.role = CrawlerStateRole.Dead_Runner
+        self._set_metadata_to_zookeeper(path=_node_state_path, metadata=_node_state)
 
+        _task = self._get_metadata_from_zookeeper(path=node_path.replace("heartbeat", "task"), as_obj=Task)
         heartbeat.healthy_state = HeartState.Asystole
         heartbeat.task_state = _task.task_result
         self._set_metadata_to_zookeeper(path=node_path, metadata=heartbeat)
@@ -263,6 +267,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         return _task
 
     def activate(self, crawler_name: str, task: Task):
+        _node_state = self._get_metadata_from_zookeeper(path=self.node_state_zookeeper_path, as_obj=NodeState)
+        _node_state.role = CrawlerStateRole.Runner
+        self._set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_node_state)
+
         with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
             _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
 
