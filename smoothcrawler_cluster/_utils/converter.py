@@ -1,5 +1,6 @@
+from warnings import warn
+from typing import Dict, Any, Type, TypeVar, Generic
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TypeVar, Generic
 import json
 
 from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, Heartbeat
@@ -10,6 +11,23 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
 class BaseConverter(metaclass=ABCMeta):
 
+    def serialize_meta_data(self, obj: Generic[_BaseMetaDataType]) -> str:
+        return self._convert_to_str(data=self._convert_to_readable_object(obj))
+
+    def deserialize_meta_data(self, data: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
+        if issubclass(as_obj, GroupState):
+            _meta_data_obj = self._convert_to_group_state(state=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, NodeState):
+            _meta_data_obj = self._convert_to_node_state(state=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, Task):
+            _meta_data_obj = self._convert_to_task(task=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, Heartbeat):
+            _meta_data_obj = self._convert_to_heartbeat(heartbeat=as_obj(), data=_parsed_data)
+        else:
+            raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
+        return _meta_data_obj
+
     @abstractmethod
     def _convert_to_str(self, data: Any) -> str:
         pass
@@ -19,15 +37,19 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def group_state_to_str(self, state: GroupState) -> str:
+        warn(message="This function would be deprecated soon, please change to use *serialize_meta_data*.", category=DeprecationWarning)
         return self._convert_to_str(data=self._convert_to_readable_object(obj=state))
 
     def node_state_to_str(self, state: NodeState) -> str:
+        warn(message="This function would be deprecated soon, please change to use *serialize_meta_data*.", category=DeprecationWarning)
         return self._convert_to_str(data=self._convert_to_readable_object(obj=state))
 
     def task_to_str(self, task: Task) -> str:
+        warn(message="This function would be deprecated soon, please change to use *serialize_meta_data*.", category=DeprecationWarning)
         return self._convert_to_str(data=self._convert_to_readable_object(obj=task))
 
     def heartbeat_to_str(self, heartbeat: Heartbeat) -> str:
+        warn(message="This function would be deprecated soon, please change to use *serialize_meta_data*.", category=DeprecationWarning)
         return self._convert_to_str(data=self._convert_to_readable_object(obj=heartbeat))
 
     @abstractmethod
@@ -35,6 +57,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_group_state(self, data: str) -> GroupState:
+        warn(message="This function would be deprecated soon, please change to use *deserialize_meta_data*.", category=DeprecationWarning)
         _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _state_with_value = self._convert_to_group_state(state=GroupState(), data=_parsed_data)
         return _state_with_value
@@ -44,6 +67,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_node_state(self, data: str) -> NodeState:
+        warn(message="This function would be deprecated soon, please change to use *deserialize_meta_data*.", category=DeprecationWarning)
         _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _state_with_value = self._convert_to_node_state(state=NodeState(), data=_parsed_data)
         return _state_with_value
@@ -53,6 +77,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_task(self, data: str) -> Task:
+        warn(message="This function would be deprecated soon, please change to use *deserialize_meta_data*.", category=DeprecationWarning)
         _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _task_with_value = self._convert_to_task(task=Task(), data=_parsed_data)
         return _task_with_value
@@ -62,6 +87,7 @@ class BaseConverter(metaclass=ABCMeta):
         pass
 
     def str_to_heartbeat(self, data: str) -> Heartbeat:
+        warn(message="This function would be deprecated soon, please change to use *deserialize_meta_data*.", category=DeprecationWarning)
         _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         _heartbeat_with_value = self._convert_to_heartbeat(heartbeat=Heartbeat(), data=_parsed_data)
         return _heartbeat_with_value
