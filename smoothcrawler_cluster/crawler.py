@@ -92,7 +92,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             self._election_strategy.identity = self._crawler_index
 
         if initial is True:
-            # TODO: It needs create another thread to keep updating heartbeat info to signal it's alive.
             self.register()
             self._run_updating_heartbeat_thread()
             if self.is_ready(interval=0.5, timeout=-1):
@@ -215,9 +214,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
         def _chk_current_runner_heartbeat(runner_name) -> bool:
             _heartbeat_path = f"{self.__generate_path(runner_name)}/heartbeat"
-            # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
-            _value = self._Zookeeper_Client.get_value_from_node(path=_heartbeat_path)
-            _heartbeat = self._zk_converter.str_to_heartbeat(_value)
+            _heartbeat = self._get_metadata_from_zookeeper(path=_heartbeat_path, as_obj=Heartbeat)
 
             _heart_rhythm_time = _heartbeat.heart_rhythm_time
             _time_format = _heartbeat.time_format
@@ -257,18 +254,15 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         pass
 
     def discover(self, node_path: str, heartbeat: Heartbeat) -> Task:
-        # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
-        _value = self._Zookeeper_Client.get_value_from_node(path=node_path.replace("heartbeat", "task"))
-        _task = self._zk_converter.str_to_task(_value)
+        _task = self._get_metadata_from_zookeeper(path=node_path.replace("heartbeat", "task"), as_obj=Task)
 
         heartbeat.healthy_state = HeartState.Asystole
         heartbeat.task_state = _task.task_result
-        self._Zookeeper_Client.set_value_to_node(path=node_path, value=self._zk_converter.heartbeat_to_str(heartbeat))
+        self._set_metadata_to_zookeeper(path=node_path, metadata=heartbeat)
 
         return _task
 
     def activate(self, crawler_name: str, task: Task):
-        # TODO: Add the logic like below getting and converting data from node of Zookeeper as a common function
         with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
             _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
 
@@ -339,34 +333,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             _heartbeat = Initial.heartbeat()
             self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=True)
 
-    def _get_metadata_from_zookeeper(self, path: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
-        _value = self._Zookeeper_Client.get_value_from_node(path=path)
-        if ZookeeperCrawler._value_is_not_empty(_value):
-            _state = self._zk_converter.deserialize_meta_data(data=_value, as_obj=as_obj)
-            return _state
-        else:
-            if issubclass(as_obj, GroupState):
-                return Empty.group_state()
-            elif issubclass(as_obj, NodeState):
-                return Empty.node_state()
-            elif issubclass(as_obj, Task):
-                return Empty.task()
-            elif issubclass(as_obj, Heartbeat):
-                return Empty.heartbeat()
-            else:
-                raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
-
-    @staticmethod
-    def _value_is_not_empty(_value) -> bool:
-        return _value is not None and _value != ""
-
-    def _set_metadata_to_zookeeper(self, path: str, metadata: Generic[_BaseMetaDataType], create_node: bool = False) -> None:
-        _metadata_str = self._zk_converter.group_state_to_str(state=metadata)
-        if create_node is True:
-            self._Zookeeper_Client.create_node(path=path, value=_metadata_str)
-        else:
-            self._Zookeeper_Client.set_value_to_node(path=path, value=_metadata_str)
-
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         _node_state = self._get_metadata_from_zookeeper(path=self.node_state_zookeeper_path, as_obj=NodeState)
         _updated_node_state = Update.node_state(node_state=_node_state, role=role)
@@ -420,6 +386,34 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                 break
         if self.__Updating_Exception is not None:
             raise self.__Updating_Exception
+
+    def _get_metadata_from_zookeeper(self, path: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
+        _value = self._Zookeeper_Client.get_value_from_node(path=path)
+        if ZookeeperCrawler._value_is_not_empty(_value):
+            _state = self._zk_converter.deserialize_meta_data(data=_value, as_obj=as_obj)
+            return _state
+        else:
+            if issubclass(as_obj, GroupState):
+                return Empty.group_state()
+            elif issubclass(as_obj, NodeState):
+                return Empty.node_state()
+            elif issubclass(as_obj, Task):
+                return Empty.task()
+            elif issubclass(as_obj, Heartbeat):
+                return Empty.heartbeat()
+            else:
+                raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
+
+    @staticmethod
+    def _value_is_not_empty(_value) -> bool:
+        return _value is not None and _value != ""
+
+    def _set_metadata_to_zookeeper(self, path: str, metadata: Generic[_BaseMetaDataType], create_node: bool = False) -> None:
+        _metadata_str = self._zk_converter.serialize_meta_data(obj=metadata)
+        if create_node is True:
+            self._Zookeeper_Client.create_node(path=path, value=_metadata_str)
+        else:
+            self._Zookeeper_Client.set_value_to_node(path=path, value=_metadata_str)
 
     @classmethod
     def _get_sleep_time(cls, timer: str) -> int:
