@@ -29,6 +29,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
 
+    _Zookeeper_GroupState_Node_Path: str = "state"
+    _Zookeeper_NodeState_Node_Path: str = "state"
+    _Zookeeper_Task_Node_Path: str = "task"
+    _Zookeeper_Heartbeat_Node_Path: str = "heartbeat"
+
     __Updating_Stop_Signal: bool = False
     __Updating_Exception = None
 
@@ -137,21 +142,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     @property
     def group_state_zookeeper_path(self) -> str:
-        return f"{self.__generate_path(self._crawler_group, is_group=True)}/state"
+        return f"{self._generate_path(self._crawler_group, is_group=True)}/{self._Zookeeper_GroupState_Node_Path}"
 
     @property
     def node_state_zookeeper_path(self) -> str:
-        return f"{self.__generate_path(self._crawler_name)}/state"
+        return f"{self._generate_path(self._crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
 
     @property
     def task_zookeeper_path(self) -> str:
-        return f"{self.__generate_path(self._crawler_name)}/task"
+        return f"{self._generate_path(self._crawler_name)}/{self._Zookeeper_Task_Node_Path}"
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
-        return f"{self.__generate_path(self._crawler_name)}/heartbeat"
+        return f"{self._generate_path(self._crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}"
 
-    def __generate_path(self, crawler_name: str, is_group: bool = False) -> str:
+    @classmethod
+    def _generate_path(cls, crawler_name: str, is_group: bool = False) -> str:
         if is_group is True:
             return f"smoothcrawler/group/{crawler_name}"
         else:
@@ -212,8 +218,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
         _timeout_record = {}
 
-        def _chk_current_runner_heartbeat(runner_name) -> bool:
-            _heartbeat_path = f"{self.__generate_path(runner_name)}/heartbeat"
+        def _chk_current_runner_heartbeat(runner_name: str) -> bool:
+            _heartbeat_path = f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}"
             _heartbeat = self._get_metadata_from_zookeeper(path=_heartbeat_path, as_obj=Heartbeat)
 
             _heart_rhythm_time = _heartbeat.heart_rhythm_time
@@ -228,7 +234,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                 _timeout_record[runner_name] = _runner_update_timeout + 1
                 if _timeout_record[runner_name] > int(_heart_rhythm_timeout):
                     # It should mark the runner as dead and try to activate itself.
-                    _task_of_dead_crawler = self.discover(node_path=_heartbeat_path, heartbeat=_heartbeat)
+                    _task_of_dead_crawler = self.discover(crawler_name=runner_name, heartbeat=_heartbeat)
                     self.activate(crawler_name=runner_name, task=_task_of_dead_crawler)
                     return True
             return False
@@ -253,16 +259,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
     def run_task(self):
         pass
 
-    def discover(self, node_path: str, heartbeat: Heartbeat) -> Task:
-        _node_state_path = node_path.replace("heartbeat", "state")
+    def discover(self, crawler_name: str, heartbeat: Heartbeat) -> Task:
+        _node_state_path = f"{self._generate_path(crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
         _node_state = self._get_metadata_from_zookeeper(path=_node_state_path, as_obj=NodeState)
         _node_state.role = CrawlerStateRole.Dead_Runner
         self._set_metadata_to_zookeeper(path=_node_state_path, metadata=_node_state)
 
-        _task = self._get_metadata_from_zookeeper(path=node_path.replace("heartbeat", "task"), as_obj=Task)
+        _task = self._get_metadata_from_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Task_Node_Path}", as_obj=Task)
         heartbeat.healthy_state = HeartState.Asystole
         heartbeat.task_state = _task.task_result
-        self._set_metadata_to_zookeeper(path=node_path, metadata=heartbeat)
+        self._set_metadata_to_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}", metadata=heartbeat)
 
         return _task
 
