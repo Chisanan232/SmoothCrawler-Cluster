@@ -1,3 +1,4 @@
+from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
 from smoothcrawler_cluster._utils.converter import JsonStrConverter
 import pytest
 import json
@@ -14,7 +15,7 @@ class TestJsonStrConverter:
     def converter(self) -> JsonStrConverter:
         return JsonStrConverter()
 
-    def test_serialize(self, converter: JsonStrConverter):
+    def test__convert_to_str(self, converter: JsonStrConverter):
         # Initial process
         _state = setup_group_state()
 
@@ -24,12 +25,50 @@ class TestJsonStrConverter:
         # Verify running result
         self._verify_serialize_result(serialized_data=_serialized_data, expected_data=json.dumps(_Test_Group_State_Data))
 
-    def test_deserialize(self, converter: JsonStrConverter):
+    def test__convert_from_str(self, converter: JsonStrConverter):
         # Run target testing function
         _deserialized_data: dict = converter._convert_from_str(data=json.dumps(_Test_Group_State_Data))
 
         # Verify running result
         self._verify_deserialize_result(deserialized_data=_deserialized_data, expected_data=_Test_Group_State_Data)
+
+    def test_serialize_meta_data(self, converter: JsonStrConverter):
+        # Initial process
+        _group_state = setup_group_state()
+        _node_state = setup_node_state()
+        _task = setup_task()
+        _heartbeat = setup_heartbeat()
+
+        # Run target testing function
+        _group_state_str = converter.serialize_meta_data(obj=_group_state)
+        _node_state_str = converter.serialize_meta_data(obj=_node_state)
+        _task_str = converter.serialize_meta_data(obj=_task)
+        _heartbeat_str = converter.serialize_meta_data(obj=_heartbeat)
+
+        # Verify running result
+        self._verify_serialize_result(serialized_data=_group_state_str, expected_data=json.dumps(_group_state.to_readable_object()))
+        self._verify_serialize_result(serialized_data=_node_state_str, expected_data=json.dumps(_node_state.to_readable_object()))
+        self._verify_serialize_result(serialized_data=_task_str, expected_data=json.dumps(_task.to_readable_object()))
+        self._verify_serialize_result(serialized_data=_heartbeat_str, expected_data=json.dumps(_heartbeat.to_readable_object()))
+
+    def test_deserialize_meta_data(self, converter: JsonStrConverter):
+        # Initial process
+        _test_group_state_str = json.dumps(_Test_Group_State_Data)
+        _test_node_state_str = json.dumps(_Test_Node_State_Data)
+        _test_task_str = json.dumps(_Test_Task_Data)
+        _test_heartbeat_str = json.dumps(_Test_Heartbeat_Data)
+
+        # Run target testing function
+        _group_state = converter.deserialize_meta_data(data=_test_group_state_str, as_obj=GroupState)
+        _node_state = converter.deserialize_meta_data(data=_test_node_state_str, as_obj=NodeState)
+        _task = converter.deserialize_meta_data(data=_test_task_str, as_obj=Task)
+        _heartbeat = converter.deserialize_meta_data(data=_test_heartbeat_str, as_obj=Heartbeat)
+
+        # Verify running result
+        self._verify_deserialize_result(deserialized_data=_group_state.to_readable_object(), expected_data=_Test_Group_State_Data)
+        self._verify_deserialize_result(deserialized_data=_node_state.to_readable_object(), expected_data=_Test_Node_State_Data)
+        self._verify_deserialize_result(deserialized_data=_task.to_readable_object(), expected_data=_Test_Task_Data)
+        self._verify_deserialize_result(deserialized_data=_heartbeat.to_readable_object(), expected_data=_Test_Heartbeat_Data)
 
     def test_group_state_to_str(self, converter: JsonStrConverter):
         # Initial process
