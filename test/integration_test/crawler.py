@@ -154,14 +154,19 @@ class TestZookeeperCrawler(ZKTestSpec):
         return ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts=Zookeeper_Hosts)
 
 
-    @ZK.reset_testing_env(path=ZKNode.GroupState)
-    @ZK.add_node_with_value_first(path_and_value={ZKNode.GroupState: _Testing_Value.group_state_data_str})
-    @ZK.remove_node_finally(path=ZKNode.GroupState)
-    def test__get_group_state_from_zookeeper(self, uit_object: ZookeeperCrawler):
-        _state = uit_object._get_group_state_from_zookeeper()
+    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.add_node_with_value_first(
+        path_and_value={
+            ZKNode.GroupState: _Testing_Value.group_state_data_str,
+            ZKNode.NodeState: _Testing_Value.node_state_data_str,
+            ZKNode.Task: _Testing_Value.task_data_str,
+            ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str
+        })
+    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    def test__get_metadata_from_zookeeper(self, uit_object: ZookeeperCrawler):
+        # # GroupState
+        _state = uit_object._get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert type(_state) is GroupState, _Type_Not_Correct_Assertion_Error_Message(GroupState)
-        # assert _state.role == _Crawler_Role_Value, \
-        #     _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _Crawler_Role_Value)
         assert _state.total_crawler == _Total_Crawler_Value, \
             _Value_Not_Correct_Assertion_Error_Message("total_crawler", _state.total_crawler, _Total_Crawler_Value)
         assert _state.total_runner == _Runner_Crawler_Value, \
@@ -171,73 +176,50 @@ class TestZookeeperCrawler(ZKTestSpec):
         assert _state.standby_id == _State_Standby_ID_Value, \
             _Value_Not_Correct_Assertion_Error_Message("standby_id", _state.standby_id, _State_Standby_ID_Value)
 
-
-    @ZK.reset_testing_env(path=ZKNode.NodeState)
-    @ZK.add_node_with_value_first(path_and_value={ZKNode.NodeState: _Testing_Value.node_state_data_str})
-    @ZK.remove_node_finally(path=ZKNode.NodeState)
-    def test__get_node_state_from_zookeeper(self, uit_object: ZookeeperCrawler):
-        _state = uit_object._get_node_state_from_zookeeper()
+        # # NodeState
+        _state = uit_object._get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
         assert type(_state) is NodeState, _Type_Not_Correct_Assertion_Error_Message(NodeState)
         assert _state.group == _Crawler_Group_Name_Value, \
             _Value_Not_Correct_Assertion_Error_Message("group", _state.group, _Crawler_Group_Name_Value)
         assert _state.role == _Crawler_Role_Value, \
             _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _Crawler_Role_Value)
 
-
-    @ZK.reset_testing_env(path=ZKNode.Task)
-    @ZK.add_node_with_value_first(path_and_value={ZKNode.Task: _Testing_Value.task_data_str})
-    @ZK.remove_node_finally(path=ZKNode.Task)
-    def test__get_task_from_zookeeper(self, uit_object: ZookeeperCrawler):
-        _task = uit_object._get_task_from_zookeeper()
+        # # Task
+        _task = uit_object._get_metadata_from_zookeeper(path=uit_object.task_zookeeper_path, as_obj=Task)
         assert type(_task) is Task, _Type_Not_Correct_Assertion_Error_Message(Task)
         assert _task.task_result == _Task_Result_Value, \
             _Value_Not_Correct_Assertion_Error_Message("task_result", _task.task_result, _Task_Result_Value)
         assert _task.task_content == _Task_Content_Value, \
             _Value_Not_Correct_Assertion_Error_Message("task_content", _task.task_content, _Task_Content_Value)
 
-
-    @ZK.reset_testing_env(path=ZKNode.Heartbeat)
-    @ZK.add_node_with_value_first(path_and_value={ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str})
-    @ZK.remove_node_finally(path=ZKNode.Heartbeat)
-    def test__get_heartbeat_from_zookeeper(self, uit_object: ZookeeperCrawler):
-        _heartbeat = uit_object._get_heartbeat_from_zookeeper()
+        # # Heartbeat
+        _heartbeat = uit_object._get_metadata_from_zookeeper(path=uit_object.heartbeat_zookeeper_path, as_obj=Heartbeat)
         assert type(_heartbeat) is Heartbeat, _Type_Not_Correct_Assertion_Error_Message(Heartbeat)
         assert _heartbeat.heart_rhythm_time == _Time_Value.strftime(_Time_Format_Value), \
             _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Time_Value)
 
 
-    @ZK.reset_testing_env(path=ZKNode.GroupState)
-    @ZK.create_node_first(path=ZKNode.GroupState)
-    @ZK.remove_node_finally(path=ZKNode.GroupState)
+    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.create_node_first(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test__set_group_state_to_zookeeper(self, uit_object: ZookeeperCrawler):
-        uit_object._set_group_state_to_zookeeper(state=_Testing_Value.group_state)
+        # # GroupState
+        uit_object._set_metadata_to_zookeeper(path=uit_object.group_state_zookeeper_path, metadata=_Testing_Value.group_state)
         _state, _znode_state = self._get_zk_node_value(path=_Testing_Value.group_state_zk_path)
         assert type(_state) is not None, _Not_None_Assertion_Error
 
-
-    @ZK.reset_testing_env(path=ZKNode.NodeState)
-    @ZK.create_node_first(path=ZKNode.NodeState)
-    @ZK.remove_node_finally(path=ZKNode.NodeState)
-    def test__set_node_state_to_zookeeper(self, uit_object: ZookeeperCrawler):
-        uit_object._set_node_state_to_zookeeper(state=_Testing_Value.node_state)
+        # # NodeState
+        uit_object._set_metadata_to_zookeeper(path=uit_object.node_state_zookeeper_path, metadata=_Testing_Value.node_state)
         _state, _znode_state = self._get_zk_node_value(path=_Testing_Value.node_state_zk_path)
         assert type(_state) is not None, _Not_None_Assertion_Error
 
-
-    @ZK.reset_testing_env(path=ZKNode.Task)
-    @ZK.create_node_first(path=ZKNode.Task)
-    @ZK.remove_node_finally(path=ZKNode.Task)
-    def test__set_task_to_zookeeper(self, uit_object: ZookeeperCrawler):
-        uit_object._set_task_to_zookeeper(task=_Testing_Value.task)
+        # # Task
+        uit_object._set_metadata_to_zookeeper(path=uit_object.task_zookeeper_path, metadata=_Testing_Value.task)
         _task, _znode_state = self._get_zk_node_value(path=_Testing_Value.task_zk_path)
         assert type(_task) is not None, _Not_None_Assertion_Error
 
-
-    @ZK.reset_testing_env(path=ZKNode.Heartbeat)
-    @ZK.create_node_first(path=ZKNode.Heartbeat)
-    @ZK.remove_node_finally(path=ZKNode.Heartbeat)
-    def test__set_heartbeat_to_zookeeper(self, uit_object: ZookeeperCrawler):
-        uit_object._set_heartbeat_to_zookeeper(heartbeat=_Testing_Value.heartbeat)
+        # # Heartbeat
+        uit_object._set_metadata_to_zookeeper(path=uit_object.heartbeat_zookeeper_path, metadata=_Testing_Value.heartbeat)
         _heartbeat, _znode_state = self._get_zk_node_value(path=_Testing_Value.heartbeat_zk_path)
         assert type(_heartbeat) is not None, _Not_None_Assertion_Error
 
@@ -247,12 +229,12 @@ class TestZookeeperCrawler(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState])
     def test__update_crawler_role(self, uit_object: ZookeeperCrawler):
         # Checking initial state
-        _group_state = uit_object._get_group_state_from_zookeeper()
+        _group_state = uit_object._get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_group_state.current_crawler) == 0, "At initial process, the length of current crawler list should be 0."
         assert len(_group_state.current_runner) == 0, "At initial process, the length of current runner list should be 0."
         assert len(_group_state.current_backup) == 0, "At initial process, the length of current backup list should be 0."
 
-        _node_state = uit_object._get_node_state_from_zookeeper()
+        _node_state = uit_object._get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
         assert _node_state.role == CrawlerStateRole.Initial.value, \
             "At initial process, the role of crawler instance should be *initial* (or value of *CrawlerStateRole.Initial*)."
 
@@ -260,13 +242,13 @@ class TestZookeeperCrawler(ZKTestSpec):
         uit_object._update_crawler_role(CrawlerStateRole.Runner)
 
         # Verify the updated state
-        _updated_group_state = uit_object._get_group_state_from_zookeeper()
+        _updated_group_state = uit_object._get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_updated_group_state.current_runner) == 1, \
             "After update the *state* meta data, the length of current crawler list should be 1 because it's *runner*."
         assert len(_updated_group_state.current_backup) == 0, \
             "After update the *state* meta data, the length of current crawler list should be 0 because it's *runner*."
 
-        _updated_node_state = uit_object._get_node_state_from_zookeeper()
+        _updated_node_state = uit_object._get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
         assert _updated_node_state.role == CrawlerStateRole.Runner.value, \
             "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
@@ -479,6 +461,8 @@ class TestZookeeperCrawler(ZKTestSpec):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
+        _zk_crawler_instances: List[ZookeeperCrawler] = []
+
         _running_flag: Dict[str, bool] = {}
         _group_state_path: str = ""
         _node_state_path: str = ""
@@ -501,6 +485,9 @@ class TestZookeeperCrawler(ZKTestSpec):
                     ensure_wait=0.5,
                     zk_hosts=Zookeeper_Hosts
                 )
+
+                _zk_crawler_instances.append(_zk_crawler)
+
                 nonlocal _group_state_path
                 if _group_state_path == "":
                     _group_state_path = _zk_crawler.group_state_zookeeper_path
@@ -538,6 +525,10 @@ class TestZookeeperCrawler(ZKTestSpec):
             self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
             self._check_role(_role_results, _index_sep_char)
         finally:
+            for _instance in _zk_crawler_instances:
+                _instance.stop_update_heartbeat()
+                del _instance
+            time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
             self._delete_zk_nodes(_all_paths)
 
     def _check_heartbeat_info(self, heartbeat_paths: List[str]) -> None:

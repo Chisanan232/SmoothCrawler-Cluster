@@ -1,5 +1,5 @@
+from typing import Dict, Any, Type, TypeVar, Generic
 from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, TypeVar, Generic
 import json
 
 from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, Heartbeat
@@ -10,61 +10,46 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
 class BaseConverter(metaclass=ABCMeta):
 
+    def serialize_meta_data(self, obj: Generic[_BaseMetaDataType]) -> str:
+        return self._convert_to_str(data=self._convert_to_readable_object(obj))
+
+    def deserialize_meta_data(self, data: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
+        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
+        if issubclass(as_obj, GroupState):
+            _meta_data_obj = self._convert_to_group_state(state=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, NodeState):
+            _meta_data_obj = self._convert_to_node_state(state=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, Task):
+            _meta_data_obj = self._convert_to_task(task=as_obj(), data=_parsed_data)
+        elif issubclass(as_obj, Heartbeat):
+            _meta_data_obj = self._convert_to_heartbeat(heartbeat=as_obj(), data=_parsed_data)
+        else:
+            raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
+        return _meta_data_obj
+
     @abstractmethod
-    def serialize(self, data: Any) -> str:
+    def _convert_to_str(self, data: Any) -> str:
         pass
 
     @abstractmethod
-    def deserialize(self, data: str) -> Any:
+    def _convert_from_str(self, data: str) -> Any:
         pass
-
-    def group_state_to_str(self, state: GroupState) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=state))
-
-    def node_state_to_str(self, state: NodeState) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=state))
-
-    def task_to_str(self, task: Task) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=task))
-
-    def heartbeat_to_str(self, heartbeat: Heartbeat) -> str:
-        return self.serialize(data=self._convert_to_readable_object(obj=heartbeat))
 
     @abstractmethod
     def _convert_to_readable_object(self, obj: Generic[_BaseMetaDataType]) -> Any:
         pass
 
-    def str_to_group_state(self, data: str) -> GroupState:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _state_with_value = self._convert_to_group_state(state=GroupState(), data=_parsed_data)
-        return _state_with_value
-
     @abstractmethod
     def _convert_to_group_state(self, state: GroupState, data: Any) -> GroupState:
         pass
-
-    def str_to_node_state(self, data: str) -> NodeState:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _state_with_value = self._convert_to_node_state(state=NodeState(), data=_parsed_data)
-        return _state_with_value
 
     @abstractmethod
     def _convert_to_node_state(self, state: NodeState, data: Any) -> NodeState:
         pass
 
-    def str_to_task(self, data: str) -> Task:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _task_with_value = self._convert_to_task(task=Task(), data=_parsed_data)
-        return _task_with_value
-
     @abstractmethod
     def _convert_to_task(self, task: Task, data: Any) -> Task:
         pass
-
-    def str_to_heartbeat(self, data: str) -> Heartbeat:
-        _parsed_data: Dict[str, Any] = self.deserialize(data=data)
-        _heartbeat_with_value = self._convert_to_heartbeat(heartbeat=Heartbeat(), data=_parsed_data)
-        return _heartbeat_with_value
 
     @abstractmethod
     def _convert_to_heartbeat(self, heartbeat: Heartbeat, data: Any) -> Heartbeat:
@@ -73,12 +58,12 @@ class BaseConverter(metaclass=ABCMeta):
 
 class JsonStrConverter(BaseConverter):
 
-    def serialize(self, data: Any) -> str:
+    def _convert_to_str(self, data: Any) -> str:
         # data maybe a str type value or a dict type value
         _data = json.dumps(data)
         return _data
 
-    def deserialize(self, data: str) -> Any:
+    def _convert_from_str(self, data: str) -> Any:
         _parsed_data: Dict[str, Any] = json.loads(data)
         return _parsed_data
 
