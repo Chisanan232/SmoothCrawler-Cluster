@@ -461,6 +461,8 @@ class TestZookeeperCrawler(ZKTestSpec):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
+        _zk_crawler_instances: List[ZookeeperCrawler] = []
+
         _running_flag: Dict[str, bool] = {}
         _group_state_path: str = ""
         _node_state_path: str = ""
@@ -483,6 +485,9 @@ class TestZookeeperCrawler(ZKTestSpec):
                     ensure_wait=0.5,
                     zk_hosts=Zookeeper_Hosts
                 )
+
+                _zk_crawler_instances.append(_zk_crawler)
+
                 nonlocal _group_state_path
                 if _group_state_path == "":
                     _group_state_path = _zk_crawler.group_state_zookeeper_path
@@ -520,6 +525,10 @@ class TestZookeeperCrawler(ZKTestSpec):
             self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
             self._check_role(_role_results, _index_sep_char)
         finally:
+            for _instance in _zk_crawler_instances:
+                _instance.stop_update_heartbeat()
+                del _instance
+            time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
             self._delete_zk_nodes(_all_paths)
 
     def _check_heartbeat_info(self, heartbeat_paths: List[str]) -> None:
