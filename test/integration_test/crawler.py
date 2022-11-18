@@ -582,7 +582,7 @@ class TestZookeeperCrawler(ZKTestSpec):
 
     def test_wait_for_standby(self, uit_object: ZookeeperCrawler):
         # Prepare the meta data for testing this scenario
-        # Set a *State* with only 2 crawlers and standby ID is '1'
+        # Set a *GroupState* with only 2 crawlers and standby ID is '1'
         _state = Initial.group_state(
             crawler_name="sc-crawler_0",
             total_crawler=3,
@@ -597,6 +597,13 @@ class TestZookeeperCrawler(ZKTestSpec):
             _state_data_str = json.dumps(_state.to_readable_object())
             self._create_node(path=uit_object.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
 
+        # Set a *NodeState* of sc-crawler_0
+        _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
+        _crawler_0_node_state_path = uit_object.node_state_zookeeper_path.replace("1", "0")
+        if self._exist_node(path=_crawler_0_node_state_path) is None:
+            _node_state_data_str = json.dumps(_node_state.to_readable_object())
+            self._create_node(path=_crawler_0_node_state_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
+
         # Set a *Task* of sc-crawler_0
         _task = Initial.task(task_result=TaskResult.Processing)
         _crawler_0_task_path = uit_object.task_zookeeper_path.replace("1", "0")
@@ -610,6 +617,13 @@ class TestZookeeperCrawler(ZKTestSpec):
         if self._exist_node(path=_crawler_0_heartbeat_path) is None:
             _heartbeat_data_str = json.dumps(_heartbeat.to_readable_object())
             self._create_node(path=_crawler_0_heartbeat_path, value=bytes(_heartbeat_data_str, "utf-8"), include_data=True)
+
+        # Set a *NodeState* of sc-crawler_1
+        _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
+        _crawler_1_node_state_path = uit_object.node_state_zookeeper_path
+        if self._exist_node(path=_crawler_1_node_state_path) is None:
+            _node_state_data_str = json.dumps(_node_state.to_readable_object())
+            self._create_node(path=_crawler_1_node_state_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
 
         # Run the function which target to test
         try:
@@ -627,7 +641,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                 assert False, "It should be ready to run. Please check the detail implementation or other settings in testing has problem or not."
 
             # Verify the result should be correct as expected
-            # Verify the *State* info
+            # Verify the *GroupState* info
             _data, _state = self._get_value_from_node(path=uit_object.group_state_zookeeper_path)
             _json_data = json.loads(str(_data.decode("utf-8")))
             print(f"[DEBUG in testing] _json_data: {_json_data}")
@@ -644,6 +658,19 @@ class TestZookeeperCrawler(ZKTestSpec):
             assert len(_json_data["fail_runner"]) == 1, ""
             assert _json_data["fail_runner"][0] == "sc-crawler_0", ""
             assert len(_json_data["fail_backup"]) == 0, ""
+
+            # Verify the *NodeState* info
+            _node_data, _state = self._get_value_from_node(path=uit_object.node_state_zookeeper_path)
+            _json_node_data = json.loads(str(_node_data.decode("utf-8")))
+            print(f"[DEBUG in testing] _json_node_data: {_json_node_data}")
+            assert _json_node_data["group"] == uit_object._crawler_group, ""
+            assert _json_node_data["role"] == CrawlerStateRole.Runner.value, ""
+
+            _0_node_data, _state = self._get_value_from_node(path=uit_object.node_state_zookeeper_path.replace("1", "0"))
+            _json_0_node_data = json.loads(str(_0_node_data.decode("utf-8")))
+            print(f"[DEBUG in testing] _json_0_node_data: {_json_0_node_data}")
+            assert _json_0_node_data["group"] == uit_object._crawler_group, ""
+            assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
         finally:
             if self._exist_node(path=uit_object.group_state_zookeeper_path):
                 self._delete_node(path=uit_object.group_state_zookeeper_path)
