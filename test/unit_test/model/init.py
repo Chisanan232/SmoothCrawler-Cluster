@@ -47,8 +47,13 @@ class TestInitial:
         _task = Initial.task()
 
         # Verify values
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="task_result", expected_value=TaskResult.Nothing.value)
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="task_content", expected_value={})
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_content", expected_value=[])
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="cookie", expected_value={})
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", is_none=True)
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={})
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
 
     def test__initial_heartbeat(self):
         # Operate target method for testing
