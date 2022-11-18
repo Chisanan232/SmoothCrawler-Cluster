@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
+from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
 from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 from datetime import datetime
@@ -54,6 +54,21 @@ class _MetaDataTest(metaclass=ABCMeta):
                 assert getting_func() == _test_cnt.value, "The value should be same as it set."
             elif type(_test_cnt) is datetime:
                 assert getting_func() == _test_cnt.strftime("%Y-%m-%d %H:%M:%S"), "The value should be same as it set."
+            elif isinstance(getattr(_test_cnt, "_fields", None), tuple) is True:
+                # Testing for namedtuple type object
+                _fields = getattr(_test_cnt, "_fields")
+                _current_values = getting_func()
+                for _f in _fields:
+                    assert getattr(_test_cnt, _f) == _current_values[_f], "The value should be same as it set."
+            elif type(_test_cnt) is list and False not in map(lambda _one_test: isinstance(getattr(_one_test, "_fields", None), tuple) is True, _test_cnt):
+                # Testing for list type value with namedtuple type elements
+                _fields = None
+                _current_values = getting_func()
+                for _one, _value in zip(_test_cnt, _current_values):
+                    if _fields is None:
+                        _fields = getattr(_one, "_fields")
+                    for _f in _fields:
+                        assert getattr(_one, _f) == _value[_f], "The value should be same as it set."
             else:
                 assert getting_func() == _test_cnt, "The value should be same as it set."
 
@@ -382,36 +397,167 @@ class TestTask(_MetaDataTest):
     def task(self) -> Task:
         return Task()
 
-    def test_task_content(self, task: Task) -> None:
+    def test_running_content_with_dict(self, task: Task) -> None:
 
-        def _get_func() -> Dict:
-            return task.task_content
+        def _get_func() -> List[dict]:
+            return task.running_content
 
         def _set_func(value) -> None:
-            task.task_content = value
+            task.running_content = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=[{"k1": "v1", "k2": "v2", "k3": "v3"}],
+            invalid_1_value="5",
+            invalid_2_value=["spider_1"]
+        )
+
+    def test_running_content_with_RunningContent(self, task: Task) -> None:
+
+        def _get_func() -> List[dict]:
+            return task.running_content
+
+        def _set_func(value) -> None:
+            task.running_content = value
+
+        _content = RunningContent(task_id="0", method="GET", url="http://test.com", parameters={}, header={}, body={})
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=[_content],
+            invalid_1_value=_content,
+            invalid_2_value=["spider_1"]
+        )
+
+    def test_cookie(self, task: Task) -> None:
+
+        def _get_func() -> dict:
+            return task.cookie
+
+        def _set_func(value) -> None:
+            task.cookie = value
 
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value={"k1": "v1", "k2": "v2", "k3": "v3"},
-            invalid_1_value="5",
-            invalid_2_value=["spider_1"]
+            invalid_1_value=5,
+            invalid_2_value=[{"k1": "v1", "k2": "v2", "k3": "v3"}]
         )
 
-    def test_task_result(self, task: Task) -> None:
+    def test_authorization(self, task: Task) -> None:
 
-        def _get_func() -> TaskResult:
-            return task.task_result
+        def _get_func() -> dict:
+            return task.authorization
 
         def _set_func(value) -> None:
-            task.task_result = value
+            task.authorization = value
 
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
-            valid_value=TaskResult.Done,
+            valid_value={"k1": "v1", "k2": "v2", "k3": "v3"},
+            invalid_1_value=5,
+            invalid_2_value=[{"k1": "v1", "k2": "v2", "k3": "v3"}]
+        )
+
+    def test_in_progressing_id(self, task: Task) -> None:
+
+        def _get_func() -> str:
+            return task.in_progressing_id
+
+        def _set_func(value) -> None:
+            task.in_progressing_id = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value="1",
+            invalid_1_value=5,
+            invalid_2_value="test_1"
+        )
+
+    def test_running_result_with_dict(self, task: Task) -> None:
+
+        def _get_func() -> dict:
+            return task.running_result
+
+        def _set_func(value) -> None:
+            task.running_result = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value={"success_cnt":1, "fail_cnt": 1},
+            invalid_1_value=5,
+            invalid_2_value="test_1"
+        )
+
+    def test_running_result_with_RunningResult(self, task: Task) -> None:
+
+        def _get_func() -> dict:
+            return task.running_result
+
+        def _set_func(value) -> None:
+            task.running_result = value
+
+        _result = RunningResult(success_count=1, fail_count=0)
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=_result,
+            invalid_1_value=5,
+            invalid_2_value=[_result]
+        )
+
+    def test_running_status(self, task: Task) -> None:
+
+        def _get_func() -> str:
+            return task.running_status
+
+        def _set_func(value) -> None:
+            task.running_status = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=TaskResult.Processing,
             invalid_1_value=5,
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_result_detail_with_dict(self, task: Task) -> None:
+
+        def _get_func() -> List[dict]:
+            return task.result_detail
+
+        def _set_func(value) -> None:
+            task.result_detail = value
+
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=[{"k1": "v1", "k2": "v2", "k3": "v3"}],
+            invalid_1_value=5,
+            invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
+        )
+
+    def test_result_detail_with_ResultDetail(self, task: Task) -> None:
+
+        def _get_func() -> List[dict]:
+            return task.result_detail
+
+        def _set_func(value) -> None:
+            task.result_detail = value
+
+        _detail = ResultDetail(task_id="0", state=TaskResult.Done.value, status_code=200, response="OK", error_msg=None)
+        self._run_property_test(
+            getting_func=_get_func,
+            setting_func=_set_func,
+            valid_value=[_detail],
+            invalid_1_value=5,
+            invalid_2_value=_detail
         )
 
 
