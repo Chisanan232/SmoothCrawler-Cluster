@@ -267,7 +267,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
         _task = self._get_metadata_from_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Task_Node_Path}", as_obj=Task)
         heartbeat.healthy_state = HeartState.Asystole
-        heartbeat.task_state = _task.task_result
+        heartbeat.task_state = _task.running_status
         self._set_metadata_to_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}", metadata=heartbeat)
 
         return _task
@@ -289,7 +289,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
             self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
 
-        if task.task_result == TaskResult.Processing.value:
+        if task.result_detail == TaskResult.Processing.value:
             # TODO: Run task content ?
             pass
         else:
@@ -384,7 +384,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
                     _heartbeat = self._get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
 
                     # Update the values
-                    _heartbeat = Update.heartbeat(_heartbeat, heart_rhythm_time=datetime.now(), healthy_state=HeartState.Healthy, task_state=_task.task_result)
+                    _heartbeat = Update.heartbeat(_heartbeat, heart_rhythm_time=datetime.now(), healthy_state=HeartState.Healthy, task_state=_task.running_status)
                     self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
 
                     # Sleep ...
@@ -395,7 +395,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             else:
                 _task = self._get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
                 _heartbeat = self._get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
-                _heartbeat = Update.heartbeat(_heartbeat, heart_rhythm_time=datetime.now(), healthy_state=HeartState.ApparentDeath, task_state=_task.task_result)
+                _heartbeat = Update.heartbeat(_heartbeat, heart_rhythm_time=datetime.now(), healthy_state=HeartState.ApparentDeath, task_state=_task.running_status)
                 self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
                 break
         if self.__Updating_Exception is not None:
