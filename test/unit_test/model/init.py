@@ -50,7 +50,7 @@ class TestInitial:
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_content", expected_value=[])
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="cookie", expected_value={})
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", is_none=True)
+        ValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={})
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
         ValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
