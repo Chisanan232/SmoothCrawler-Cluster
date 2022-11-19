@@ -4,6 +4,7 @@ Here are some global variables for testing.
 
 from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from datetime import datetime
+from typing import List
 
 
 # # # # For Zookeeper
@@ -27,8 +28,29 @@ _State_Standby_ID_Value: str = "3"
 _Empty_List_Value: list = []
 
 # # Related task settings
-_Task_Result_Value: str = TaskResult.Nothing.value
-_Task_Content_Value: dict = {}
+_Task_Running_Content_Value: List[dict] = [{
+    "task_id": 0,
+    "url": "https://www.example.com",
+    "method": "GET",
+    "parameters": None,
+    "header": None,
+    "body": None
+}]
+_Task_Cookie_Value: dict = {}
+_Task_Authorization_Value: dict = {}
+_Task_In_Progressing_Id_Value: str = "0"
+_Task_Running_Result: dict = {
+    "success_count": 0,
+    "fail_count": 0
+}
+_Task_Running_State: str = str(TaskResult.Nothing.value)
+_Task_Result_Detail_Value: List[dict] = [{
+    "task_id": 0,
+    "state": "done",
+    "status_code": 200,
+    "response": "",
+    "error_msg": None
+}]
 
 # # Related heartbeat settings
 _Time_Value: datetime = datetime.now()
@@ -69,8 +91,13 @@ _Test_Node_State_Data = {
 
 # # *Task*
 _Test_Task_Data = {
-    "task_content": _Task_Content_Value,
-    "task_result": _Task_Result_Value
+    "running_content": _Task_Running_Content_Value,
+    "cookie": _Task_Cookie_Value,
+    "authorization": _Task_Authorization_Value,
+    "in_progressing_id": _Task_In_Progressing_Id_Value,
+    "running_result": _Task_Running_Result,
+    "running_status": _Task_Running_State,
+    "result_detail": _Task_Result_Detail_Value
 }
 
 # # *Heartbeat*
@@ -113,10 +140,22 @@ def setup_node_state() -> NodeState:
     return _state
 
 
-def setup_task() -> Task:
+def setup_task(reset: bool = False) -> Task:
     _task = Task()
-    _task.task_content = _Test_Task_Data["task_content"]
-    _task.task_result = _Test_Task_Data["task_result"]
+    if reset is True:
+        _task.running_content = _Empty_List_Value
+    else:
+        _task.running_content = _Test_Task_Data["running_content"]
+    _task.cookie = _Test_Task_Data["cookie"]
+    _task.authorization = _Test_Task_Data["authorization"]
+    _task.in_progressing_id = _Test_Task_Data["in_progressing_id"]
+    _task.running_result = _Test_Task_Data["running_result"]
+    _task.running_status = _Test_Task_Data["running_status"]
+    if reset is True:
+        _task.result_detail = _Empty_List_Value
+    else:
+        _task.result_detail = _Test_Task_Data["result_detail"]
+    print(f"[DEBUG - setup_task] _task: {_task.to_readable_object()}")
     return _task
 
 

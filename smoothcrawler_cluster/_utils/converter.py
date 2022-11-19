@@ -96,8 +96,13 @@ class JsonStrConverter(BaseConverter):
     def _convert_to_task(self, task: Task, data: Any) -> Task:
         # TODO: Maybe it could develop a package like mapstruct in kotlin.
         data: Dict[str, Any] = data
-        task.task_content = data.get("task_content")
-        task.task_result = data.get("task_result")
+        task.running_content = data.get("running_content")
+        task.cookie = data.get("cookie")
+        task.authorization = data.get("authorization")
+        task.in_progressing_id = data.get("in_progressing_id")
+        task.running_result = data.get("running_result")
+        task.running_status = data.get("running_status")
+        task.result_detail = data.get("result_detail")
         return task
 
     def _convert_to_heartbeat(self, heartbeat: Heartbeat, data: Any) -> Heartbeat:

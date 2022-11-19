@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import List, Union
 from abc import ABCMeta, abstractmethod
 
-from .metadata import GroupState, NodeState, Task, Heartbeat
+from .metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 
@@ -59,8 +59,13 @@ class Empty(_BaseDataObjectUtils):
     @staticmethod
     def task() -> Task:
         _task = Task()
-        _task.task_result = TaskResult.Nothing
-        _task.task_content = {}
+        _task.running_content = []
+        _task.cookie = {}
+        _task.authorization = {}
+        _task.in_progressing_id = "-1"
+        _task.running_result = RunningResult(success_count=0, fail_count=0)
+        _task.running_status = TaskResult.Nothing
+        _task.result_detail = []
         return _task
 
     @staticmethod
@@ -112,12 +117,18 @@ class Initial(_BaseDataObjectUtils):
         return _node_state
 
     @staticmethod
-    def task(task_result: TaskResult = None, task_content: dict = {}) -> Task:
+    def task(running_content: List[Union[dict, RunningContent]] = [], cookie: dict = {}, authorization: dict = {}, in_progressing_id: str = "-1",
+             running_result: Union[dict, RunningResult] = {}, running_state: TaskResult = None, result_detail: List[Union[dict, ResultDetail]] = []) -> Task:
         _task = Task()
-        if task_result is None:
-            task_result = TaskResult.Nothing
-        _task.task_result = task_result
-        _task.task_content = {}
+        _task.running_content = running_content
+        _task.cookie = cookie
+        _task.authorization = authorization
+        _task.in_progressing_id = in_progressing_id
+        _task.running_result = running_result
+        if running_state is None:
+            running_state = TaskResult.Nothing
+        _task.running_status = running_state
+        _task.result_detail = result_detail
         return _task
 
     @staticmethod
@@ -173,15 +184,22 @@ class Update(_BaseDataObjectUtils):
         return node_state
 
     @staticmethod
-    def task(task: Task, task_result: TaskResult = None, task_content: dict = {}) -> Task:
-        Update._update_ele_if_not_none(data_obj=task, prop="task_result", new_val=task_result)
-        Update._update_ele_if_not_none(data_obj=task, prop="task_content", new_val=task_content)
+    def task(task: Task, running_content: List[Union[dict, RunningContent]] = None, cookie: dict = None, authorization: dict = None,
+             in_progressing_id: str = None, running_result: Union[dict, RunningResult] = None, running_status: TaskResult = None,
+             result_detail: List[Union[dict, ResultDetail]] = None) -> Task:
+        Update._update_ele_if_not_none(data_obj=task, prop="running_content", new_val=running_content)
+        Update._update_ele_if_not_none(data_obj=task, prop="cookie", new_val=cookie)
+        Update._update_ele_if_not_none(data_obj=task, prop="authorization", new_val=authorization)
+        Update._update_ele_if_not_none(data_obj=task, prop="in_progressing_id", new_val=in_progressing_id)
+        Update._update_ele_if_not_none(data_obj=task, prop="running_result", new_val=running_result)
+        Update._update_ele_if_not_none(data_obj=task, prop="running_status", new_val=running_status)
+        Update._update_ele_if_not_none(data_obj=task, prop="result_detail", new_val=result_detail)
         return task
 
     @staticmethod
     def heartbeat(heartbeat: Heartbeat, heart_rhythm_time: datetime = None, time_format: str = "%Y-%m-%d %H:%M:%S",
                   update_time: str = "2s", update_timeout: str = "4s", heart_rhythm_timeout: str = "3",
-                  healthy_state: HeartState = None, task_state: TaskResult = None) -> Heartbeat:
+                  healthy_state: HeartState = None, task_state: Union[str, TaskResult] = None) -> Heartbeat:
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="heart_rhythm_time", new_val=heart_rhythm_time)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="time_format", new_val=time_format)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="update_time", new_val=update_time)
@@ -192,7 +210,7 @@ class Update(_BaseDataObjectUtils):
         return heartbeat
 
     @staticmethod
-    def _update_ele_if_not_none(data_obj, prop: str, new_val: Union[int, str, dict, datetime, CrawlerStateRole, TaskResult, HeartState]):
+    def _update_ele_if_not_none(data_obj, prop: str, new_val: Union[int, str, list, dict, datetime, CrawlerStateRole, TaskResult, HeartState]):
         if new_val is not None:
             setattr(data_obj, prop, new_val)
 

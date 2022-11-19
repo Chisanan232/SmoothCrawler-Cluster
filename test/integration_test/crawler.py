@@ -21,7 +21,7 @@ from .._values import (
     # NodeState
     _Crawler_Group_Name_Value,
     # Task
-    _Task_Content_Value, _Task_Result_Value,
+    _Task_Running_Content_Value, _Task_Running_State,
     # Heartbeat
     _Time_Value, _Time_Format_Value,
     # common functions
@@ -107,7 +107,7 @@ class _TestValue:
     @property
     def task(self) -> Task:
         if self.__Testing_Task is None:
-            self.__Testing_Task = setup_task()
+            self.__Testing_Task = setup_task(reset=True)
         return self.__Testing_Task
 
     @property
@@ -187,10 +187,10 @@ class TestZookeeperCrawler(ZKTestSpec):
         # # Task
         _task = uit_object._get_metadata_from_zookeeper(path=uit_object.task_zookeeper_path, as_obj=Task)
         assert type(_task) is Task, _Type_Not_Correct_Assertion_Error_Message(Task)
-        assert _task.task_result == _Task_Result_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("task_result", _task.task_result, _Task_Result_Value)
-        assert _task.task_content == _Task_Content_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("task_content", _task.task_content, _Task_Content_Value)
+        assert _task.running_status == _Task_Running_State, \
+            _Value_Not_Correct_Assertion_Error_Message("running_status", _task.running_status, _Task_Running_State)
+        assert _task.running_content == [], \
+            _Value_Not_Correct_Assertion_Error_Message("running_content", _task.running_content, _Task_Running_Content_Value)
 
         # # Heartbeat
         _heartbeat = uit_object._get_metadata_from_zookeeper(path=uit_object.heartbeat_zookeeper_path, as_obj=Heartbeat)
@@ -303,8 +303,8 @@ class TestZookeeperCrawler(ZKTestSpec):
         assert _node_state_json["role"] == _Crawler_Role_Value, _assertion
 
         _task_json = json.loads(_task)
-        assert _task_json["task_result"] == _Task_Result_Value, _assertion
-        assert _task_json["task_content"] == {}, _assertion
+        assert _task_json["running_content"] == [], _assertion
+        assert _task_json["running_status"] == _Task_Running_State, _assertion
 
         _heartbeat_json = json.loads(_heartbeat)
         assert _heartbeat_json["heart_rhythm_time"] is not None, _assertion
@@ -605,7 +605,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             self._create_node(path=_crawler_0_node_state_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
 
         # Set a *Task* of sc-crawler_0
-        _task = Initial.task(task_result=TaskResult.Processing)
+        _task = Initial.task(running_state=TaskResult.Processing)
         _crawler_0_task_path = uit_object.task_zookeeper_path.replace("1", "0")
         if self._exist_node(path=_crawler_0_task_path) is None:
             _task_data_str = json.dumps(_task.to_readable_object())

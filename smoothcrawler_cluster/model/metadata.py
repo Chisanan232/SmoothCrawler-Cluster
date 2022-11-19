@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import datetime as dt
 from typing import List, Union, Optional, TypeVar
 from abc import ABCMeta, abstractmethod
@@ -316,6 +317,16 @@ class NodeState(_BaseMetaData):
         self._role = role
 
 
+_RunningContent_Attrs: List[str] = ["task_id", "url", "method", "parameters", "header", "body"]
+RunningContent = namedtuple("RunningContent", _RunningContent_Attrs)
+
+_RunningResult_Attrs: List[str] = ["success_count", "fail_count"]
+RunningResult = namedtuple("RunningResult", _RunningResult_Attrs)
+
+_ResultDetail_Attrs: List[str] = ["task_id", "state", "status_code", "response", "error_msg"]
+ResultDetail = namedtuple("ResultDetail", _ResultDetail_Attrs)
+
+
 class Task(_BaseMetaData):
     """
     The current web spider task **Runner** member got. It's the record for **Runner** or **Backup Runner** in different
@@ -343,55 +354,195 @@ class Task(_BaseMetaData):
     * Example value at node *task*:
 
     {
-        "task_content": {"url": "xxx", "method": "GET", "parameter": "", "body": ""},
-        "task_result": "done"
+        "running_content": [
+            {
+                "task_id": 0,
+                "url": "https://www.example.com",
+                "method": "GET",
+                "parameters": None,
+                "header": None,
+                "body": None
+            }
+        ],
+        "cookies": "{}",
+        "authorization": {},
+        "in_progressing_id": "0",
+        "running_result": {
+            "success_count": 0,
+            "fail_count": 0
+        },
+        "running_status": "running",
+        "result_detail": [
+            {
+                "task_id": 0,
+                "state": "done",
+                "status_code": 200,
+                "response": "",
+                "error_msg": None
+            }
+        ],
     }
 
     """
 
-    _task_content: dict = None
-    _task_result: TaskResult = None
+    _running_content: List[dict] = None
+    _cookie: dict = None
+    _authorization: dict = None
+    _in_progressing_id: str = None
+    _running_result: dict = None
+    _running_status: str = None
+    _result_detail: List[dict] = None
 
     def to_readable_object(self) -> dict:
         _dict_format_data = {
-            "task_content": self.task_content,
-            "task_result": self.task_result
+            "running_content": self._running_content,
+            "cookie": self._cookie,
+            "authorization": self._authorization,
+            "in_progressing_id": self._in_progressing_id,
+            "running_result": self._running_result,
+            "running_status": self._running_status,
+            "result_detail": self._result_detail
         }
         return _dict_format_data
 
     @property
-    def task_content(self) -> dict:
+    def running_content(self) -> List[dict]:
         """
-        Detail of task. In generally, it should record some necessary data about task like
-        *url*, *method*, etc.
+        Detail of task. In generally, it should record some necessary data about task like *url*, *method*, etc. It suggests
+        developers use object *RunningContent* to configure this attribute. This would be reset after crawler instance finish
+        all tasks.
 
-        :return: A dict type value which saves task detail.
+        :return: A list type value which be combined with dict type elements.
         """
 
-        return self._task_content
+        return self._running_content
 
-    @task_content.setter
-    def task_content(self, task_content: dict) -> None:
-        if type(task_content) is not dict:
-            raise ValueError("Property *task_content* only accept dict type value.")
-        self._task_content = task_content
+    @running_content.setter
+    def running_content(self, running_content: List[Union[dict, RunningContent]]) -> None:
+        if type(running_content) is not list:
+            raise ValueError("Property *running_content* only accept list type object which be combined with "
+                             "RunningContent type elements.")
+        _chksum = map(lambda content: type(content) is dict or type(content) is RunningContent, running_content)
+        if False in list(_chksum):
+            raise ValueError("Property *running_content* only accept list with RunningContent type elements.")
+        _dict_contents = map(lambda content: self.__to_dict(content, _RunningContent_Attrs) if type(content) is RunningContent else content, running_content)
+        self._running_content = list(_dict_contents)
 
     @property
-    def task_result(self) -> TaskResult:
+    def cookie(self) -> dict:
         """
-        The result of running wen spider task.
+        The cookie for tasks.
 
-        :return: An enum object of **TaskResult**.
+        :return: A dict type value.
         """
 
-        return self._task_result
+        return self._cookie
 
-    @task_result.setter
-    def task_result(self, task_result: Union[TaskResult, str]) -> None:
-        if type(task_result) is not str and type(task_result) is not TaskResult:
-            raise ValueError("Property *task_result* only accept *str* or *TaskResult* type value.")
-        task_result = task_result.value if type(task_result) is TaskResult else task_result
-        self._task_result = task_result
+    @cookie.setter
+    def cookie(self, cookie: dict) -> None:
+        if type(cookie) is not dict:
+            raise ValueError("Property *cookie* only accept dict type value.")
+        self._cookie = cookie
+
+    @property
+    def authorization(self) -> dict:
+        """
+        The authorization for tasks.
+
+        :return: A dict type value.
+        """
+
+        return self._authorization
+
+    @authorization.setter
+    def authorization(self, authorization: dict) -> None:
+        if type(authorization) is not dict:
+            raise ValueError("Property *authorization* only accept dict type value.")
+        self._authorization = authorization
+
+    @property
+    def in_progressing_id(self) -> str:
+        """
+        The ID of the task which be run by crawler instance currently.
+
+        :return: A dict type value.
+        """
+
+        return self._in_progressing_id
+
+    @in_progressing_id.setter
+    def in_progressing_id(self, in_progressing_id: str) -> None:
+        if type(in_progressing_id) is not str:
+            raise ValueError("Property *in_progressing_id* only accept str type value which is a number format.")
+        try:
+            int(in_progressing_id)
+        except ValueError:
+            raise ValueError("Property *in_progressing_id* only accept str type value which is a number format.")
+        else:
+            self._in_progressing_id = in_progressing_id
+
+    @property
+    def running_result(self) -> dict:
+        """
+        This attribute records statistics of the running result of tasks. Currently, it only has 2 type data: count of
+        success (_success_count_) and count of fail (_fail_count_).
+
+        :return: A dict type value.
+        """
+
+        return self._running_result
+
+    @running_result.setter
+    def running_result(self, running_result: Union[dict, RunningResult]) -> None:
+        if type(running_result) is not dict and type(running_result) is not RunningResult:
+            raise ValueError("Property *running_result* only accept dict type or RunningResult type value.")
+        running_result = self.__to_dict(running_result, _RunningResult_Attrs) if type(running_result) is RunningResult else running_result
+        self._running_result = running_result
+
+    @property
+    def running_status(self) -> str:
+        """
+        The status of crawler runs task. It suggests developers configure this attribute by enum object **TaskResult**.
+
+        :return: A string type value from enum object of **TaskResult**.
+        """
+
+        return self._running_status
+
+    @running_status.setter
+    def running_status(self, running_status: Union[str, TaskResult]) -> None:
+        if type(running_status) is not str and type(running_status) is not TaskResult:
+            raise ValueError("Property *running_status* only accept *str* or *TaskResult* type value.")
+        result_detail = running_status.value if type(running_status) is TaskResult else running_status
+        self._running_status = result_detail
+
+    @property
+    def result_detail(self) -> List[dict]:
+        """
+        This attributes saves the details of tasks running result.
+
+        :return: A list type valur which be combined with dict type data be defined by object **ResultDetail**.
+        """
+
+        return self._result_detail
+
+    @result_detail.setter
+    def result_detail(self, result_detail: List[Union[dict, ResultDetail]]) -> None:
+        if type(result_detail) is not list:
+            raise ValueError("Property *result_detail* only accept list type object which be combined with ResultDetail "
+                             "type elements.")
+        _chksum = map(lambda detail: type(detail) is dict or type(detail) is ResultDetail, result_detail)
+        if False in list(_chksum):
+            raise ValueError("Property *result_detail* only accept list with ResultDetail type elements.")
+        _dict_details = map(lambda detail: self.__to_dict(detail, _ResultDetail_Attrs) if type(detail) is ResultDetail else detail, result_detail)
+        self._result_detail = list(_dict_details)
+
+    @classmethod
+    def __to_dict(cls, obj, attrs: List[str]) -> dict:
+        _value = {}
+        for attr in attrs:
+            _value[attr] = getattr(obj, attr)
+        return _value
 
 
 class Heartbeat(_BaseMetaData):
