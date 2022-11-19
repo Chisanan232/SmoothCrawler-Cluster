@@ -1,10 +1,11 @@
-from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
-from smoothcrawler_cluster._utils.converter import JsonStrConverter
+from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
+from smoothcrawler_cluster._utils.converter import JsonStrConverter, TaskContentDataUtils
 import pytest
 import json
 
 from ..._values import (
     _Test_Group_State_Data, _Test_Node_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
+    _Task_Running_Content_Value, _Task_Running_Result, _Task_Result_Detail_Value,
     setup_group_state, setup_node_state, setup_task, setup_heartbeat
 )
 
@@ -87,3 +88,36 @@ class TestJsonStrConverter:
         for _key in expected_data.keys():
             assert deserialized_data[_key] == expected_data[_key], \
                 f"The values of both objects *deserialized_data* and *expected_data* with key '{_key}' should be the same."
+
+
+class TestTaskContentDataUtils:
+
+    @pytest.fixture(scope="function")
+    def utils(self) -> TaskContentDataUtils:
+        return TaskContentDataUtils()
+
+    def test_convert_to_running_content(self, utils: TaskContentDataUtils):
+        _running_content = utils.convert_to_running_content(data=_Task_Running_Content_Value[0])
+        assert type(_running_content) is RunningContent, ""
+        assert _running_content.task_id == _Task_Running_Content_Value[0]["task_id"], ""
+        assert _running_content.url == _Task_Running_Content_Value[0]["url"], ""
+        assert _running_content.method == _Task_Running_Content_Value[0]["method"], ""
+        assert _running_content.parameters == _Task_Running_Content_Value[0]["parameters"], ""
+        assert _running_content.header == _Task_Running_Content_Value[0]["header"], ""
+        assert _running_content.body == _Task_Running_Content_Value[0]["body"], ""
+
+    def test_convert_to_running_result(self, utils: TaskContentDataUtils):
+        _running_result = utils.convert_to_running_result(data=_Task_Running_Result)
+        assert type(_running_result) is RunningResult, ""
+        assert _running_result.success_count == _Task_Running_Result["success_count"], ""
+        assert _running_result.fail_count == _Task_Running_Result["fail_count"], ""
+
+    def test_convert_to_result_detail(self, utils: TaskContentDataUtils):
+        _result_detail = utils.convert_to_result_detail(data=_Task_Result_Detail_Value[0])
+        assert type(_result_detail) is ResultDetail, ""
+        assert _result_detail.task_id == _Task_Result_Detail_Value[0]["task_id"], ""
+        assert _result_detail.state == _Task_Result_Detail_Value[0]["state"], ""
+        assert _result_detail.status_code == _Task_Result_Detail_Value[0]["status_code"], ""
+        assert _result_detail.response == _Task_Result_Detail_Value[0]["response"], ""
+        assert _result_detail.error_msg == _Task_Result_Detail_Value[0]["error_msg"], ""
+
