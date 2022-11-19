@@ -2,7 +2,7 @@ from typing import Dict, Any, Type, TypeVar, Generic
 from abc import ABCMeta, abstractmethod
 import json
 
-from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, Heartbeat
+from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
 
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
@@ -116,3 +116,31 @@ class JsonStrConverter(BaseConverter):
         heartbeat.healthy_state = data.get("healthy_state")
         heartbeat.task_state = data.get("task_state")
         return heartbeat
+
+
+class TaskContentDataUtils:
+
+    @staticmethod
+    def convert_to_running_content(data: dict) -> RunningContent:
+        return RunningContent(
+            task_id=data["task_id"],
+            url=data["url"],
+            method=data["method"],
+            parameters=data["parameters"],
+            header=data["header"],
+            body=data["body"]
+        )
+
+    @staticmethod
+    def convert_to_running_result(data: dict) -> RunningResult:
+        return RunningResult(success_count=data["success_count"], fail_count=data["fail_count"])
+
+    @staticmethod
+    def convert_to_result_detail(data: dict) -> ResultDetail:
+        return ResultDetail(
+            task_id=data["task_id"],
+            state=data["state"],
+            status_code=data["status_code"],
+            response=data["response"],
+            error_msg=data["error_msg"]
+        )
