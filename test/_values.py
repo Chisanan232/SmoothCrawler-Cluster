@@ -26,15 +26,16 @@ _Backup_Crawler_Value: int = 1
 _Total_Crawler_Value: int = _Runner_Crawler_Value + _Backup_Crawler_Value
 _State_Standby_ID_Value: str = "3"
 _Empty_List_Value: list = []
+_Empty_Dict_Value: dict = {}
 
 # # Related task settings
 _Task_Running_Content_Value: List[dict] = [{
     "task_id": 0,
     "url": "https://www.example.com",
     "method": "GET",
-    "parameters": None,
-    "header": None,
-    "body": None
+    "parameters": _Empty_Dict_Value,
+    "header": _Empty_Dict_Value,
+    "body": _Empty_Dict_Value
 }]
 _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}
