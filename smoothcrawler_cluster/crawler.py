@@ -1,14 +1,25 @@
+from smoothcrawler.crawler import BaseCrawler
+from smoothcrawler.factory import BaseFactory
 from datetime import datetime
-from typing import List, Type, TypeVar, Generic
+from typing import List, Any, Type, TypeVar, Generic
 from abc import ABCMeta
 import threading
 import time
 
-from .model import Empty, Initial, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
+from .model import (
+    # Zookeeper operating common functions
+    Empty, Initial, Update,
+    # Enum objects
+    CrawlerStateRole, TaskResult, HeartState,
+    # Content data namedtuple object
+    RunningContent, RunningResult, ResultDetail,
+    # Meta data objects
+    GroupState, NodeState, Task, Heartbeat
+)
 from .model.metadata import _BaseMetaData
 from .election import BaseElection, IndexElection, ElectionResult
 from .exceptions import ZookeeperCrawlerNotReady
-from ._utils.converter import BaseConverter, JsonStrConverter
+from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
 from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
 
 
@@ -24,7 +35,7 @@ class BaseDecentralizedCrawler(BaseDistributedCrawler):
     pass
 
 
-class ZookeeperCrawler(BaseDecentralizedCrawler):
+class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
@@ -39,8 +50,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
 
     def __init__(self, runner: int, backup: int, name: str = "", group: str = "", index_sep: List[str] = ["-", "_"],
                  initial: bool = True, ensure_initial: bool = False, ensure_timeout: int = 3, ensure_wait: float = 0.5,
-                 zk_hosts: str = None, zk_converter: Type[BaseConverter] = None, election_strategy: Generic[BaseElectionType] = None):
-        super().__init__()
+                 zk_hosts: str = None, zk_converter: Type[BaseConverter] = None, election_strategy: Generic[BaseElectionType] = None,
+                 factory: BaseFactory = None):
+        super(ZookeeperCrawler, self).__init__(factory=factory)
 
         self._total_crawler = runner + backup
         self._runner = runner
@@ -202,15 +214,28 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         # TODO: Change to be a unlimited loop to keep running?
         if self._crawler_role is CrawlerStateRole.Runner:
             self.wait_for_task()
-            self.run_task()
         elif self._crawler_role is CrawlerStateRole.Backup_Runner:
             if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
                 self.wait_and_standby()
             else:
                 self.wait_for_to_be_standby()
 
-    def wait_for_task(self):
-        pass
+    def wait_for_task(self) -> None:
+        # 1. Try to get data from the target mode path of Zookeeper
+        # 2. if (step 1 has data and it's valid) {
+        #        Start to run tasks from the data
+        #    } else {
+        #        Keep wait for tasks
+        #    }
+        while True:
+            _task = self._get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task, must_has_data=False)
+            if _task.running_content is not None and len(_task.running_content) >= 1:
+                # Start to run tasks ...
+                self.run_task(task=_task)
+            else:
+                # Keep waiting
+                # TODO: Parameterize this value for sleep a little bit while.
+                time.sleep(2)
 
     def wait_and_standby(self) -> None:
         if self._current_total_runner is None or len(self._current_total_runner) == 0:
@@ -256,8 +281,53 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
             # TODO: Parameterize this value for sleep a little bit while.
             time.sleep(2)
 
-    def run_task(self):
-        pass
+    def run_task(self, task: Task) -> None:
+        _running_content = task.running_content
+        _current_task: Task = None
+        for _index, _content in enumerate(_running_content):
+            _content = TaskContentDataUtils.convert_to_running_content(_content)
+
+            # Update the ongoing task ID
+            _original_task = self._get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
+            if _index == 0:
+                _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id, running_status=TaskResult.Processing)
+            else:
+                _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id)
+            self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+
+            # Run the task and update the meta data Task
+            _data = None
+            try:
+                # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage in cient site
+                _data = self._processing_task(_content)
+            except Exception as e:
+                # Update attributes
+                _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
+                _updated_running_result = RunningResult(success_count=_running_result.success_count, fail_count=_running_result.fail_count + 1)
+
+                _result_detail = _original_task.result_detail
+                _result_detail.append(ResultDetail(task_id=_content.task_id, state=TaskResult.Error.value, status_code=500, response=None, error_msg=f"{e}"))
+            else:
+                # Update attributes
+                _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
+                _updated_running_result = RunningResult(success_count=_running_result.success_count + 1, fail_count=_running_result.fail_count)
+
+                _result_detail = _original_task.result_detail
+                _result_detail.append(ResultDetail(task_id=_content.task_id, state=TaskResult.Done.value, status_code=200, response=_data, error_msg=None))
+
+            _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id, running_result=_updated_running_result, result_detail=_result_detail)
+            self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+
+        # Finish all tasks, record the running result and reset the content ...
+        _current_task = Update.task(task=_current_task, running_content=[], in_progressing_id="-1", running_status=TaskResult.Done)
+        self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+
+    def _processing_task(self, content: RunningContent) -> Any:
+        # TODO: How to check these factories has be registered or not?
+        _parsed_response = self.crawl(method=content.method, url=content.url)
+        _data = self.data_process(_parsed_response)
+        # self.persist(data=_data)
+        return _data
 
     def discover(self, crawler_name: str, heartbeat: Heartbeat) -> Task:
         _node_state_path = f"{self._generate_path(crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
@@ -401,22 +471,25 @@ class ZookeeperCrawler(BaseDecentralizedCrawler):
         if self.__Updating_Exception is not None:
             raise self.__Updating_Exception
 
-    def _get_metadata_from_zookeeper(self, path: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
+    def _get_metadata_from_zookeeper(self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True) -> Generic[_BaseMetaDataType]:
         _value = self._Zookeeper_Client.get_value_from_node(path=path)
         if ZookeeperCrawler._value_is_not_empty(_value):
             _state = self._zk_converter.deserialize_meta_data(data=_value, as_obj=as_obj)
             return _state
         else:
-            if issubclass(as_obj, GroupState):
-                return Empty.group_state()
-            elif issubclass(as_obj, NodeState):
-                return Empty.node_state()
-            elif issubclass(as_obj, Task):
-                return Empty.task()
-            elif issubclass(as_obj, Heartbeat):
-                return Empty.heartbeat()
+            if must_has_data is True:
+                if issubclass(as_obj, GroupState):
+                    return Empty.group_state()
+                elif issubclass(as_obj, NodeState):
+                    return Empty.node_state()
+                elif issubclass(as_obj, Task):
+                    return Empty.task()
+                elif issubclass(as_obj, Heartbeat):
+                    return Empty.heartbeat()
+                else:
+                    raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
             else:
-                raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
+                return None
 
     @staticmethod
     def _value_is_not_empty(_value) -> bool:
