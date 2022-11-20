@@ -474,8 +474,8 @@ class TestTask(_MetaDataTest):
             getting_func=_get_func,
             setting_func=_set_func,
             valid_value="1",
-            invalid_1_value=5,
-            invalid_2_value="test_1"
+            invalid_1_value="test_1",
+            invalid_2_value=["test_1"]
         )
 
     def test_running_result_with_dict(self, task: Task) -> None:
