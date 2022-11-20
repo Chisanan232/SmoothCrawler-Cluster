@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model import Initial, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
+from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from smoothcrawler_cluster.exceptions import ZookeeperCrawlerNotReady
@@ -27,6 +27,7 @@ from .._values import (
     # common functions
     setup_group_state, setup_node_state, setup_task, setup_heartbeat
 )
+from .._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
 
 
 def _Type_Not_Correct_Assertion_Error_Message(obj) -> str:
@@ -747,4 +748,62 @@ class TestZookeeperCrawler(ZKTestSpec):
         # # Verify the result
         assert _result is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end - _start) <= 6, "It should NOT run more than 6 seconds."
+
+    def test_run_task(self, uit_object: ZookeeperCrawler):
+        _empty_task = Empty.task()
+        if self._exist_node(path=uit_object.task_zookeeper_path) is None:
+            _task_data_str = json.dumps(_empty_task.to_readable_object())
+            self._create_node(path=uit_object.task_zookeeper_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
+
+        def _assign_task() -> None:
+            time.sleep(5)
+            _task = uit_object._get_metadata_from_zookeeper(path=uit_object.task_zookeeper_path, as_obj=Task)
+            _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
+            _updated_task_str = json.dumps(_updated_task.to_readable_object())
+            self._set_value_to_node(path=uit_object.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+
+        def _wait_for_task() -> None:
+            try:
+                uit_object.register_factory(
+                    http_req_sender=RequestsHTTPRequest(),
+                    http_resp_parser=RequestsHTTPResponseParser(),
+                    data_process=ExampleWebDataHandler()
+                )
+                uit_object.wait_for_task()
+            except Exception as e:
+                raise e
+                # assert False, ""
+            else:
+                assert True, ""
+
+        try:
+            _assign_task_thread = threading.Thread(target=_assign_task)
+            _run_task_thread = threading.Thread(target=_wait_for_task)
+            _run_task_thread.daemon = True
+
+            _assign_task_thread.start()
+            _run_task_thread.start()
+
+            _assign_task_thread.join()
+
+            time.sleep(3)
+
+            # Verify the running result
+            _task_data, state = self._get_value_from_node(path=uit_object.task_zookeeper_path)
+            _json_task_data = json.loads(str(_task_data.decode("utf-8")))
+            print(f"[DEBUG in testing] _json_task_data: {_json_task_data}")
+            assert _json_task_data["in_progressing_id"] == "-1", ""
+            assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, ""
+            assert _json_task_data["running_status"] == TaskResult.Done.value, ""
+            assert len(_json_task_data["result_detail"]) == 1, ""
+            assert _json_task_data["result_detail"][0] == {
+                "task_id": _Task_Running_Content_Value[0]["task_id"],
+                "state": TaskResult.Done.value,
+                "status_code": 200,
+                "response": "Example Domain",
+                "error_msg": None
+            }, ""
+        finally:
+            if self._exist_node(path=uit_object.task_zookeeper_path):
+                self._delete_node(path=uit_object.task_zookeeper_path)
 
