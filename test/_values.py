@@ -29,9 +29,11 @@ _Empty_List_Value: list = []
 _Empty_Dict_Value: dict = {}
 
 # # Related task settings
+_Task_Test_URL: str = "http://127.0.0.1:8081/example.com"
+_Task_Real_URL: str = "https://www.example.com"
 _Task_Running_Content_Value: List[dict] = [{
     "task_id": 0,
-    "url": "https://www.example.com",
+    "url": _Task_Test_URL,
     "method": "GET",
     "parameters": _Empty_Dict_Value,
     "header": _Empty_Dict_Value,
