@@ -299,16 +299,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             _data = None
             try:
                 # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage in cient site
-                _data = self._processing_task(_content)
+                _data = self.processing_crawling_task(_content)
             except Exception as e:
-                # Update attributes
+                # Update attributes with fail result
                 _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
                 _updated_running_result = RunningResult(success_count=_running_result.success_count, fail_count=_running_result.fail_count + 1)
 
                 _result_detail = _original_task.result_detail
                 _result_detail.append(ResultDetail(task_id=_content.task_id, state=TaskResult.Error.value, status_code=500, response=None, error_msg=f"{e}"))
             else:
-                # Update attributes
+                # Update attributes with successful result
                 _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
                 _updated_running_result = RunningResult(success_count=_running_result.success_count + 1, fail_count=_running_result.fail_count)
 
@@ -322,7 +322,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         _current_task = Update.task(task=_current_task, running_content=[], in_progressing_id="-1", running_status=TaskResult.Done)
         self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
 
-    def _processing_task(self, content: RunningContent) -> Any:
+    def processing_crawling_task(self, content: RunningContent) -> Any:
         # TODO: How to check these factories has be registered or not?
         _parsed_response = self.crawl(method=content.method, url=content.url)
         _data = self.data_process(_parsed_response)
