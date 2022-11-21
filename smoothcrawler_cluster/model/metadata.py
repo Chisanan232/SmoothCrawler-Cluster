@@ -2,7 +2,6 @@ from collections import namedtuple
 from datetime import datetime as dt
 from typing import List, Union, Optional, TypeVar
 from abc import ABCMeta, abstractmethod
-import json
 import re
 
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
