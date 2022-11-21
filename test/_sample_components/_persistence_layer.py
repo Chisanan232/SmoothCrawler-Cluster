@@ -151,8 +151,7 @@ class StockDao(BaseDao):
 
 
     def get(self, stock_symbol: str):
-        sql = f"" \
-              f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume " \
+        sql = f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume " \
               f"FROM tw_stock.stock_data_{stock_symbol}"
 
         ## Method 1
@@ -182,7 +181,9 @@ class StockDao(BaseDao):
 
 
     def batch_insert(self, stock_symbol: str, data: Tuple[tuple]) -> None:
-        sql = f"INSERT INTO tw_stock.stock_data_{stock_symbol} (stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume) " \
+        sql = f"INSERT INTO tw_stock.stock_data_{stock_symbol} (" \
+              f"stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume" \
+              f") " \
               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         self.execute_many(sql, data)

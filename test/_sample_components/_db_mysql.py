@@ -49,7 +49,8 @@ class MySQLDriverConnectionPool(BaseConnectionPool):
                 raise e
             except AttributeError as ae:
                 if "'NoneType' object has no attribute 'get_connection'" in str(ae):
-                    raise ConnectionError(f"Cannot get the one connection instance from connection pool because it doesn't exist the connection pool with the name '{pool_name}'.")
+                    raise ConnectionError(f"Cannot get the one connection instance from connection pool because it doesn't "
+                                          f"exist the connection pool with the name '{pool_name}'.")
                 else:
                     raise ae
 
