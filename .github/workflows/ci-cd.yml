@@ -78,6 +78,11 @@ jobs:
     with:
       test_type: integration-test
       all_test_items_paths: ${{needs.prep-testbed_integration-test.outputs.all_test_items}}
+      setup_http_server: true
+      http_server_host: 0.0.0.0
+      http_server_port: 12345
+      http_server_app_module: test._http_server.app
+      http_server_enter_point: app
 #      debug_mode: true
 
 

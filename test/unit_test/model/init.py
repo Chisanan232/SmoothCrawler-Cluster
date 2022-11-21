@@ -2,7 +2,7 @@ from smoothcrawler_cluster.model import Initial, CrawlerStateRole, TaskResult
 
 from ..._assertion import (
     WorkingTime,
-    ObjectIsNoneOrNotAssertion, ValueAssertion, ListSizeAssertion
+    ObjectIsNoneOrNotAssertion, MetaDataValueAssertion, ListSizeAssertion
 )
 from ..._values import _Crawler_Name_Value, _Total_Crawler_Value, _Runner_Crawler_Value, _Backup_Crawler_Value
 
@@ -16,11 +16,11 @@ class TestInitial:
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
 
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_crawler", expected_value=_Runner_Crawler_Value + _Backup_Crawler_Value)
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_runner", expected_value=_Runner_Crawler_Value)
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="total_backup", expected_value=_Backup_Crawler_Value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="total_crawler", expected_value=_Runner_Crawler_Value + _Backup_Crawler_Value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="total_runner", expected_value=_Runner_Crawler_Value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="total_backup", expected_value=_Backup_Crawler_Value)
 
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="standby_id", expected_value="0")
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="standby_id", expected_value="0")
 
         ListSizeAssertion(WorkingTime.AtInitial, _state, metadata="current_crawler", expected_value=1)
         assert _state.current_crawler[0] == _Crawler_Name_Value, \
@@ -39,21 +39,21 @@ class TestInitial:
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
 
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value="test-group")
-        ValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value="test-group")
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
 
     def test__initial_task(self):
         # Operate target method for testing
         _task = Initial.task()
 
         # Verify values
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_content", expected_value=[])
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="cookie", expected_value={})
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={})
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
-        ValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_content", expected_value=[])
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="cookie", expected_value={})
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={})
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
 
     def test__initial_heartbeat(self):
         # Operate target method for testing

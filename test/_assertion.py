@@ -37,7 +37,7 @@ def ObjectIsNoneOrNotAssertion(working_time: WorkingTime, uit_obj: Any, is_none:
         assert uit_obj is not None, f"{working_time.value}, object *{uit_obj.__class__.__name__}* should NOT be None."
 
 
-def ValueAssertion(working_time: WorkingTime, uit_obj: Any, metadata: str, expected_value: Any = None, is_none: bool = False) -> None:
+def MetaDataValueAssertion(working_time: WorkingTime, uit_obj: Any, metadata: str, expected_value: Any = None, is_none: bool = False) -> None:
     if expected_value is None:
         if is_none is True:
             _assertion = f"{working_time.value}, meta data *{uit_obj.__class__.__name__}.{metadata}* should be None."

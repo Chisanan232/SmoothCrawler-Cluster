@@ -1,10 +1,11 @@
-from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
-from smoothcrawler_cluster._utils.converter import JsonStrConverter
+from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
+from smoothcrawler_cluster._utils.converter import JsonStrConverter, TaskContentDataUtils
 import pytest
 import json
 
 from ..._values import (
     _Test_Group_State_Data, _Test_Node_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
+    _Task_Running_Content_Value, _Task_Running_Result, _Task_Result_Detail_Value,
     setup_group_state, setup_node_state, setup_task, setup_heartbeat
 )
 
@@ -87,3 +88,38 @@ class TestJsonStrConverter:
         for _key in expected_data.keys():
             assert deserialized_data[_key] == expected_data[_key], \
                 f"The values of both objects *deserialized_data* and *expected_data* with key '{_key}' should be the same."
+
+
+class TestTaskContentDataUtils:
+
+    @pytest.fixture(scope="function")
+    def utils(self) -> TaskContentDataUtils:
+        return TaskContentDataUtils()
+
+    def test_convert_to_running_content(self, utils: TaskContentDataUtils):
+        _running_content = utils.convert_to_running_content(data=_Task_Running_Content_Value[0])
+        _content = _Task_Running_Content_Value[0]
+        assert type(_running_content) is RunningContent, "It should be converted as 'RunningContent' type object."
+        assert _running_content.task_id == _content["task_id"], "The *task_id* values should be the same."
+        assert _running_content.url == _content["url"], "The *url* values should be the same."
+        assert _running_content.method == _content["method"], "The *method* values should be the same."
+        assert _running_content.parameters == _content["parameters"], "The *parameters* values should be the same."
+        assert _running_content.header == _content["header"], "The *header* values should be the same."
+        assert _running_content.body == _content["body"], "The *body* values should be the same."
+
+    def test_convert_to_running_result(self, utils: TaskContentDataUtils):
+        _running_result = utils.convert_to_running_result(data=_Task_Running_Result)
+        assert type(_running_result) is RunningResult, "It should be converted as 'RunningResult' type object."
+        assert _running_result.success_count == _Task_Running_Result["success_count"], "The *success_count* values should be the same."
+        assert _running_result.fail_count == _Task_Running_Result["fail_count"], "The *fail_count* values should be the same."
+
+    def test_convert_to_result_detail(self, utils: TaskContentDataUtils):
+        _result_detail = utils.convert_to_result_detail(data=_Task_Result_Detail_Value[0])
+        _detail = _Task_Result_Detail_Value[0]
+        assert type(_result_detail) is ResultDetail, "It should be converted as 'ResultDetail' type object."
+        assert _result_detail.task_id == _detail["task_id"], "The *task_id* values should be the same."
+        assert _result_detail.state == _detail["state"], "The *state* values should be the same."
+        assert _result_detail.status_code == _detail["status_code"], "The *status_code* values should be the same."
+        assert _result_detail.response == _detail["response"], "The *response* values should be the same."
+        assert _result_detail.error_msg == _detail["error_msg"], "The *error_msg* values should be the same."
+

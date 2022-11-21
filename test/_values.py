@@ -6,6 +6,8 @@ from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState
 from datetime import datetime
 from typing import List
 
+from ._config import Test_Task_HTTP_Host, Test_Task_API_Path
+
 
 # # # # For Zookeeper
 # # Zookeeper paths
@@ -26,15 +28,18 @@ _Backup_Crawler_Value: int = 1
 _Total_Crawler_Value: int = _Runner_Crawler_Value + _Backup_Crawler_Value
 _State_Standby_ID_Value: str = "3"
 _Empty_List_Value: list = []
+_Empty_Dict_Value: dict = {}
 
 # # Related task settings
+_Task_Test_URL: str = f"http://{Test_Task_HTTP_Host}{Test_Task_API_Path}"
+_Task_Real_URL: str = "https://www.example.com"
 _Task_Running_Content_Value: List[dict] = [{
     "task_id": 0,
-    "url": "https://www.example.com",
+    "url": _Task_Test_URL,
     "method": "GET",
-    "parameters": None,
-    "header": None,
-    "body": None
+    "parameters": _Empty_Dict_Value,
+    "header": _Empty_Dict_Value,
+    "body": _Empty_Dict_Value
 }]
 _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}

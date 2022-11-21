@@ -19,3 +19,7 @@ mysql-connector-python >= 8.0.28
 
 ## For running testing in a sandbox runtime environment via tool 'tox'
 tox >= 3.25.1
+
+## For running HTTP server for testing crawling feature of web spider
+flask >= 2.0.0    # In Python 3.6, its latest version supported is 2.0.0. But it supports 2.2.1 version in Python 3.10.
+gunicorn >= 20.0.0    # In Python 3.6, its latest version supported is 20.0.0. But it supports 20.1.0 version in Python 3.10.

@@ -471,15 +471,15 @@ class Task(_BaseMetaData):
         return self._in_progressing_id
 
     @in_progressing_id.setter
-    def in_progressing_id(self, in_progressing_id: str) -> None:
-        if type(in_progressing_id) is not str:
-            raise ValueError("Property *in_progressing_id* only accept str type value which is a number format.")
+    def in_progressing_id(self, in_progressing_id: Union[str, int]) -> None:
+        if type(in_progressing_id) is not str and type(in_progressing_id) is not int:
+            raise ValueError("Property *in_progressing_id* only accept int type value or str type value which is a number format.")
         try:
             int(in_progressing_id)
         except ValueError:
             raise ValueError("Property *in_progressing_id* only accept str type value which is a number format.")
         else:
-            self._in_progressing_id = in_progressing_id
+            self._in_progressing_id = str(in_progressing_id)
 
     @property
     def running_result(self) -> dict:
