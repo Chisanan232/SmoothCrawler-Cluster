@@ -299,7 +299,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             _data = None
             try:
                 # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage in cient site
-                _data = self.processing_crawling_task(_content)
+                _data = self._run_crawling_processing(_content)
             except NotImplementedError as e:
                 raise e
             except Exception as e:
@@ -325,26 +325,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
 
     def processing_crawling_task(self, content: RunningContent) -> Any:
-        if self._chk_register(persist=False) is True:
-            _parsed_response = self.crawl(method=content.method, url=content.url)
-            _data = self.data_process(_parsed_response)
-            # self.persist(data=_data)
-            return _data
-        else:
-            raise NotImplementedError("You should implement the SmoothCrawler components and register them.")
-
-    def _chk_register(self, http_sender: bool = True, http_resp_parser: bool = True, data_hdler: bool = True, persist: bool = True) -> bool:
-
-        def _is_not_none(_chk: bool, _val) -> bool:
-            if _chk is True:
-                return _val is not None
-            return True
-
-        _factory = self._factory
-        return _is_not_none(http_sender, _factory.http_factory) and \
-               _is_not_none(http_resp_parser, _factory.parser_factory) and \
-               _is_not_none(data_hdler, _factory.data_handling_factory) and \
-               _is_not_none(persist, _factory.data_handling_factory)
+        _parsed_response = self.crawl(method=content.method, url=content.url)
+        _data = self.data_process(_parsed_response)
+        # self.persist(data=_data)
+        return _data
 
     def discover(self, crawler_name: str, heartbeat: Heartbeat) -> Task:
         _node_state_path = f"{self._generate_path(crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
@@ -487,6 +471,26 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 break
         if self.__Updating_Exception is not None:
             raise self.__Updating_Exception
+
+    def _run_crawling_processing(self, content: RunningContent) -> Any:
+        if self._chk_register(persist=False) is True:
+            _data = self.processing_crawling_task(content)
+            return _data
+        else:
+            raise NotImplementedError("You should implement the SmoothCrawler components and register them.")
+
+    def _chk_register(self, http_sender: bool = True, http_resp_parser: bool = True, data_hdler: bool = True, persist: bool = True) -> bool:
+
+        def _is_not_none(_chk: bool, _val) -> bool:
+            if _chk is True:
+                return _val is not None
+            return True
+
+        _factory = self._factory
+        return _is_not_none(http_sender, _factory.http_factory) and \
+               _is_not_none(http_resp_parser, _factory.parser_factory) and \
+               _is_not_none(data_hdler, _factory.data_handling_factory) and \
+               _is_not_none(persist, _factory.data_handling_factory)
 
     def _get_metadata_from_zookeeper(self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True) -> Generic[_BaseMetaDataType]:
         _value = self._Zookeeper_Client.get_value_from_node(path=path)
