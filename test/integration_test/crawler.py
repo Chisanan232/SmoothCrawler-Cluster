@@ -28,7 +28,7 @@ from .._values import (
     # common functions
     setup_group_state, setup_node_state, setup_task, setup_heartbeat
 )
-from .._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
+from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
 
 
 def _Type_Not_Correct_Assertion_Error_Message(obj) -> str:
