@@ -6,6 +6,7 @@ from datetime import datetime
 from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
 from typing import List, Dict
+import traceback
 import threading
 import pytest
 import json
@@ -764,17 +765,23 @@ class TestZookeeperCrawler(ZKTestSpec):
 
         def _wait_for_task() -> None:
             try:
+                uit_object.wait_for_task()
+            except NotImplementedError:
+                assert True, "It works finely."
+            else:
+                assert False, "It should raise an error about *NotImplementedError* of registering SmoothCrawler components."
+
+            try:
                 uit_object.register_factory(
                     http_req_sender=RequestsHTTPRequest(),
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler()
                 )
                 uit_object.wait_for_task()
-            except Exception as e:
-                raise e
-                # assert False, ""
+            except Exception:
+                assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
             else:
-                assert True, ""
+                assert True, "It works finely."
 
         try:
             _assign_task_thread = threading.Thread(target=_assign_task)
@@ -792,18 +799,21 @@ class TestZookeeperCrawler(ZKTestSpec):
             _task_data, state = self._get_value_from_node(path=uit_object.task_zookeeper_path)
             _json_task_data = json.loads(str(_task_data.decode("utf-8")))
             print(f"[DEBUG in testing] _json_task_data: {_json_task_data}")
-            assert _json_task_data["in_progressing_id"] == "-1", ""
-            assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, ""
-            assert _json_task_data["running_status"] == TaskResult.Done.value, ""
-            assert len(_json_task_data["result_detail"]) == 1, ""
+            assert _json_task_data["in_progressing_id"] == "-1", "It should be reset as '-1' finally in crawl processing."
+            assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, "It should has 1 successful and 0 fail result."
+            assert _json_task_data["running_status"] == TaskResult.Done.value, "It should be 'TaskResult.Done' state."
+            assert len(_json_task_data["result_detail"]) == 1, "It's size should be 1."
             assert _json_task_data["result_detail"][0] == {
                 "task_id": _Task_Running_Content_Value[0]["task_id"],
                 "state": TaskResult.Done.value,
                 "status_code": 200,
                 "response": "Example Domain",
                 "error_msg": None
-            }, ""
+            }, "The detail should be completely same as above."
         finally:
-            if self._exist_node(path=uit_object.task_zookeeper_path):
-                self._delete_node(path=uit_object.task_zookeeper_path)
+            _under_test_task_path = uit_object.task_zookeeper_path
+            del uit_object
+            time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
+            if self._exist_node(path=_under_test_task_path):
+                self._delete_node(path=_under_test_task_path)
 
