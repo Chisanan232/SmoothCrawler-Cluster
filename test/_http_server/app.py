@@ -23,7 +23,7 @@ def get_stock_data() -> str:
     :return: A string type data with JSON type format.
     """
 
-    _response = request.args.get("response", "json")
+    # _response = request.args.get("response", "json")
     _date = request.args.get("date", None)    # Example: 20170101
     _stockNo = request.args.get("stockNo", None)    # Example: 2330
 
