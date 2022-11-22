@@ -118,12 +118,14 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def task(running_content: List[Union[dict, RunningContent]] = [], cookie: dict = {}, authorization: dict = {}, in_progressing_id: str = "-1",
-             running_result: Union[dict, RunningResult] = {}, running_state: TaskResult = None, result_detail: List[Union[dict, ResultDetail]] = []) -> Task:
+             running_result: Union[dict, RunningResult] = None, running_state: TaskResult = None, result_detail: List[Union[dict, ResultDetail]] = []) -> Task:
         _task = Task()
         _task.running_content = running_content
         _task.cookie = cookie
         _task.authorization = authorization
         _task.in_progressing_id = in_progressing_id
+        if running_result is None:
+            running_result = RunningResult(success_count=0, fail_count=0)
         _task.running_result = running_result
         if running_state is None:
             running_state = TaskResult.Nothing
