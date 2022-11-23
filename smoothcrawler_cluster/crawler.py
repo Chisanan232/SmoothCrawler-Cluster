@@ -450,6 +450,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     def _register_heartbeat_to_zookeeper(self) -> None:
         if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
+            # TODO: It needs to parameterize these settings
             _heartbeat = Initial.heartbeat(update_time="0.4s", update_timeout="0.8s", heart_rhythm_timeout="3")
             self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=True)
 
