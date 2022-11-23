@@ -6,6 +6,7 @@ from datetime import datetime
 from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
 from typing import List, Dict
+import multiprocessing as mp
 import traceback
 import threading
 import pytest
@@ -40,6 +41,11 @@ def _Value_Not_Correct_Assertion_Error_Message(value_meaning, current_value, exp
 
 
 _Not_None_Assertion_Error: str = "It should not be None object."
+
+
+_Manager = mp.Manager()
+_ZK_Crawler_Instances: List[ZookeeperCrawler] = _Manager.list()
+_Global_Exception_Record: Exception = None
 
 
 # TODO: Consider that this class should be managed in a module or not
@@ -580,7 +586,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         _sorted_all_paths = list(set(all_paths))
         for _path in _sorted_all_paths:
             if self._PyTest_ZK_Client.exists(path=_path) is not None:
-                self._PyTest_ZK_Client.delete(path=_path)
+                self._PyTest_ZK_Client.delete(path=_path, recursive=True)
 
     def test_wait_for_standby(self, uit_object: ZookeeperCrawler):
         # Prepare the meta data for testing this scenario
@@ -750,7 +756,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         assert _result is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end - _start) <= 6, "It should NOT run more than 6 seconds."
 
-    def test_run_task(self, uit_object: ZookeeperCrawler):
+    def test_wait_for_task(self, uit_object: ZookeeperCrawler):
         _empty_task = Empty.task()
         if self._exist_node(path=uit_object.task_zookeeper_path) is None:
             _task_data_str = json.dumps(_empty_task.to_readable_object())
@@ -816,4 +822,180 @@ class TestZookeeperCrawler(ZKTestSpec):
             time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
             if self._exist_node(path=_under_test_task_path):
                 self._delete_node(path=_under_test_task_path)
+
+    def test_run(self):
+        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
+        self._PyTest_ZK_Client.start()
+
+        # Reset Zookeeper nodes
+        _all_paths = []
+        _all_paths.append("smoothcrawler/group/sc-crawler-cluster/state")
+        for i in range(1, _Total_Crawler_Value + 1):
+            _all_paths.append(f"smoothcrawler/node/sc-crawler_{i}/state")
+            _all_paths.append(f"smoothcrawler/node/sc-crawler_{i}/task")
+            _all_paths.append(f"smoothcrawler/node/sc-crawler_{i}/heartbeat")
+        self._delete_zk_nodes(_all_paths)
+
+        _running_flag: Dict[str, bool] = _Manager.dict()
+        _group_state_path = _Manager.Value("group_path", "")
+        _node_state_path: str = ""
+        _index_sep_char: str = "_"
+        _all_paths: List[str] = _Manager.list()
+
+        _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
+
+        def _assign_task() -> None:
+            time.sleep(3)
+
+            _task_paths = [f"smoothcrawler/node/sc-crawler{_index_sep_char}{i}/task" for i in range(1, 4)]
+            for _task_path in _task_paths:
+                _task_data, state = self._get_value_from_node(path=_task_path)
+                _task_json_data = json.loads(_task_data)
+                _task_json_data["running_content"] = _Task_Running_Content_Value
+                _task_json_str = json.dumps(_task_json_data)
+                self._set_value_to_node(path=_task_path, value=bytes(_task_json_str, "utf-8"))
+
+        def _run_and_test(_name: str) -> None:
+            _zk_crawler = None
+            try:
+                # Instantiate ZookeeperCrawler
+                _zk_crawler = ZookeeperCrawler(
+                    runner=_Runner_Crawler_Value,
+                    backup=_Backup_Crawler_Value,
+                    name=_name,
+                    initial=True,
+                    ensure_initial=True,
+                    zk_hosts=Zookeeper_Hosts
+                )
+
+                if _group_state_path.value == "":
+                    _group_state_path.value = _zk_crawler.group_state_zookeeper_path
+                _all_paths.append(_zk_crawler.group_state_zookeeper_path)
+                nonlocal _node_state_path
+                if _node_state_path == "":
+                    _node_state_path = _zk_crawler.node_state_zookeeper_path
+                _all_paths.append(_node_state_path)
+                _all_paths.append(_zk_crawler.task_zookeeper_path)
+                _all_paths.append(_zk_crawler.heartbeat_zookeeper_path)
+
+                # Get the instance role of the crawler cluster
+                _role_results[_name] = _zk_crawler.role
+
+                _zk_crawler.register_factory(
+                    http_req_sender=RequestsHTTPRequest(),
+                    http_resp_parser=RequestsHTTPResponseParser(),
+                    data_process=ExampleWebDataHandler()
+                )
+                if "2" in _name:
+                    print(f"[DEBUG - testing] _name: {_name} stop updating heartbeat and run")
+                    _zk_crawler.stop_update_heartbeat()
+                    _zk_crawler.run()
+                else:
+                    print(f"[DEBUG - testing] _name: {_name} run")
+                    _zk_crawler.run()
+            except Exception as e:
+                _running_flag[_name] = False
+                global _Global_Exception_Record
+                _Global_Exception_Record = e
+            else:
+                _running_flag[_name] = True
+
+        try:
+            # Run the target methods by multi-processes
+            _processes = []
+            for i in range(1, _Total_Crawler_Value + 1):
+                _crawler_process = mp.Process(target=_run_and_test, args=(f"sc-crawler{_index_sep_char}{i}",))
+                _crawler_process.daemon = True
+                _processes.append(_crawler_process)
+
+            for _process in _processes:
+                _process.start()
+
+            time.sleep(3)
+            _assign_task()
+
+            time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+
+            global _Global_Exception_Record
+            if _Global_Exception_Record is not None:
+                assert False, traceback.print_exception(_Global_Exception_Record)
+
+            self._check_running_status(_running_flag)
+
+            # Verify the group info
+            _group_data, _state = self._PyTest_ZK_Client.get(path=_group_state_path.value)
+            _group_json_data = json.loads(_group_data.decode("utf-8"))
+            print(f"[DEBUG] _group_state_path.value: {_group_state_path.value}, _group_json_data: {_group_json_data} - {datetime.now()}")
+
+            assert _group_json_data["total_crawler"] == 3, ""
+            assert _group_json_data["total_runner"] == 2, ""
+            assert _group_json_data["total_backup"] == 0, ""
+
+            assert len(_group_json_data["current_crawler"]) == 2, ""
+            assert False not in ["2" not in _crawler for _crawler in _group_json_data["current_crawler"]], ""
+            assert len(_group_json_data["current_runner"]) == 2, ""
+            assert False not in ["2" not in _crawler for _crawler in _group_json_data["current_runner"]], ""
+            assert len(_group_json_data["current_backup"]) == 0, ""
+
+            assert _group_json_data["standby_id"] == "4", ""
+
+            assert len(_group_json_data["fail_crawler"]) == 1, ""
+            assert False not in ["2" in _crawler for _crawler in _group_json_data["fail_crawler"]], ""
+            assert len(_group_json_data["fail_runner"]) == 1, ""
+            assert False not in ["2" in _crawler for _crawler in _group_json_data["fail_runner"]], ""
+            assert len(_group_json_data["fail_backup"]) == 0, ""
+
+            # Verify the state info
+            _state_paths = filter(lambda _path: "node" in _path and "state" in _path, _all_paths)
+            for _state_path in list(_state_paths):
+                _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
+                _json_data = json.loads(_data.decode("utf-8"))
+                print(f"[DEBUG] _state_path: {_state_path}, _json_data: {_json_data} - {datetime.now()}")
+                if "1" in _state_path:
+                    assert _json_data["role"] == CrawlerStateRole.Runner.value, ""
+                elif "2" in _state_path:
+                    assert _json_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
+                elif "3" in _state_path:
+                    assert _json_data["role"] == CrawlerStateRole.Runner.value, ""
+                else:
+                    assert False, ""
+
+            # Verify the task info
+            _task_paths = filter(lambda _path: "task" in _path, _all_paths)
+            for _task_path in list(_task_paths):
+                _data, _state = self._PyTest_ZK_Client.get(path=_task_path)
+                _json_data = json.loads(_data.decode("utf-8"))
+                print(f"[DEBUG] _task_path: {_task_path}, _json_data: {_json_data}")
+                assert _json_data is not None, ""
+                if "1" in _task_path:
+                    self._chk_available_task_detail(_json_data)
+                elif "2" in _task_path:
+                    # self._chk_error_task_detail(_json_data)
+                    self._chk_available_task_detail(_json_data)
+                elif "3" in _task_path:
+                    self._chk_available_task_detail(_json_data)
+                else:
+                    assert False, ""
+        finally:
+            self._delete_zk_nodes(_all_paths)
+
+    def _chk_available_task_detail(self, _one_detail: dict) -> None:
+        assert len(_one_detail["running_content"]) == 0, ""
+        assert _one_detail["in_progressing_id"] == "-1", ""
+        assert _one_detail["running_result"] == {"success_count": 1, "fail_count": 0}, ""
+        assert _one_detail["running_status"] == TaskResult.Done.value, ""
+        assert _one_detail["result_detail"][0] == {
+            "task_id": _Task_Running_Content_Value[0]["task_id"],
+            "state": TaskResult.Done.value,
+            "status_code": 200,
+            "response": "Example Domain",
+            "error_msg": None
+        }, "The detail should be completely same as above."
+
+    def _chk_error_task_detail(self, _one_detail: dict) -> None:
+        assert len(_one_detail["running_content"]) == 0, ""
+        assert _one_detail["in_progressing_id"] == "-1", ""
+        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 1}, ""
+        assert _one_detail["running_status"] == TaskResult.Error.value, ""
+        assert len(_one_detail["result_detail"]) == 0, "The detail should be empty list."
 
