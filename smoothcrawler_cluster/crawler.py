@@ -1,7 +1,7 @@
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 from datetime import datetime
-from typing import List, Any, Type, TypeVar, Union, Generic
+from typing import List, Dict, Callable, Any, Type, TypeVar, Union, Generic
 from abc import ABCMeta
 import threading
 import time
@@ -57,9 +57,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._total_crawler = runner + backup
         self._runner = runner
         self._backup = backup
-        self._current_total_crawler: List[str] = None
-        self._current_total_runner: List[str] = None
-        self._current_total_backup: List[str] = None
         self._standby_id: str = None
         self._crawler_role: CrawlerStateRole = None
         self._index_sep = ""
@@ -109,16 +106,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             self._election_strategy.identity = self._crawler_index
 
         if initial is True:
-            self.register()
-            self._run_updating_heartbeat_thread()
-            if self.is_ready(interval=0.5, timeout=-1):
-                if self.elect() is ElectionResult.Winner:
-                    self._crawler_role = CrawlerStateRole.Runner
-                else:
-                    self._crawler_role = CrawlerStateRole.Backup_Runner
-                self._update_crawler_role(self._crawler_role)
-            else:
-                raise TimeoutError("Timeout to wait for crawler be ready in register process.")
+            self.initial()
 
     @property
     def role(self) -> CrawlerStateRole:
@@ -175,6 +163,19 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         else:
             return f"smoothcrawler/node/{crawler_name}"
 
+    def initial(self) -> None:
+        self.register()
+        if self.__Updating_Stop_Signal is False:
+            self._run_updating_heartbeat_thread()
+        if self.is_ready_for_election(interval=0.5, timeout=-1):
+            if self.elect() is ElectionResult.Winner:
+                self._crawler_role = CrawlerStateRole.Runner
+            else:
+                self._crawler_role = CrawlerStateRole.Backup_Runner
+            self._update_crawler_role(self._crawler_role)
+        else:
+            raise TimeoutError("Timeout to wait for crawler be ready in register process.")
+
     def register(self) -> None:
         # Question: How could it name the web crawler with number?
         # Current Answer:
@@ -188,17 +189,37 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     def stop_update_heartbeat(self) -> None:
         self.__Updating_Stop_Signal = True
 
-    def is_ready(self, interval: float = 0.5, timeout: float = -1) -> bool:
+    def is_ready_for_election(self, interval: float = 0.5, timeout: float = -1) -> bool:
+
+        def _chk_by_condition(_state: GroupState) -> bool:
+            return len(_state.current_crawler) == self._total_crawler and self._crawler_name in _state.current_crawler
+
+        return self._is_ready_by_groupstate(
+            condition_callback=_chk_by_condition,
+            interval=interval,
+            timeout=timeout
+        )
+
+    def is_ready_for_run(self, interval: float = 0.5, timeout: float = -1) -> bool:
+
+        def _chk_by_condition(_state: GroupState) -> bool:
+            return len(_state.current_crawler) == self._total_crawler and self._crawler_name in _state.current_crawler and \
+                   len(_state.current_runner) == self._runner and len(_state.current_backup) == self._backup
+
+        return self._is_ready_by_groupstate(
+            condition_callback=_chk_by_condition,
+            interval=interval,
+            timeout=timeout
+        )
+
+    def _is_ready_by_groupstate(self, condition_callback: Callable, interval: float = 0.5, timeout: float = -1) -> bool:
         if timeout < -1:
             raise ValueError("The option *timeout* value is incorrect. Please configure more than -1, and -1 means it never timeout.")
 
         _start = time.time()
         while True:
             _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-            if len(_state.current_crawler) == self._total_crawler:
-                self._current_total_crawler = _state.current_crawler
-                self._current_total_runner = _state.current_runner
-                self._current_total_backup = _state.current_backup
+            if condition_callback(_state) is True:
                 return True
             if timeout != -1:
                 if (time.time() - _start) >= timeout:
@@ -210,27 +231,27 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler, index_sep=self._index_sep, spot=self._runner)
 
     def run(self) -> None:
-        while True:
-            self.pre_running()
-            try:
-                self.running_as_role(self._crawler_role)
-            except Exception as e:
-                self.before_dead(e)
-            time.sleep(1)
+        if self.is_ready_for_run(interval=0.5, timeout=-1) is True:
+            while True:
+                self.pre_running()
+                try:
+                    self.running_as_role(self._crawler_role)
+                except Exception as e:
+                    self.before_dead(e)
+                time.sleep(1)
+        else:
+            raise TimeoutError("Timeout to wait for crawler be ready for running crawler cluster.")
 
     def pre_running(self) -> None:
         pass
 
     def running_as_role(self, role: CrawlerStateRole) -> None:
         if role is CrawlerStateRole.Runner:
-            print(f"[DEBUG - {self._crawler_name}::running_as_role] wait_for_task")
             self.wait_for_task()
         elif role is CrawlerStateRole.Backup_Runner:
             if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
-                print(f"[DEBUG - {self._crawler_name}::running_as_role] wait_and_standby")
                 self.wait_and_standby()
             else:
-                print(f"[DEBUG - {self._crawler_name}::running_as_role] wait_for_to_be_standby")
                 self.wait_for_to_be_standby()
 
     def before_dead(self, exception: Exception) -> None:
@@ -245,10 +266,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         #    }
         while True:
             _task = self._get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task, must_has_data=False)
-            print(f"[DEBUG - {self._crawler_name}::wait_for_task] task: {_task}.")
             if _task.running_content is not None and len(_task.running_content) >= 1:
                 # Start to run tasks ...
-                print(f"[DEBUG - {self._crawler_name}::wait_for_task] run task.")
                 self.run_task(task=_task)
             else:
                 # Keep waiting
@@ -256,19 +275,17 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 time.sleep(2)
 
     def wait_and_standby(self) -> None:
-        print(f"[DEBUG - {self._crawler_name}::wait_and_standby] start wait_and_standby.")
         _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-        print(f"[DEBUG - {self._crawler_name}::wait_and_standby] _state: {_state}.")
         if _state.current_crawler is None or len(_state.current_crawler) != self._total_crawler or \
                 _state.current_runner is None or len(_state.current_runner) != self._runner or \
                 _state.current_backup is None or len(_state.current_backup) != self._backup:
-            print(f"[DEBUG] - {self._crawler_name} raise ZookeeperCrawlerNotReady.")
             raise ZookeeperCrawlerNotReady
 
-        _timeout_record = {}
+        _timeout_records: Dict[str, int] = {}
+        _no_timeout_records: Dict[str, int] = {}
+        _detect_heart_rhythm_timeout: bool = False
 
         def _chk_current_runner_heartbeat(runner_name: str) -> bool:
-            print(f"[DEBUG - _chk_current_runner_heartbeat] runner_name: {runner_name}")
             _heartbeat_path = f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}"
             _heartbeat = self._get_metadata_from_zookeeper(path=_heartbeat_path, as_obj=Heartbeat)
 
@@ -279,28 +296,30 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
             _diff_datetime = datetime.now() - datetime.strptime(_heart_rhythm_time, _time_format)
             if _diff_datetime.total_seconds() >= self._get_sleep_time(_update_timeout):
-                print(f"[DEBUG - _chk_current_runner_heartbeat] runner_name: {runner_name}, update heartbeat timeout")
                 # It should start to pay attention on it
-                _runner_update_timeout = _timeout_record.get(runner_name, 0)
-                _timeout_record[runner_name] = _runner_update_timeout + 1
-                if _timeout_record[runner_name] >= int(_heart_rhythm_timeout):
-                    print(f"[DEBUG - _chk_current_runner_heartbeat] runner_name: {runner_name}, it timeout too many times to be marked as dead")
+                _timeout_records[runner_name] = _timeout_records.get(runner_name, 0) + 1
+                _no_timeout_records[runner_name] = 0
+                if _timeout_records[runner_name] >= int(_heart_rhythm_timeout):
                     # It should mark the runner as dead and try to activate itself.
                     _task_of_dead_crawler = self.discover(crawler_name=runner_name, heartbeat=_heartbeat)
                     self.activate(crawler_name=runner_name, task=_task_of_dead_crawler)
                     return True
+            else:
+                _no_timeout_records[runner_name] = _no_timeout_records.get(runner_name, 0) + 1
+                # TODO: Maybe we could parameterize this option
+                if _no_timeout_records[runner_name] >= 10:
+                    _timeout_records[runner_name] = 0
             return False
 
-        print(f"[DEBUG - wait_and_standby] Start while loop ...")
         while True:
             _group_state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-            print(f"[DEBUG - wait_and_standby] self._crawler_name: {self._crawler_name}, _state: {_group_state}")
             _current_runners_heartbeat = map(_chk_current_runner_heartbeat, _group_state.current_runner)
-            if True in list(_current_runners_heartbeat):
+            _current_runners_heartbeat_chksum = list(_current_runners_heartbeat)
+            if True in _current_runners_heartbeat_chksum:
                 break
 
             # TODO: Parameterize this value for sleep a little bit while.
-            time.sleep(0.4)
+            time.sleep(0.5)
 
     def wait_for_to_be_standby(self) -> bool:
         while True:
@@ -361,7 +380,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return _data
 
     def discover(self, crawler_name: str, heartbeat: Heartbeat) -> Task:
-        print(f"[DEBUG - discover]")
         _node_state_path = f"{self._generate_path(crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
         _node_state = self._get_metadata_from_zookeeper(path=_node_state_path, as_obj=NodeState)
         _node_state.role = CrawlerStateRole.Dead_Runner
@@ -375,7 +393,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return _task
 
     def activate(self, crawler_name: str, task: Task):
-        print(f"[DEBUG - activate]")
         _node_state = self._get_metadata_from_zookeeper(path=self.node_state_zookeeper_path, as_obj=NodeState)
         self._crawler_role = CrawlerStateRole.Runner
         _node_state.role = self._crawler_role
@@ -384,16 +401,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
             _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
 
-            _state.total_backup = _state.total_backup - 1
-            _state.current_crawler.remove(crawler_name)
-            _state.current_runner.remove(crawler_name)
-            _state.current_runner.append(self._crawler_name)
-            _state.current_backup.remove(self._crawler_name)
-            _state.fail_crawler.append(crawler_name)
-            _state.fail_runner.append(crawler_name)
-            _state.standby_id = str(int(_state.standby_id) + 1)
+            if self._crawler_name in _state.current_backup:
+                _state.total_backup = _state.total_backup - 1
+                _state.current_crawler.remove(crawler_name)
+                _state.current_runner.remove(crawler_name)
+                _state.current_runner.append(self._crawler_name)
+                _state.current_backup.remove(self._crawler_name)
+                _state.fail_crawler.append(crawler_name)
+                _state.fail_runner.append(crawler_name)
+                _state.standby_id = str(int(_state.standby_id) + 1)
 
-            self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
+                self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
+            else:
+                # TODO: Does it need to do something?
+                # This crawler instance has been ready be activated by itself for others
+                pass
 
         if task.result_detail == TaskResult.Processing.value:
             # TODO: Run task content ?
@@ -451,8 +473,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     def _register_heartbeat_to_zookeeper(self) -> None:
         if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
             # TODO: It needs to parameterize these settings
-            _heartbeat = Initial.heartbeat(update_time="0.4s", update_timeout="0.8s", heart_rhythm_timeout="3")
-            self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=True)
+            _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
+            _create_node = True
+        else:
+            _current_heartbeat = self._get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
+            _heartbeat = Update.heartbeat(_current_heartbeat, update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
+            _create_node = False
+        self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=_create_node)
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         _node_state = self._get_metadata_from_zookeeper(path=self.node_state_zookeeper_path, as_obj=NodeState)
