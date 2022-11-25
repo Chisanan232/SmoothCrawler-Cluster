@@ -78,7 +78,12 @@ jobs:
     with:
       test_type: integration-test
       all_test_items_paths: ${{needs.prep-testbed_integration-test.outputs.all_test_items}}
-      debug_mode: true
+      setup_http_server: true
+      http_server_host: 0.0.0.0
+      http_server_port: 12345
+      http_server_app_module: test._http_server.app
+      http_server_enter_point: app
+#      debug_mode: true
 
 
   unit-test_codecov:
@@ -97,9 +102,36 @@ jobs:
       test_type: integration-test
 
 
+#  unit-codecov_finish:
+##    name: Organize and generate the testing report and upload it to Codecov
+##    if: github.ref_name == 'release' || github.ref_name == 'master'
+#    needs: [unit-test_codecov]
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+#    secrets:
+#      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+#    with:
+#      test_type: unit-test
+#      upload-to-codecov: true
+#      codecov_flags: unit  # Required if 'upload-to-codecov' is true
+#      codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
+#
+#
+#  integration-codecov_finish:
+##    name: Organize and generate the testing report and upload it to Codecov
+##    if: github.ref_name == 'release' || github.ref_name == 'master'
+#    needs: [integration-test_codecov]
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+#    secrets:
+#      codecov_token: ${{ secrets.CODECOV_TOKEN }}
+#    with:
+#      test_type: integration-test
+#      upload-to-codecov: true
+#      codecov_flags: integration  # Required if 'upload-to-codecov' is true
+#      codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
+
+
   codecov_finish:
 #    name: Organize and generate the testing report and upload it to Codecov
-#    if: github.ref_name == 'release' || github.ref_name == 'master'
     needs: [unit-test_codecov, integration-test_codecov]
     uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
     secrets:
@@ -108,13 +140,13 @@ jobs:
       test_type: all-test
       upload-to-codecov: true
       codecov_flags: unit,integration  # Required if 'upload-to-codecov' is true
-      codecov_name: smoothcrawler-cluster_test  # Required if 'upload-to-codecov' is true
+      codecov_name: smoothcrawler-cluster  # Required if 'upload-to-codecov' is true
 
 
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
     needs: [unit-test_codecov, integration-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
@@ -136,6 +168,7 @@ jobs:
 
   build_git-tag_and_create_github-release:
 #    name: Build git tag and GitHub release if it needs
+#    needs: [unit-codecov_finish, integration-codecov_finish, codacy_finish]
     needs: [codecov_finish, codacy_finish]
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v3

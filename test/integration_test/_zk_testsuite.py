@@ -11,7 +11,8 @@ _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
 
 class ZKNode(Enum):
 
-    State = "state_zookeeper_path"
+    GroupState = "group_state_zookeeper_path"
+    NodeState = "node_state_zookeeper_path"
     Task = "task_zookeeper_path"
     Heartbeat = "heartbeat_zookeeper_path"
 
@@ -85,7 +86,7 @@ class ZK:
         for _path in _paths:
             _path_str = getattr(zk_crawler, str(_path.value))
             zk_function(_path_str)
-            test_item(self, zk_crawler)
+        test_item(self, zk_crawler)
 
     @staticmethod
     def remove_node_finally(path: Union[ZKNode, List[ZKNode]]):
@@ -119,6 +120,9 @@ class ZK:
 
     def _set_value_to_node(self, path: str, value: bytes) -> None:
         self._PyTest_ZK_Client.set(path=path, value=value)
+
+    def _get_value_from_node(self, path: str) -> tuple:
+        return self._PyTest_ZK_Client.get(path=path)
 
     def _delete_node(self, path: str) -> None:
         self._PyTest_ZK_Client.delete(path=path)

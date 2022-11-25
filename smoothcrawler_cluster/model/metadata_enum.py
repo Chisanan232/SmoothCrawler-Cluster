@@ -69,3 +69,33 @@ class TaskResult(Enum):
 
     Error = "error"
     """ If it raise any exceptions in web spider task running, its result would be error. """
+
+
+class HeartState(Enum):
+    """
+    The heartbeat state.
+    """
+
+    Newborn = "Newborn"
+    """ 
+    The initialized heartbeat state of a crawler instance which just be created, in other words, crawler instance's heartbeat 
+    state would be this before it run updating heartbeat process. 
+    """
+
+    Healthy = "Healthy"
+    """ This means that current crawler instance runs finely without any issue. """
+
+    Arrhythmia = "Arrhythmia"
+    """ 
+    It means that the current crawler instance is late to update property *heart_rhythm_time*. It likes its heartbeat rate 
+    is not stable and cannot work normally lead to it looks or sounds not good, just like arrhythmia in human.
+    """
+
+    Asystole = "Asystole"
+    """ 
+    If a crawler instance's property *healthy_state* become this state, it means the crawler be judged it's dead by other 
+    alive crawler instances. So the dead crawler instance won't run anymore and list to *fail_xxx* property in *State*.
+    """
+
+    ApparentDeath = "Apparent Death"
+    """ It would be this state if the crawler instance would be stopped or killed manually. """
