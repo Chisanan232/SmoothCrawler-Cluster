@@ -1,7 +1,6 @@
 from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from smoothcrawler_cluster.exceptions import ZookeeperCrawlerNotReady
 from datetime import datetime
 from kazoo.protocol.states import ZnodeStat
 from kazoo.client import KazooClient
@@ -320,11 +319,11 @@ class TestZookeeperCrawler(ZKTestSpec):
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    def test_is_ready_with_positive_timeout(self, uit_object: ZookeeperCrawler):
+    def test_is_ready_for_election_with_positive_timeout(self, uit_object: ZookeeperCrawler):
         # Operate target method to test
         uit_object.register()
         _func_start_time = time.time()
-        _result = uit_object.is_ready(timeout=_Waiting_Time)
+        _result = uit_object.is_ready_for_election(timeout=_Waiting_Time)
         _func_end__time = time.time()
 
         # Verify the values
@@ -391,7 +390,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                 _zk_crawler.register()
 
                 # Verify the running result
-                _zk_crawler_ready = _zk_crawler.is_ready(timeout=10)
+                _zk_crawler_ready = _zk_crawler.is_ready_for_election(timeout=10)
                 _is_ready_flag[_name] = _zk_crawler_ready
 
                 # Try to run election
@@ -591,59 +590,74 @@ class TestZookeeperCrawler(ZKTestSpec):
     def test_wait_for_standby(self, uit_object: ZookeeperCrawler):
         # Prepare the meta data for testing this scenario
         # Set a *GroupState* with only 2 crawlers and standby ID is '1'
-        _state = Initial.group_state(
-            crawler_name="sc-crawler_0",
-            total_crawler=3,
-            total_runner=2,
-            total_backup=1,
-            standby_id="1",
-            current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
-            current_runner=["sc-crawler_0"],
-            current_backup=["sc-crawler_1"]
-        )
-        if self._exist_node(path=uit_object.group_state_zookeeper_path) is None:
-            _state_data_str = json.dumps(_state.to_readable_object())
-            self._create_node(path=uit_object.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
+
+        _all_paths: list = []
+
+        def _initial_group_state() -> None:
+            _state = Initial.group_state(
+                crawler_name="sc-crawler_0",
+                total_crawler=3,
+                total_runner=2,
+                total_backup=1,
+                standby_id="1",
+                current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
+                current_runner=["sc-crawler_0", "sc-crawler_2"],
+                current_backup=["sc-crawler_1"]
+            )
+            if self._exist_node(path=uit_object.group_state_zookeeper_path) is None:
+                _state_data_str = json.dumps(_state.to_readable_object())
+                self._create_node(path=uit_object.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
+
+        def _initial_node_state(_node_path: str) -> None:
+            _all_paths.append(_node_path)
+            _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
+            if self._exist_node(path=_node_path) is None:
+                _node_state_data_str = json.dumps(_node_state.to_readable_object())
+                self._create_node(path=_node_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
+
+        def _initial_task(_task_path: str) -> None:
+            _all_paths.append(_task_path)
+            _task = Initial.task(running_state=TaskResult.Processing)
+            if self._exist_node(path=_task_path) is None:
+                _task_data_str = json.dumps(_task.to_readable_object())
+                self._create_node(path=_task_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
+
+        def _initial_heartbeat(_heartbeat_path: str) -> None:
+            _all_paths.append(_heartbeat_path)
+            _heartbeat = Initial.heartbeat()
+            if self._exist_node(path=_heartbeat_path) is None:
+                _heartbeat_data_str = json.dumps(_heartbeat.to_readable_object())
+                self._create_node(path=_heartbeat_path, value=bytes(_heartbeat_data_str, "utf-8"), include_data=True)
+
+        _initial_group_state()
+        _all_paths.append(uit_object.group_state_zookeeper_path)
+        _all_paths.append(uit_object.node_state_zookeeper_path)
+        _all_paths.append(uit_object.task_zookeeper_path)
+        _all_paths.append(uit_object.heartbeat_zookeeper_path)
 
         # Set a *NodeState* of sc-crawler_0
-        _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
-        _crawler_0_node_state_path = uit_object.node_state_zookeeper_path.replace("1", "0")
-        if self._exist_node(path=_crawler_0_node_state_path) is None:
-            _node_state_data_str = json.dumps(_node_state.to_readable_object())
-            self._create_node(path=_crawler_0_node_state_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
-
-        # Set a *Task* of sc-crawler_0
-        _task = Initial.task(running_state=TaskResult.Processing)
-        _crawler_0_task_path = uit_object.task_zookeeper_path.replace("1", "0")
-        if self._exist_node(path=_crawler_0_task_path) is None:
-            _task_data_str = json.dumps(_task.to_readable_object())
-            self._create_node(path=_crawler_0_task_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
-
-        # Set a *Heartbeat* of sc-crawler_0 is dead
-        _heartbeat = Initial.heartbeat()
-        _crawler_0_heartbeat_path = uit_object.heartbeat_zookeeper_path.replace("1", "0")
-        if self._exist_node(path=_crawler_0_heartbeat_path) is None:
-            _heartbeat_data_str = json.dumps(_heartbeat.to_readable_object())
-            self._create_node(path=_crawler_0_heartbeat_path, value=bytes(_heartbeat_data_str, "utf-8"), include_data=True)
+        _initial_node_state(uit_object.node_state_zookeeper_path.replace("1", "0"))
 
         # Set a *NodeState* of sc-crawler_1
-        _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
-        _crawler_1_node_state_path = uit_object.node_state_zookeeper_path
-        if self._exist_node(path=_crawler_1_node_state_path) is None:
-            _node_state_data_str = json.dumps(_node_state.to_readable_object())
-            self._create_node(path=_crawler_1_node_state_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
+        _initial_node_state(uit_object.node_state_zookeeper_path)
 
-        # Run the function which target to test
-        try:
-            uit_object.wait_and_standby()
-        except ZookeeperCrawlerNotReady:
-            # assert str(e) == "Current crawler instance is not ready for running. Its *current_runner* still be empty.", ""
-            assert True, "It works finely!"
-        else:
-            assert False, "It should raise an exception about ZookeeperCrawler is not ready to run."
+        # Set a *NodeState* of sc-crawler_2
+        _initial_node_state(uit_object.node_state_zookeeper_path.replace("1", "2"))
+
+        # Set a *Task* of sc-crawler_0
+        _initial_task(uit_object.task_zookeeper_path.replace("1", "0"))
+
+        # Set a *Task* of sc-crawler_2
+        _initial_task(uit_object.task_zookeeper_path.replace("1", "2"))
+
+        # Set a *Heartbeat* of sc-crawler_0 is dead
+        _initial_heartbeat(uit_object.heartbeat_zookeeper_path.replace("1", "0"))
+
+        # Set a *Heartbeat* of sc-crawler_2 is dead
+        _initial_heartbeat(uit_object.heartbeat_zookeeper_path.replace("1", "2"))
 
         try:
-            if uit_object.is_ready(timeout=5):
+            if uit_object.is_ready_for_run(timeout=5):
                 uit_object.wait_and_standby()
             else:
                 assert False, "It should be ready to run. Please check the detail implementation or other settings in testing has problem or not."
@@ -655,16 +669,16 @@ class TestZookeeperCrawler(ZKTestSpec):
             print(f"[DEBUG in testing] _json_data: {_json_data}")
             assert _json_data["standby_id"] == "2", ""
 
-            assert len(_json_data["current_crawler"]) == 3, ""
+            assert len(_json_data["current_crawler"]) == 2, ""
             assert uit_object._crawler_name in _json_data["current_crawler"], ""
-            assert len(_json_data["current_runner"]) == 1, ""
+            assert len(_json_data["current_runner"]) == 2, ""
             assert uit_object._crawler_name in _json_data["current_runner"], ""
             assert len(_json_data["current_backup"]) == 0, ""
 
             assert len(_json_data["fail_crawler"]) == 1, ""
-            assert _json_data["fail_crawler"][0] == "sc-crawler_0", ""
+            assert _json_data["fail_crawler"][0] != "sc-crawler_1", ""
             assert len(_json_data["fail_runner"]) == 1, ""
-            assert _json_data["fail_runner"][0] == "sc-crawler_0", ""
+            assert _json_data["fail_runner"][0] != "sc-crawler_1", ""
             assert len(_json_data["fail_backup"]) == 0, ""
 
             # Verify the *NodeState* info
@@ -680,18 +694,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             assert _json_0_node_data["group"] == uit_object._crawler_group, ""
             assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
         finally:
-            if self._exist_node(path=uit_object.group_state_zookeeper_path):
-                self._delete_node(path=uit_object.group_state_zookeeper_path)
-            if self._exist_node(path=uit_object.node_state_zookeeper_path):
-                self._delete_node(path=uit_object.node_state_zookeeper_path)
-            if self._exist_node(path=uit_object.task_zookeeper_path):
-                self._delete_node(path=uit_object.task_zookeeper_path)
-            if self._exist_node(path=uit_object.heartbeat_zookeeper_path):
-                self._delete_node(path=uit_object.heartbeat_zookeeper_path)
-            if self._exist_node(path=_crawler_0_task_path):
-                self._delete_node(path=_crawler_0_task_path)
-            if self._exist_node(path=_crawler_0_heartbeat_path):
-                self._delete_node(path=_crawler_0_heartbeat_path)
+            self._delete_zk_nodes(_all_paths)
 
     def test_wait_for_to_be_standby(self):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
@@ -728,9 +731,7 @@ class TestZookeeperCrawler(ZKTestSpec):
 
         def _update_state_standby_id():
             time.sleep(5)
-            _state.standby_id = "2"
-            _new_state_data_str = json.dumps(_state.to_readable_object())
-            self._set_value_to_node(path=_zk_crawler.group_state_zookeeper_path, value=bytes(_new_state_data_str, "utf-8"))
+            setattr(_zk_crawler, "_standby_id", "2")
 
         def _run_target_test_func():
             try:
@@ -859,14 +860,26 @@ class TestZookeeperCrawler(ZKTestSpec):
             _zk_crawler = None
             try:
                 # Instantiate ZookeeperCrawler
-                _zk_crawler = ZookeeperCrawler(
-                    runner=_Runner_Crawler_Value,
-                    backup=_Backup_Crawler_Value,
-                    name=_name,
-                    initial=True,
-                    ensure_initial=True,
-                    zk_hosts=Zookeeper_Hosts
-                )
+                if "2" in _name:
+                    _zk_crawler = ZookeeperCrawler(
+                        runner=_Runner_Crawler_Value,
+                        backup=_Backup_Crawler_Value,
+                        name=_name,
+                        initial=False,
+                        ensure_initial=True,
+                        zk_hosts=Zookeeper_Hosts
+                    )
+                    _zk_crawler.stop_update_heartbeat()
+                    _zk_crawler.initial()
+                else:
+                    _zk_crawler = ZookeeperCrawler(
+                        runner=_Runner_Crawler_Value,
+                        backup=_Backup_Crawler_Value,
+                        name=_name,
+                        initial=True,
+                        ensure_initial=True,
+                        zk_hosts=Zookeeper_Hosts
+                    )
 
                 if _group_state_path.value == "":
                     _group_state_path.value = _zk_crawler.group_state_zookeeper_path
@@ -886,13 +899,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler()
                 )
-                if "2" in _name:
-                    print(f"[DEBUG - testing] _name: {_name} stop updating heartbeat and run")
-                    _zk_crawler.stop_update_heartbeat()
-                    _zk_crawler.run()
-                else:
-                    print(f"[DEBUG - testing] _name: {_name} run")
-                    _zk_crawler.run()
+                _zk_crawler.run()
             except Exception as e:
                 _running_flag[_name] = False
                 global _Global_Exception_Record
@@ -914,9 +921,10 @@ class TestZookeeperCrawler(ZKTestSpec):
             time.sleep(3)
             _assign_task()
 
-            time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+            time.sleep(3)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
             global _Global_Exception_Record
+            print(f"[DEBUG in testing] _Global_Exception_Record: {_Global_Exception_Record}")
             if _Global_Exception_Record is not None:
                 assert False, traceback.print_exception(_Global_Exception_Record)
 
@@ -924,8 +932,9 @@ class TestZookeeperCrawler(ZKTestSpec):
 
             # Verify the group info
             _group_data, _state = self._PyTest_ZK_Client.get(path=_group_state_path.value)
+            assert len(_group_data) != 0, "The data content of meta data *GroupState* should NOT be empty."
             _group_json_data = json.loads(_group_data.decode("utf-8"))
-            print(f"[DEBUG] _group_state_path.value: {_group_state_path.value}, _group_json_data: {_group_json_data} - {datetime.now()}")
+            print(f"[DEBUG in testing] _group_state_path.value: {_group_state_path.value}, _group_json_data: {_group_json_data} - {datetime.now()}")
 
             assert _group_json_data["total_crawler"] == 3, ""
             assert _group_json_data["total_runner"] == 2, ""
@@ -950,7 +959,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             for _state_path in list(_state_paths):
                 _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
                 _json_data = json.loads(_data.decode("utf-8"))
-                print(f"[DEBUG] _state_path: {_state_path}, _json_data: {_json_data} - {datetime.now()}")
+                print(f"[DEBUG in testing] _state_path: {_state_path}, _json_data: {_json_data} - {datetime.now()}")
                 if "1" in _state_path:
                     assert _json_data["role"] == CrawlerStateRole.Runner.value, ""
                 elif "2" in _state_path:
@@ -965,7 +974,7 @@ class TestZookeeperCrawler(ZKTestSpec):
             for _task_path in list(_task_paths):
                 _data, _state = self._PyTest_ZK_Client.get(path=_task_path)
                 _json_data = json.loads(_data.decode("utf-8"))
-                print(f"[DEBUG] _task_path: {_task_path}, _json_data: {_json_data}")
+                print(f"[DEBUG in testing] _task_path: {_task_path}, _json_data: {_json_data}")
                 assert _json_data is not None, ""
                 if "1" in _task_path:
                     self._chk_available_task_detail(_json_data)
