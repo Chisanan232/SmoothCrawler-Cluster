@@ -199,9 +199,9 @@ class Update(_BaseDataObjectUtils):
         return task
 
     @staticmethod
-    def heartbeat(heartbeat: Heartbeat, heart_rhythm_time: datetime = None, time_format: str = "%Y-%m-%d %H:%M:%S",
-                  update_time: str = "2s", update_timeout: str = "4s", heart_rhythm_timeout: str = "3",
-                  healthy_state: HeartState = None, task_state: Union[str, TaskResult] = None) -> Heartbeat:
+    def heartbeat(heartbeat: Heartbeat, heart_rhythm_time: datetime = None, time_format: str = None, update_time: str = None,
+                  update_timeout: str = None, heart_rhythm_timeout: str = None, healthy_state: HeartState = None,
+                  task_state: Union[str, TaskResult] = None) -> Heartbeat:
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="heart_rhythm_time", new_val=heart_rhythm_time)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="time_format", new_val=time_format)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="update_time", new_val=update_time)
