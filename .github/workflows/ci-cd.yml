@@ -153,7 +153,6 @@ jobs:
 
   coveralls_finish:
 #    name: Organize and generate the testing report and upload it to Coveralls
-#    if: github.ref_name == 'release' || github.ref_name == 'master'
     needs: all-test_codecov
     uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v4
     secrets:
@@ -177,7 +176,7 @@ jobs:
   pre-building_test:
 #    name: Check about it could work finely by installing the Python package with setup.py file
     needs: [codecov_finish, coveralls_finish, codacy_finish]
-    if: ${{ github.ref_name == 'release' && github.event_name == 'push' }}
+    if: ${{ github.ref_name == 'release' || github.ref_name == 'master' && github.event_name == 'push' }}
     uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/pre-building_test.yaml@v4
     with:
       python_package_name: SmoothCrawler-Cluster
@@ -188,7 +187,6 @@ jobs:
 
   build_git-tag_and_create_github-release:
 #    name: Build git tag and GitHub release if it needs
-#    needs: [unit-codecov_finish, integration-codecov_finish, codacy_finish]
     needs: pre-building_test
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
     uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v4
