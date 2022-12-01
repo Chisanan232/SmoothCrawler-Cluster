@@ -48,7 +48,7 @@ on:
 jobs:
   prep-testbed_unit-test:
 #    name: Prepare all unit test items
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v3
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/prepare_test_items.yaml@v4
     with:
       shell_path: scripts/ci/get-unit-test-paths.sh
       shell_arg: unix
@@ -56,7 +56,7 @@ jobs:
 
   prep-testbed_integration-test:
 #    name: Prepare all integration test items
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v3
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/prepare_test_items.yaml@v4
     with:
       shell_path: scripts/ci/get-integration-test-paths.sh
       shell_arg: unix
@@ -65,7 +65,7 @@ jobs:
   run_unit-test:
 #    name: Run all unit test items
     needs: prep-testbed_unit-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/run_test_items_via_pytest.yaml@v3
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/run_test_items_via_pytest.yaml@v4
     with:
       test_type: unit-test
       all_test_items_paths: ${{needs.prep-testbed_unit-test.outputs.all_test_items}}
@@ -86,27 +86,35 @@ jobs:
 #      debug_mode: true
 
 
-  unit-test_codecov:
-#    name: Organize and generate the testing report and upload it to Codecov
-    needs: run_unit-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v3
-    with:
-      test_type: unit-test
+#  unit-test_codecov:
+##    name: Organize and generate the testing report and upload it to Codecov
+#    needs: run_unit-test
+#    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v4
+#    with:
+#      test_type: unit-test
+#
+#
+#  integration-test_codecov:
+##    name: Organize and generate the testing report and upload it to Codecov
+#    needs: run_integration-test
+#    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v4
+#    with:
+#      test_type: integration-test
 
 
-  integration-test_codecov:
+  all-test_codecov:
 #    name: Organize and generate the testing report and upload it to Codecov
-    needs: run_integration-test
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v3
+    needs: [run_unit-test, run_integration-test]
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/organize_and_generate_test_cov_reports.yaml@v4
     with:
-      test_type: integration-test
+      test_type: all-test
 
 
 #  unit-codecov_finish:
 ##    name: Organize and generate the testing report and upload it to Codecov
 ##    if: github.ref_name == 'release' || github.ref_name == 'master'
 #    needs: [unit-test_codecov]
-#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+#    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v3
 #    secrets:
 #      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 #    with:
@@ -120,7 +128,7 @@ jobs:
 ##    name: Organize and generate the testing report and upload it to Codecov
 ##    if: github.ref_name == 'release' || github.ref_name == 'master'
 #    needs: [integration-test_codecov]
-#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+#    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v3
 #    secrets:
 #      codecov_token: ${{ secrets.CODECOV_TOKEN }}
 #    with:
@@ -132,8 +140,8 @@ jobs:
 
   codecov_finish:
 #    name: Organize and generate the testing report and upload it to Codecov
-    needs: [unit-test_codecov, integration-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v3
+    needs: all-test_codecov
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v3
     secrets:
       codecov_token: ${{ secrets.CODECOV_TOKEN }}
     with:
@@ -143,10 +151,22 @@ jobs:
       codecov_name: smoothcrawler-cluster  # Required if 'upload-to-codecov' is true
 
 
+  coveralls_finish:
+#    name: Organize and generate the testing report and upload it to Coveralls
+#    if: github.ref_name == 'release' || github.ref_name == 'master'
+    needs: all-test_codecov
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v4
+    secrets:
+      coveralls_token: ${{ secrets.COVERALLS_TOKEN }}
+    with:
+      test_type: all-test
+      upload-to-coveralls: true
+
+
   codacy_finish:
 #    name: Upload test report to Codacy to analyse and record code quality
-    needs: [unit-test_codecov, integration-test_codecov]
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_test_cov_report.yaml@v2
+    needs: all-test_codecov
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/upload_test_cov_report.yaml@v2
     secrets:
       codacy_token: ${{ secrets.CODACY_PROJECT_TOKEN }}
     with:
@@ -154,24 +174,24 @@ jobs:
       upload-to-codacy: true
 
 
-#  pre-building_check:
-##    name: Check about it could work finely by installing the Python package with setup.py file
-#    needs: [codecov_finish, codacy_finish]
-#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/upload_code_report_to_codacy.yaml@v2
-#    with:
-#      python_package_name: smoothcrawler
-#      test_import_package_code_1: import smoothcrawler as mr
-#      test_import_package_code_2: from smoothcrawler.crawler import SimpleCrawler
-#      test_import_package_code_3: from smoothcrawler.components.data import BaseHTTPResponseParser, BaseDataHandler
-#      test_python_script: ./scripts/test_crawler.py
+  pre-building_test:
+#    name: Check about it could work finely by installing the Python package with setup.py file
+    needs: [codecov_finish, coveralls_finish, codacy_finish]
+    if: ${{ github.ref_name == 'release' && github.event_name == 'push' }}
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/pre-building_test.yaml@v4
+    with:
+      python_package_name: SmoothCrawler-Cluster
+      test_import_package_code_1: from smoothcrawler_cluster
+      test_import_package_code_2: from smoothcrawler_cluster.crawler import ZookeeperCrawler
+      test_python_script: ./scripts/test_crawler.py
 
 
   build_git-tag_and_create_github-release:
 #    name: Build git tag and GitHub release if it needs
 #    needs: [unit-codecov_finish, integration-codecov_finish, codacy_finish]
-    needs: [codecov_finish, codacy_finish]
+    needs: pre-building_test
     if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
-    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v3
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/build_git-tag_and_create_github-release.yaml@v4
     secrets:
       github_auth_token: ${{ secrets.GITHUB_TOKEN }}
     with:
@@ -180,20 +200,15 @@ jobs:
       software_version_format: general-3
 
 
-  fake_build_pkg_and_push_to_pypi:
+  push_python_pkg_to_pypi:
 #    name: Check about it could work finely by installing the Python package with setup.py file
     needs: build_git-tag_and_create_github-release
-    if: ${{ github.ref_name == 'master' && 
-                github.event_name == 'push' && 
-                needs.test_build_git-tag_and_create_github-release.outputs.github-action_reusable_workflow_release_version != 'Pre-Release' }}
-    runs-on: ubuntu-latest
-    env:
-      RELEASE_TYPE: ${{ needs.build_git-tag_and_create_github-release.outputs.python_release_version }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: For testing about getting the software version info
-        run: | 
-          echo "🐍📦 Release version: $RELEASE_TYPE"
+    if: ${{ github.ref_name == 'master' && github.event_name == 'push' }}
+    uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/push_pkg_to_pypi.yaml@v4
+    with:
+      release-type: ${{ needs.build_git-tag_and_create_github-release.outputs.python_release_version }}
+      push-to-PyPI: official
+    secrets:
+      pypi_user: ${{ secrets.PYPI_USERNAME }}
+      pypi_token: ${{ secrets.PYPI_PASSWORD }}
 
