@@ -51,7 +51,7 @@ class TestInitial:
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="cookie", expected_value={})
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
-        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={})
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={'success_count': 0, 'fail_count': 0})
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
 
