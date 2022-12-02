@@ -19,7 +19,7 @@ from .model import (
 from .model.metadata import _BaseMetaData
 from .election import BaseElection, IndexElection, ElectionResult
 from .exceptions import ZookeeperCrawlerNotReady
-from ._utils import MetaDataUtil
+from ._utils import parse_timer, MetaDataUtil
 from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
 from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
 
@@ -356,7 +356,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             _heart_rhythm_timeout = _heartbeat.heart_rhythm_timeout
 
             _diff_datetime = datetime.now() - datetime.strptime(_heart_rhythm_time, _time_format)
-            if _diff_datetime.total_seconds() >= self._get_sleep_time(_update_timeout):
+            if _diff_datetime.total_seconds() >= parse_timer(_update_timeout):
                 # It should start to pay attention on it
                 _timeout_records[runner_name] = _timeout_records.get(runner_name, 0) + 1
                 _no_timeout_records[runner_name] = 0
@@ -527,7 +527,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                     self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
 
                     # Sleep ...
-                    time.sleep(self._get_sleep_time(_heartbeat.update_timeout))
+                    time.sleep(parse_timer(_heartbeat.update_timeout))
                 except Exception as e:
                     self.__Updating_Exception = e
                     break
@@ -559,21 +559,3 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                _is_not_none(http_resp_parser, _factory.parser_factory) and \
                _is_not_none(data_hdler, _factory.data_handling_factory) and \
                _is_not_none(persist, _factory.data_handling_factory)
-
-    @classmethod
-    def _get_sleep_time(cls, timer: str) -> Union[int, float]:
-        _timer_val = timer[:-1]
-        if "." in _timer_val:
-            _time = float(_timer_val)
-        else:
-            _time = int(_timer_val)
-        _time_unit = timer[-1]
-        if _time_unit == "s":
-            _sleep_time = _time
-        elif _time_unit == "m":
-            _sleep_time = _time * 60
-        elif _time_unit == "h":
-            _sleep_time = _time * 60 * 60
-        else:
-            raise ValueError("It only supports 's' (seconds), 'm' (minutes) or 'h' (hours) setting value.")
-        return _sleep_time
