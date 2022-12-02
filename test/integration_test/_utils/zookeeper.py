@@ -1,8 +1,7 @@
 from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperNode,
     ZookeeperRecipe,
-    _BaseZookeeperClient, ZookeeperClient,
-    _BaseZookeeperListener
+    _BaseZookeeperClient, ZookeeperClient
 )
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError, NoNodeError
@@ -16,7 +15,6 @@ from ..._values import Test_Zookeeper_Path, Test_Zookeeper_Not_Exist_Path, Test_
 
 _BaseZookeeperPathType = TypeVar("_BaseZookeeperPathType", bound=_BaseZookeeperNode)
 _BaseZookeeperClientType = TypeVar("_BaseZookeeperClientType", bound=_BaseZookeeperClient)
-_BaseZookeeperListenerType = TypeVar("_BaseZookeeperListenerType", bound=_BaseZookeeperListener)
 
 
 class TestZookeeperClient:
@@ -191,10 +189,3 @@ class TestZookeeperClient:
         else:
             assert False, "It should raise an exception 'NoNodeError'."
 
-
-
-class TestZookeeperListener:
-
-    @pytest.fixture(scope="function")
-    def zk_listener(self) -> Type[_BaseZookeeperListener]:
-        return

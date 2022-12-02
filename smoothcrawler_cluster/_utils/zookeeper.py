@@ -264,21 +264,3 @@ class ZookeeperClient(_BaseZookeeperClient):
 
     def close(self) -> None:
         self.__zk_client.close()
-
-
-class _BaseZookeeperListener(metaclass=ABCMeta):
-
-    def __init__(self, converter: BaseConverterType = None):
-        self._converter = converter
-
-    @abstractmethod
-    def watch_data(self, path: str):
-        pass
-
-    @abstractmethod
-    def listen_path_for_value(self, path: str, value: str) -> bool:
-        pass
-
-    @abstractmethod
-    def converter(self, data: str) -> Any:
-        pass

@@ -548,7 +548,8 @@ class TestZookeeperCrawler(ZKTestSpec):
 
         def _update_state_standby_id():
             time.sleep(5)
-            setattr(_zk_crawler, "_standby_id", "2")
+            _state.standby_id = "2"
+            _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
 
         def _run_target_test_func():
             try:
