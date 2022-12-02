@@ -112,6 +112,31 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             self.initial()
 
     @property
+    def name(self) -> str:
+        """
+        This crawler instance name. It MUST be unique naming in cluster (the same group) for let entire crawler cluster
+        to distinguish every one, for example, the properties _current_crawler_, _current_runner_ and _current_backup_ in
+        meta-data **GroupState** would record by crawler names.
+        This option value could be modified by Zookeeper object option _name_.
+
+        :return: A string type value.
+        """
+
+        return self._crawler_name
+
+    @property
+    def group(self) -> str:
+        """
+        The group name of this crawler instance. This also means the cluster naming to let system distinguishes which crawler
+        instance belong to which cluster.
+        This option value could be modified by Zookeeper object option _group_.
+
+        :return: A string type value.
+        """
+
+        return self._crawler_group
+
+    @property
     def role(self) -> CrawlerStateRole:
         return self._crawler_role
 
