@@ -36,6 +36,7 @@ class BaseDecentralizedCrawler(BaseDistributedCrawler):
 
 
 class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
+
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
     _MetaData_Util: MetaDataUtil = None
@@ -102,7 +103,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         if zk_hosts is None:
             zk_hosts = self.__Default_Zookeeper_Hosts
-        self._Zookeeper_Client = ZookeeperClient(hosts=zk_hosts)
+        self._zk_hosts = zk_hosts
+        self._Zookeeper_Client = ZookeeperClient(hosts=self._zk_hosts)
 
         if zk_converter is None:
             zk_converter = JsonStrConverter()
@@ -178,7 +180,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: A string type value which should be as IP:Port (multi: IP:Port,IP:Port) format content.
         """
 
-        return self.__Default_Zookeeper_Hosts
+        return self._zk_hosts
 
     @property
     def ensure_register(self) -> bool:
@@ -374,7 +376,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             if self._ensure_wait is not None:
                 time.sleep(self._ensure_wait)
         else:
-            raise TimeoutError(f"It gets timeout of registering meta data *State* to Zookeeper cluster '{self.zookeeper_hosts}'.")
+            raise TimeoutError(f"It gets timeout of registering meta data *GroupState* to Zookeeper cluster '{self.zookeeper_hosts}'.")
 
     def register_node_state(self) -> None:
         """
