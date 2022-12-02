@@ -5,6 +5,8 @@ from enum import Enum
 from abc import ABC, abstractmethod
 import pytest
 
+from ._instance_value import _TestValue
+
 
 _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
 
@@ -53,7 +55,8 @@ class ZK:
                 # Add new node with value in Zookeeper
                 def _get_enum_key_from_value(_path):
                     for _zk_node in ZKNode:
-                        if getattr(uit_object, str(_zk_node.value)) == _path:
+                        _inst = self._initial_zk_opt_inst(uit_object)
+                        if getattr(_inst, str(_zk_node.value)) == _path:
                             return _zk_node
                     else:
                         raise ValueError(f"Cannot find the mapping enum key from the value '{_path}'.")
@@ -84,7 +87,8 @@ class ZK:
     def _operate_zk_before_run_testing(self, zk_crawler: Generic[_ZookeeperCrawlerType], path: Union[ZKNode, List[ZKNode]], zk_function, test_item):
         _paths = self._paths_to_list(path)
         for _path in _paths:
-            _path_str = getattr(zk_crawler, str(_path.value))
+            _inst = self._initial_zk_opt_inst(zk_crawler)
+            _path_str = getattr(_inst, str(_path.value))
             zk_function(_path_str)
         test_item(self, zk_crawler)
 
@@ -102,6 +106,14 @@ class ZK:
                             self._delete_node(path=_path.value)
             return _
         return _
+
+    @classmethod
+    def _initial_zk_opt_inst(cls, uit_object):
+        if type(uit_object) is not ZookeeperCrawler:
+            _inst = _TestValue()
+        else:
+            _inst = uit_object
+        return _inst
 
     @classmethod
     def _paths_to_list(cls, path: Union[ZKNode, List[ZKNode]]) -> List[ZKNode]:
