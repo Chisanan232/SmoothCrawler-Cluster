@@ -1,14 +1,14 @@
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 from datetime import datetime
-from typing import List, Dict, Callable, Any, Type, TypeVar, Union, Generic
+from typing import List, Dict, Callable, Any, Type, TypeVar, Generic
 from abc import ABCMeta
 import threading
 import time
 
 from .model import (
     # Zookeeper operating common functions
-    Empty, Initial, Update,
+    Initial, Update,
     # Enum objects
     CrawlerStateRole, TaskResult, HeartState,
     # Content data namedtuple object
