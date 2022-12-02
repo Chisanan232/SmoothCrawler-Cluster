@@ -59,7 +59,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._total_crawler = runner + backup
         self._runner = runner
         self._backup = backup
-        self._standby_id: str = None
         self._crawler_role: CrawlerStateRole = None
         self._index_sep = ""
         self._ensure_register = ensure_initial
@@ -310,7 +309,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if role is CrawlerStateRole.Runner:
             self.wait_for_task()
         elif role is CrawlerStateRole.Backup_Runner:
-            if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
+            _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
+            if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
                 self.wait_and_standby()
             else:
                 self.wait_for_to_be_standby()
@@ -384,8 +384,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     def wait_for_to_be_standby(self) -> bool:
         while True:
-            # _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == self._standby_id:
+            _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
+            if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
             # TODO: Parameterize this value for sleep a little bit while.
@@ -503,7 +503,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                     append_current_backup=[self._crawler_name],
                     standby_id=self._crawler_name.split(self._index_sep)[-1]
                 )
-                self._standby_id = _updated_state.standby_id
             else:
                 raise ValueError(f"It doesn't support {role} recently.")
 
