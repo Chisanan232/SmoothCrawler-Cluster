@@ -15,7 +15,6 @@ from ..._values import Test_Zookeeper_Path, Test_Zookeeper_Not_Exist_Path, Test_
 
 _BaseZookeeperPathType = TypeVar("_BaseZookeeperPathType", bound=_BaseZookeeperNode)
 _BaseZookeeperClientType = TypeVar("_BaseZookeeperClientType", bound=_BaseZookeeperClient)
-_BaseZookeeperListenerType = TypeVar("_BaseZookeeperListenerType", bound=_BaseZookeeperListener)
 
 
 class TestZookeeperClient:
