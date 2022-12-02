@@ -16,6 +16,20 @@ class TestZookeeperCrawler:
             mock_zk_cli.assert_called_once()
         return _zk_crawler
 
+    def test_property_name(self, zk_crawler: ZookeeperCrawler):
+        # Get value by target method for testing (with default, doesn't modify it by the initial options)
+        _crawler_name = zk_crawler.name
+
+        # Verify values
+        ValueFormatAssertion(target=_crawler_name, regex=r"sc-crawler_[0-9]{1,3}")
+
+    def test_property_group(self, zk_crawler: ZookeeperCrawler):
+        # Get value by target method for testing (with default, doesn't modify it by the initial options)
+        _group_name = zk_crawler.group
+
+        # Verify values
+        ValueFormatAssertion(target=_group_name, regex=r"sc-crawler-cluster")
+
     def test_property_group_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         _path = zk_crawler.group_state_zookeeper_path
