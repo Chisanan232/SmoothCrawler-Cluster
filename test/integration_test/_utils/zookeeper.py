@@ -1,8 +1,7 @@
 from smoothcrawler_cluster._utils.zookeeper import (
     _BaseZookeeperNode,
     ZookeeperRecipe,
-    _BaseZookeeperClient, ZookeeperClient,
-    _BaseZookeeperListener
+    _BaseZookeeperClient, ZookeeperClient
 )
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError, NoNodeError
@@ -191,10 +190,3 @@ class TestZookeeperClient:
         else:
             assert False, "It should raise an exception 'NoNodeError'."
 
-
-
-class TestZookeeperListener:
-
-    @pytest.fixture(scope="function")
-    def zk_listener(self) -> Type[_BaseZookeeperListener]:
-        return
