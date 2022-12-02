@@ -262,8 +262,8 @@ class TestZookeeperCrawler(ZKTestSpec):
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.Task, ZKNode.Heartbeat])
-    def test_register_with_not_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_and_verify_result(zk_crawler=uit_object)
+    def test_register_metadata_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
 
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
@@ -275,17 +275,17 @@ class TestZookeeperCrawler(ZKTestSpec):
             ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str
         })
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    def test_register_with_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_and_verify_result(zk_crawler=uit_object)
+    def test_register_metadata_with_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
 
 
-    def __operate_register_and_verify_result(self, zk_crawler: ZookeeperCrawler):
+    def __operate_register_metadata_and_verify_result(self, zk_crawler: ZookeeperCrawler):
 
         def _not_none_assertion(obj_type: str):
             return f"It should get something data and its data type is *{obj_type}*."
 
         # Operate target method to test
-        zk_crawler.register()
+        zk_crawler.register_metadata()
 
         # Get the result which would be generated or modified by target method
         _group_state, _znode_state = self._get_zk_node_value(path=_Testing_Value.group_state_zk_path)
@@ -321,7 +321,7 @@ class TestZookeeperCrawler(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_is_ready_for_election_with_positive_timeout(self, uit_object: ZookeeperCrawler):
         # Operate target method to test
-        uit_object.register()
+        uit_object.register_metadata()
         _func_start_time = time.time()
         _result = uit_object.is_ready_for_election(timeout=_Waiting_Time)
         _func_end__time = time.time()
@@ -336,7 +336,7 @@ class TestZookeeperCrawler(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_elect(self, uit_object: ZookeeperCrawler):
         # Operate target method to test
-        uit_object.register()
+        uit_object.register_metadata()
         _election_result = uit_object.elect()
 
         # Verify the values
@@ -348,7 +348,7 @@ class TestZookeeperCrawler(ZKTestSpec):
         return _data.decode("utf-8"), _state
 
 
-    def test_register_and_elect_with_many_crawler_instances(self):
+    def test_register_metadata_and_elect_with_many_crawler_instances(self):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
 
@@ -387,7 +387,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                 _zk_crawler.ensure_register = True
                 _zk_crawler.ensure_timeout = 10
                 _zk_crawler.ensure_wait = 0.5
-                _zk_crawler.register()
+                _zk_crawler.register_metadata()
 
                 # Verify the running result
                 _zk_crawler_ready = _zk_crawler.is_ready_for_election(timeout=10)

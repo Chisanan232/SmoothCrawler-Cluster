@@ -164,7 +164,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             return f"smoothcrawler/node/{crawler_name}"
 
     def initial(self) -> None:
-        self.register()
+        self.register_metadata()
         if self.__Updating_Stop_Signal is False:
             self._run_updating_heartbeat_thread()
         if self.is_ready_for_election(interval=0.5, timeout=-1):
@@ -176,15 +176,72 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         else:
             raise TimeoutError("Timeout to wait for crawler be ready in register process.")
 
-    def register(self) -> None:
+    def register_metadata(self) -> None:
         # Question: How could it name the web crawler with number?
         # Current Answer:
         # 1. Index: get data from Zookeeper first and check the value, and it set the next index of crawler and save it to Zookeeper.
         # 2. Hardware code: Use the unique hardware code or flag to record it, i.e., the MAC address of host or something ID of container.
-        self._register_group_state_to_zookeeper()
-        self._register_node_to_zookeeper()
-        self._register_task_to_zookeeper()
-        self._register_heartbeat_to_zookeeper()
+        self.register_group_state()
+        self.register_node_state()
+        self.register_task()
+        self.register_heartbeat()
+
+    def register_group_state(self) -> None:
+        for _ in range(self._ensure_timeout):
+            with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
+                if self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path) is None:
+                    _state = Initial.group_state(
+                        crawler_name=self._crawler_name,
+                        total_crawler=self._runner + self._backup,
+                        total_runner=self._runner,
+                        total_backup=self._backup
+                    )
+                    self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state, create_node=True)
+                else:
+                    _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
+                    if _state.current_crawler is None or self._crawler_name not in _state.current_crawler:
+                        _state = Update.group_state(
+                            _state,
+                            total_crawler=self._runner + self._backup,
+                            total_runner=self._runner,
+                            total_backup=self._backup,
+                            append_current_crawler=[self._crawler_name],
+                            standby_id="0"
+                        )
+                        self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
+
+            if self._ensure_register is False:
+                break
+
+            _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
+            assert _state is not None, "The meta data *State* should NOT be None."
+            if len(set(_state.current_crawler)) == self._total_crawler and self._crawler_name in _state.current_crawler:
+                break
+            if self._ensure_wait is not None:
+                time.sleep(self._ensure_wait)
+        else:
+            raise TimeoutError(f"It gets timeout of registering meta data *State* to Zookeeper cluster '{self.zookeeper_hosts}'.")
+
+    def register_node_state(self) -> None:
+        if self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path) is None:
+            _state = Initial.node_state(group=self._crawler_group)
+            self._set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_state, create_node=True)
+
+    def register_task(self) -> None:
+        if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
+            _task = Initial.task()
+            self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task, create_node=True)
+
+    def register_heartbeat(self) -> None:
+        if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
+            # TODO: It needs to parameterize these settings
+            _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
+            _create_node = True
+        else:
+            _current_heartbeat = self._get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
+            _heartbeat = Update.heartbeat(_current_heartbeat, update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
+            _create_node = False
+        self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=_create_node)
 
     def stop_update_heartbeat(self) -> None:
         self.__Updating_Stop_Signal = True
@@ -423,63 +480,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         else:
             # TODO: Do something else to handle?
             pass
-
-    def _register_group_state_to_zookeeper(self) -> None:
-        for _ in range(self._ensure_timeout):
-            with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path, restrict=ZookeeperRecipe.WriteLock, identifier=self._state_identifier):
-                if self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path) is None:
-                    _state = Initial.group_state(
-                        crawler_name=self._crawler_name,
-                        total_crawler=self._runner + self._backup,
-                        total_runner=self._runner,
-                        total_backup=self._backup
-                    )
-                    self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state, create_node=True)
-                else:
-                    _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-                    if _state.current_crawler is None or self._crawler_name not in _state.current_crawler:
-                        _state = Update.group_state(
-                            _state,
-                            total_crawler=self._runner + self._backup,
-                            total_runner=self._runner,
-                            total_backup=self._backup,
-                            append_current_crawler=[self._crawler_name],
-                            standby_id="0"
-                        )
-                        self._set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
-
-            if self._ensure_register is False:
-                break
-
-            _state = self._get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-            assert _state is not None, "The meta data *State* should NOT be None."
-            if len(set(_state.current_crawler)) == self._total_crawler and self._crawler_name in _state.current_crawler:
-                break
-            if self._ensure_wait is not None:
-                time.sleep(self._ensure_wait)
-        else:
-            raise TimeoutError(f"It gets timeout of registering meta data *State* to Zookeeper cluster '{self.zookeeper_hosts}'.")
-
-    def _register_node_to_zookeeper(self) -> None:
-        if self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path) is None:
-            _state = Initial.node_state(group=self._crawler_group)
-            self._set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_state, create_node=True)
-
-    def _register_task_to_zookeeper(self) -> None:
-        if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
-            _task = Initial.task()
-            self._set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task, create_node=True)
-
-    def _register_heartbeat_to_zookeeper(self) -> None:
-        if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
-            # TODO: It needs to parameterize these settings
-            _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
-            _create_node = True
-        else:
-            _current_heartbeat = self._get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
-            _heartbeat = Update.heartbeat(_current_heartbeat, update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
-            _create_node = False
-        self._set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=_create_node)
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         _node_state = self._get_metadata_from_zookeeper(path=self.node_state_zookeeper_path, as_obj=NodeState)
