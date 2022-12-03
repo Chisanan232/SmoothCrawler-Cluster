@@ -49,6 +49,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     __Updating_Stop_Signal: bool = False
     __Updating_Exception = None
 
+    __Initial_Standby_ID: str = "0"
+
     def __init__(self, runner: int, backup: int, name: str = "", group: str = "", index_sep: List[str] = ["-", "_"],
                  initial: bool = True, ensure_initial: bool = False, ensure_timeout: int = 3, ensure_wait: float = 0.5,
                  zk_hosts: str = None, zk_converter: Type[BaseConverter] = None,
@@ -362,7 +364,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                             total_runner=self._runner,
                             total_backup=self._backup,
                             append_current_crawler=[self._crawler_name],
-                            standby_id="0"
+                            standby_id=self.__Initial_Standby_ID
                         )
                         self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
 
@@ -829,11 +831,19 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                     append_current_runner=[self._crawler_name],
                 )
             elif role is CrawlerStateRole.Backup_Runner:
-                _updated_state = Update.group_state(
-                    _state,
-                    append_current_backup=[self._crawler_name],
-                    standby_id=self._crawler_name.split(self._index_sep)[-1]
-                )
+                _crawler_index = self._crawler_name.split(self._index_sep)[-1]
+                _current_standby_id = _state.standby_id
+                if int(_crawler_index) > int(_current_standby_id) and _current_standby_id != self.__Initial_Standby_ID:
+                    _updated_state = Update.group_state(
+                        _state,
+                        append_current_backup=[self._crawler_name]
+                    )
+                else:
+                    _updated_state = Update.group_state(
+                        _state,
+                        append_current_backup=[self._crawler_name],
+                        standby_id=self._crawler_name.split(self._index_sep)[-1]
+                    )
             else:
                 raise ValueError(f"It doesn't support {role} recently.")
 
