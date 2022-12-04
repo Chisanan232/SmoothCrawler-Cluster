@@ -464,6 +464,9 @@ class TestZookeeperCrawler(ZKTestSpec):
         # Set a *Task* of sc-crawler_0
         _initial_task(uit_object.task_zookeeper_path.replace("1", "0"))
 
+        # Set a *Task* of sc-crawler_1
+        _initial_task(uit_object.task_zookeeper_path)
+
         # Set a *Task* of sc-crawler_2
         _initial_task(uit_object.task_zookeeper_path.replace("1", "2"))
 
