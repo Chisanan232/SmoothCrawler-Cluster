@@ -33,14 +33,15 @@ _Empty_Dict_Value: dict = {}
 # # Related task settings
 _Task_Test_URL: str = f"http://{Test_Task_HTTP_Host}{Test_Task_API_Path}"
 _Task_Real_URL: str = "https://www.example.com"
-_Task_Running_Content_Value: List[dict] = [{
+_One_Running_Content: dict = {
     "task_id": 0,
     "url": _Task_Test_URL,
     "method": "GET",
     "parameters": _Empty_Dict_Value,
     "header": _Empty_Dict_Value,
     "body": _Empty_Dict_Value
-}]
+}
+_Task_Running_Content_Value: List[dict] = [_One_Running_Content]
 _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}
 _Task_In_Progressing_Id_Value: str = "0"
