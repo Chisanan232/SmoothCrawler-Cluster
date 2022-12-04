@@ -807,7 +807,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                     assert False, ""
         finally:
             for _process in _processes:
-                _process.kill()
+                _process.terminate()
             self._delete_zk_nodes(_all_paths)
 
     def _chk_available_task_detail(self, _one_detail: dict) -> None:
@@ -1007,6 +1007,6 @@ class TestZookeeperCrawler(ZKTestSpec):
                     assert False, ""
         finally:
             for _process in _processes:
-                _process.kill()
+                _process.terminate()
             self._delete_zk_nodes(_all_paths)
 
