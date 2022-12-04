@@ -3,6 +3,7 @@ A simple HTTP server for testing. It would return a JSON type data.
 """
 
 from flask import Flask, request
+import time
 
 
 app: Flask = Flask(__name__)
@@ -62,6 +63,9 @@ def get_stock_data() -> str:
 
 @app.route("/example.com", methods=["GET"])
 def example_web() -> str:
+    _sleep_time = request.args.get("sleep", None)
+    if _sleep_time is not None:
+        time.sleep(int(_sleep_time))
     return '<!doctype html>\n' \
            '<html>\n' \
            '<head>\n' \
