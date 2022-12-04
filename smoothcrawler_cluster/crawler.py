@@ -797,12 +797,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 _state.standby_id = str(int(_state.standby_id) + 1)
 
                 self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
+
+                self.hand_over_task(task)
             else:
                 # TODO: Does it need to do something?
                 # This crawler instance has been ready be activated by itself for others
                 pass
-
-        self.hand_over_task(task)
 
     def hand_over_task(self, task: Task) -> None:
         """
@@ -817,18 +817,14 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         """
 
-        def _run_task_of_dead_crawler(_task: Task) -> None:
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task)
-            self.run_task(task)
-
         if task.running_status == TaskResult.Processing.value:
             # Run the tasks from the start index
-            _run_task_of_dead_crawler(task)
-        elif task.running_status == TaskResult.Error.value:
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=task)
+        elif task.running_status in [TaskResult.Nothing.value, TaskResult.Error.value]:
             # Reset some specific attributes
             _updated_task = Update.task(task, in_progressing_id='0', running_result=RunningResult(success_count=0, fail_count=0), result_detail=[])
             # Reruns all tasks
-            _run_task_of_dead_crawler(_updated_task)
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_updated_task)
         else:
             # Ignore and don't do anything if the task state is nothing or done.
             pass
