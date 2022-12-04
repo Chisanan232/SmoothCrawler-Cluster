@@ -5,6 +5,7 @@ from typing import List, Dict, Callable, Any, Type, TypeVar, Generic
 from abc import ABCMeta
 import threading
 import time
+import re
 
 from .model import (
     # Zookeeper operating common functions
@@ -683,15 +684,18 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         _running_content = task.running_content
-        _current_task: Task = None
-        for _index, _content in enumerate(_running_content):
+        _current_task: Task = task
+        _start_task_id = task.in_progressing_id
+
+        assert re.search(r"[0-9]{1,32}]", _start_task_id) is None, "The task index must be integer format value."
+
+        for _index, _content in enumerate(_running_content[int(_start_task_id):]):
             _content = TaskContentDataUtils.convert_to_running_content(_content)
 
             # Update the ongoing task ID
             _original_task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
             if _index == 0:
-                _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id,
-                                            running_status=TaskResult.Processing)
+                _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id, running_status=TaskResult.Processing)
             else:
                 _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id)
             self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
@@ -706,31 +710,26 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             except Exception as e:
                 # Update attributes with fail result
                 _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
-                _updated_running_result = RunningResult(success_count=_running_result.success_count,
-                                                        fail_count=_running_result.fail_count + 1)
+                _updated_running_result = RunningResult(success_count=_running_result.success_count, fail_count=_running_result.fail_count + 1)
 
                 _result_detail = _original_task.result_detail
                 _result_detail.append(
-                    ResultDetail(task_id=_content.task_id, state=TaskResult.Error.value, status_code=500, response=None,
-                                 error_msg=f"{e}"))
+                    ResultDetail(task_id=_content.task_id, state=TaskResult.Error.value, status_code=500, response=None, error_msg=f"{e}"))
             else:
                 # Update attributes with successful result
                 _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
-                _updated_running_result = RunningResult(success_count=_running_result.success_count + 1,
-                                                        fail_count=_running_result.fail_count)
+                _updated_running_result = RunningResult(success_count=_running_result.success_count + 1, fail_count=_running_result.fail_count)
 
                 _result_detail = _original_task.result_detail
                 _result_detail.append(
-                    ResultDetail(task_id=_content.task_id, state=TaskResult.Done.value, status_code=200, response=_data,
-                                 error_msg=None))
+                    ResultDetail(task_id=_content.task_id, state=TaskResult.Done.value, status_code=200, response=_data, error_msg=None))
 
             _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id,
                                         running_result=_updated_running_result, result_detail=_result_detail)
             self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
 
         # Finish all tasks, record the running result and reset the content ...
-        _current_task = Update.task(task=_current_task, running_content=[], in_progressing_id="-1",
-                                    running_status=TaskResult.Done)
+        _current_task = Update.task(task=_current_task, running_content=[], in_progressing_id="-1", running_status=TaskResult.Done)
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
 
     def processing_crawling_task(self, content: RunningContent) -> Any:
@@ -803,11 +802,35 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 # This crawler instance has been ready be activated by itself for others
                 pass
 
-        if task.result_detail == TaskResult.Processing.value:
-            # TODO: Run task content ?
-            pass
+        self.hand_over_task(task)
+
+    def hand_over_task(self, task: Task) -> None:
+        """
+        Hand over the task of the dead crawler instance. It would get the meta-data _Task_ from dead crawler and write it
+        to this crawler's meta-data _Task_.
+
+        Args:
+            task: The meta-data _Task_ of crawler be under checking.
+
+        Returns:
+            None
+
+        """
+
+        def _run_task_of_dead_crawler(_task: Task) -> None:
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task)
+            self.run_task(task)
+
+        if task.running_status == TaskResult.Processing.value:
+            # Run the tasks from the start index
+            _run_task_of_dead_crawler(task)
+        elif task.running_status == TaskResult.Error.value:
+            # Reset some specific attributes
+            _updated_task = Update.task(task, in_progressing_id='0', running_result=RunningResult(success_count=0, fail_count=0), result_detail=[])
+            # Reruns all tasks
+            _run_task_of_dead_crawler(_updated_task)
         else:
-            # TODO: Do something else to handle?
+            # Ignore and don't do anything if the task state is nothing or done.
             pass
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
