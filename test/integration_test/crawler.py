@@ -23,7 +23,7 @@ from .._values import (
     # NodeState
     _Crawler_Group_Name_Value,
     # Task
-    _Task_Running_Content_Value, _Task_Running_State,
+    _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State,
     # Heartbeat
     _Time_Value, _Time_Format_Value,
     # common functions
@@ -728,9 +728,9 @@ class TestZookeeperCrawler(ZKTestSpec):
             else:
                 _running_flag[_name] = True
 
+        _processes = []
         try:
             # Run the target methods by multi-processes
-            _processes = []
             for i in range(1, _Total_Crawler_Value + 1):
                 _crawler_process = mp.Process(target=_run_and_test, args=(f"sc-crawler{_index_sep_char}{i}",))
                 _crawler_process.daemon = True
@@ -800,13 +800,14 @@ class TestZookeeperCrawler(ZKTestSpec):
                 if "1" in _task_path:
                     self._chk_available_task_detail(_json_data)
                 elif "2" in _task_path:
-                    # self._chk_error_task_detail(_json_data)
                     self._chk_available_task_detail(_json_data)
                 elif "3" in _task_path:
                     self._chk_available_task_detail(_json_data)
                 else:
                     assert False, ""
         finally:
+            for _process in _processes:
+                _process.kill()
             self._delete_zk_nodes(_all_paths)
 
     def _chk_available_task_detail(self, _one_detail: dict) -> None:
@@ -822,15 +823,8 @@ class TestZookeeperCrawler(ZKTestSpec):
             "error_msg": None
         }, "The detail should be completely same as above."
 
-    def _chk_error_task_detail(self, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 0, ""
-        assert _one_detail["in_progressing_id"] == "-1", ""
-        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 1}, ""
-        assert _one_detail["running_status"] == TaskResult.Error.value, ""
-        assert len(_one_detail["result_detail"]) == 0, "The detail should be empty list."
-
     def _chk_backup_task_detail(self, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 1, ""
+        assert len(_one_detail["running_content"]) == 0, ""
         assert _one_detail["in_progressing_id"] == "-1", ""
         assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
         assert _one_detail["running_status"] == TaskResult.Nothing.value, ""
@@ -863,15 +857,16 @@ class TestZookeeperCrawler(ZKTestSpec):
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
         def _assign_task() -> None:
-            time.sleep(3)
-
-            _task_paths = [f"smoothcrawler/node/sc-crawler{_index_sep_char}{i}/task" for i in range(1, _Multiple_Backup_Scenarios_Total_Crawler + 1)]
+            _task_paths = [f"smoothcrawler/node/sc-crawler{_index_sep_char}{i}/task" for i in range(1, _Multiple_Backup_Scenarios_Total_Crawler - 1)]
             for _task_path in _task_paths:
-                _task_data, state = self._get_value_from_node(path=_task_path)
-                _task_json_data = json.loads(_task_data)
-                _task_json_data["running_content"] = _Task_Running_Content_Value
-                _task_json_str = json.dumps(_task_json_data)
-                self._set_value_to_node(path=_task_path, value=bytes(_task_json_str, "utf-8"))
+                if "2" in _task_path:
+                    _task_running_content = _One_Running_Content
+                    _task_running_content["url"] = _One_Running_Content["url"] + "?sleep=5"
+                    _task_running_contents = [_task_running_content]
+                else:
+                    _task_running_contents = _Task_Running_Content_Value
+                _task = Initial.task(running_content=_task_running_contents)
+                self._create_node(path=_task_path, value=bytes(json.dumps(_task.to_readable_object()), "utf-8"), include_data=True)
 
         def _run_and_test(_name: str) -> None:
             _zk_crawler = None
@@ -930,9 +925,9 @@ class TestZookeeperCrawler(ZKTestSpec):
             else:
                 _running_flag[_name] = True
 
+        _processes = []
         try:
             # Run the target methods by multi-processes
-            _processes = []
             for i in range(1, _Multiple_Backup_Scenarios_Total_Crawler + 1):
                 _crawler_process = mp.Process(target=_run_and_test, args=(f"sc-crawler{_index_sep_char}{i}",))
                 _crawler_process.daemon = True
@@ -941,10 +936,9 @@ class TestZookeeperCrawler(ZKTestSpec):
             for _process in _processes:
                 _process.start()
 
-            time.sleep(10)
             _assign_task()
 
-            time.sleep(3)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+            time.sleep(15)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
             global _Global_Exception_Record
             print(f"[DEBUG in testing] _Global_Exception_Record: {_Global_Exception_Record}")
@@ -1004,7 +998,6 @@ class TestZookeeperCrawler(ZKTestSpec):
                 if "1" in _task_path:
                     self._chk_available_task_detail(_json_data)
                 elif "2" in _task_path:
-                    # self._chk_error_task_detail(_json_data)
                     self._chk_available_task_detail(_json_data)
                 elif "3" in _task_path:
                     self._chk_available_task_detail(_json_data)
@@ -1013,5 +1006,7 @@ class TestZookeeperCrawler(ZKTestSpec):
                 else:
                     assert False, ""
         finally:
+            for _process in _processes:
+                _process.kill()
             self._delete_zk_nodes(_all_paths)
 
