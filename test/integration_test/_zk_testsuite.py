@@ -139,6 +139,12 @@ class ZK:
     def _delete_node(self, path: str) -> None:
         self._PyTest_ZK_Client.delete(path=path)
 
+    def _delete_zk_nodes(self, all_paths: List[str]) -> None:
+        _sorted_all_paths = list(set(all_paths))
+        for _path in _sorted_all_paths:
+            if self._PyTest_ZK_Client.exists(path=_path) is not None:
+                self._PyTest_ZK_Client.delete(path=_path, recursive=True)
+
 
 class ZKTestSpec(ZK, ABC):
 
