@@ -719,6 +719,10 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(ZK):
     def test_run_with_multiple_fail_runners(self):
         pass
 
+    def _reset_all_metadata(self, size: int):
+        _all_paths = self._get_all_path(size)
+        self._delete_zk_nodes(_all_paths)
+
     def _get_all_path(self, size: int):
         _all_paths = []
         _all_paths.append(_Testing_Value.group_state_zookeeper_path)
@@ -745,10 +749,6 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(ZK):
         for i in range(1, size + 1):
             target_list.append(metadata_path.replace("0", str(i)))
         return target_list
-
-    def _reset_all_metadata(self, size: int):
-        _all_paths = self._get_all_path(size)
-        self._delete_zk_nodes(_all_paths)
 
     def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
         _running_flag: Dict[str, bool] = _Manager.dict()
@@ -840,6 +840,15 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(ZK):
         if _Global_Exception_Record is not None:
             assert False, traceback.print_exception(_Global_Exception_Record)
 
+    def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role, expected_task_result):
+        # Verify the group info
+        self._verify_group_info(runner=runner, backup=backup, fail_runner=fail_runner)
+        # Verify the state info
+        self._verify_state_role(runner=runner, backup=backup, expected_role=expected_role)
+        # Verify the task info
+        self._verify_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
+
+
     def _verify_group_info(self, runner: int, backup: int, fail_runner: int):
         _group_data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
         assert len(_group_data) != 0, "The data content of meta data *GroupState* should NOT be empty."
@@ -918,12 +927,3 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(ZK):
         assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
         assert _one_detail["running_status"] == TaskResult.Nothing.value, ""
         assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
-
-    def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role, expected_task_result):
-        # Verify the group info
-        self._verify_group_info(runner=runner, backup=backup, fail_runner=fail_runner)
-        # Verify the state info
-        self._verify_state_role(runner=runner, backup=backup, expected_role=expected_role)
-        # Verify the task info
-        self._verify_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
-
