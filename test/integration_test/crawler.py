@@ -622,12 +622,12 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
                 self._delete_node(path=_under_test_task_path)
 
 
-class MultiInstancesTestSuite(ZK):
+class MultiCrawlerTestSuite(ZK):
 
     __Processes: List[mp.Process] = []
 
     @staticmethod
-    def _clean_testing_environment(function):
+    def _clean_environment(function):
         def _(self):
             self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
             self._PyTest_ZK_Client.start()
@@ -645,13 +645,13 @@ class MultiInstancesTestSuite(ZK):
         return _
 
 
-class TestZookeeperCrawlerRunUnderDiffScenarios(MultiInstancesTestSuite):
+class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
     __All_Node_State_Paths: List[str] = []
     __All_Task_State_Paths: List[str] = []
     __All_Heartbeat_State_Paths: List[str] = []
 
-    @MultiInstancesTestSuite._clean_testing_environment
+    @MultiCrawlerTestSuite._clean_environment
     def test_run_with_2_runner_and_1_backup(self):
         # Run the target methods by multi-processes
         _running_flag, _role_results = self._run_multiple_crawler_instances(
@@ -682,7 +682,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiInstancesTestSuite):
             }
         )
 
-    @MultiInstancesTestSuite._clean_testing_environment
+    @MultiCrawlerTestSuite._clean_environment
     def test_run_with_multiple_backup(self):
         _Multiple_Backup_Scenarios_Total_Crawler: int = 4
         _Multiple_Backup_Scenarios_Runner_Crawler: int = 2
