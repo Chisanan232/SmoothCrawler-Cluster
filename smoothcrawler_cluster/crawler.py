@@ -1,7 +1,7 @@
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 from datetime import datetime
-from typing import List, Dict, Callable, Any, Type, TypeVar, Generic
+from typing import List, Dict, Callable, Any, Type, TypeVar, Optional, Generic
 from abc import ABCMeta
 import threading
 import time
@@ -621,14 +621,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         _no_timeout_records: Dict[str, int] = {}
         _detect_heart_rhythm_timeout: bool = False
 
-        def _chk_current_runner_heartbeat(runner_name: str) -> bool:
-            _heartbeat_path = f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}"
-            _heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=_heartbeat_path, as_obj=Heartbeat)
+        def _one_current_runner_is_dead(runner_name: str) -> Optional[str]:
+            _current_runner_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
+                path=f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
+                as_obj=Heartbeat
+            )
 
-            _heart_rhythm_time = _heartbeat.heart_rhythm_time
-            _time_format = _heartbeat.time_format
-            _update_timeout = _heartbeat.update_timeout
-            _heart_rhythm_timeout = _heartbeat.heart_rhythm_timeout
+            _heart_rhythm_time = _current_runner_heartbeat.heart_rhythm_time
+            _time_format = _current_runner_heartbeat.time_format
+            _update_timeout = _current_runner_heartbeat.update_timeout
+            _heart_rhythm_timeout = _current_runner_heartbeat.heart_rhythm_timeout
 
             _diff_datetime = datetime.now() - datetime.strptime(_heart_rhythm_time, _time_format)
             if _diff_datetime.total_seconds() >= parse_timer(_update_timeout):
@@ -636,22 +638,29 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 _timeout_records[runner_name] = _timeout_records.get(runner_name, 0) + 1
                 _no_timeout_records[runner_name] = 0
                 if _timeout_records[runner_name] >= int(_heart_rhythm_timeout):
-                    # It should mark the runner as dead and try to activate itself.
-                    _task_of_dead_crawler = self.discover(crawler_name=runner_name, heartbeat=_heartbeat)
-                    self.activate(crawler_name=runner_name, task=_task_of_dead_crawler)
-                    return True
+                    return runner_name
             else:
                 _no_timeout_records[runner_name] = _no_timeout_records.get(runner_name, 0) + 1
                 # TODO: Maybe we could parameterize this option
                 if _no_timeout_records[runner_name] >= 10:
                     _timeout_records[runner_name] = 0
-            return False
+            return None
 
         while True:
             _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-            _current_runners_heartbeat = map(_chk_current_runner_heartbeat, _group_state.current_runner)
-            _current_runners_heartbeat_chksum = list(_current_runners_heartbeat)
-            if True in _current_runners_heartbeat_chksum:
+            _chk_current_runners_is_dead = map(_one_current_runner_is_dead, _group_state.current_runner)
+            _dead_current_runner_iter = filter(lambda _dead_runner: _dead_runner is not None, list(_chk_current_runners_is_dead))
+            _dead_current_runner = list(_dead_current_runner_iter)
+            if len(_dead_current_runner) != 0:
+                # Only handle the first one of dead crawlers (if it has multiple dead crawlers
+                _runner_name = _dead_current_runner[0]
+                _heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
+                    path=f"{self._generate_path(_runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
+                    as_obj=Heartbeat
+                )
+                _task_of_dead_crawler = self.discover(dead_crawler_name=_runner_name, heartbeat=_heartbeat)
+                self.activate(dead_crawler_name=_runner_name)
+                self.hand_over_task(task=_task_of_dead_crawler)
                 break
 
             # TODO: Parameterize this value for sleep a little bit while.
@@ -745,35 +754,34 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # self.persist(data=_data)
         return _data
 
-    def discover(self, crawler_name: str, heartbeat: Heartbeat) -> Task:
+    def discover(self, dead_crawler_name: str, heartbeat: Heartbeat) -> Task:
         """
         When backup role crawler instance discover anyone is dead, it would mark the target one as _Dead_ (_HeartState.Asystole_)
         and update its meta-data _Heartbeat_. In the same time, it would try to get its _Task_ and take over it.
 
-        :param crawler_name: The crawler name which be under checking.
+        :param dead_crawler_name: The crawler name which be under checking.
         :param heartbeat: The meta-data _Heartbeat_ of crawler be under checking.
         :return: Meta-data _Task_ from dead crawler instance.
         """
 
-        _node_state_path = f"{self._generate_path(crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
+        _node_state_path = f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
         _node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=_node_state_path, as_obj=NodeState)
         _node_state.role = CrawlerStateRole.Dead_Runner
         self._MetaData_Util.set_metadata_to_zookeeper(path=_node_state_path, metadata=_node_state)
 
-        _task = self._MetaData_Util.get_metadata_from_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Task_Node_Path}", as_obj=Task)
+        _task = self._MetaData_Util.get_metadata_from_zookeeper(path=f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_Task_Node_Path}", as_obj=Task)
         heartbeat.healthy_state = HeartState.Asystole
         heartbeat.task_state = _task.running_status
-        self._MetaData_Util.set_metadata_to_zookeeper(path=f"{self._generate_path(crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}", metadata=heartbeat)
+        self._MetaData_Util.set_metadata_to_zookeeper(path=f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}", metadata=heartbeat)
 
         return _task
 
-    def activate(self, crawler_name: str, task: Task) -> None:
+    def activate(self, dead_crawler_name: str) -> None:
         """
         After backup role crawler instance marks target as _Dead_, it would start to activate to be running by itself and
         run the runner's job.
 
-        :param crawler_name: The crawler name which be under checking.
-        :param task: The meta-data _Task_ of crawler be under checking.
+        :param dead_crawler_name: The crawler name which be under checking.
         :return: None
         """
 
@@ -786,23 +794,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                              identifier=self._state_identifier):
             _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
 
-            if self._crawler_name in _state.current_backup:
-                _state.total_backup = _state.total_backup - 1
-                _state.current_crawler.remove(crawler_name)
-                _state.current_runner.remove(crawler_name)
-                _state.current_runner.append(self._crawler_name)
-                _state.current_backup.remove(self._crawler_name)
-                _state.fail_crawler.append(crawler_name)
-                _state.fail_runner.append(crawler_name)
-                _state.standby_id = str(int(_state.standby_id) + 1)
+            _state.total_backup = _state.total_backup - 1
+            _state.current_crawler.remove(dead_crawler_name)
+            _state.current_runner.remove(dead_crawler_name)
+            _state.current_runner.append(self._crawler_name)
+            _state.current_backup.remove(self._crawler_name)
+            _state.fail_crawler.append(dead_crawler_name)
+            _state.fail_runner.append(dead_crawler_name)
+            _state.standby_id = str(int(_state.standby_id) + 1)
 
-                self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
-
-                self.hand_over_task(task)
-            else:
-                # TODO: Does it need to do something?
-                # This crawler instance has been ready be activated by itself for others
-                pass
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
 
     def hand_over_task(self, task: Task) -> None:
         """
