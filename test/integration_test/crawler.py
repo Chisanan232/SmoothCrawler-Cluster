@@ -12,7 +12,7 @@ import json
 import time
 import re
 
-from ._instance_value import _TestValue
+from ._instance_value import _TestValue, _ZKNodePathUtils
 from ._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from .._config import Zookeeper_Hosts
 from .._values import (
@@ -620,42 +620,6 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
             time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
             if self._exist_node(path=_under_test_task_path):
                 self._delete_node(path=_under_test_task_path)
-
-
-class _ZKNodePathUtils:
-
-    __Testing_Value: _TestValue = _TestValue()
-
-    @classmethod
-    def all(cls, size: int, paths: List[str] = []) -> List[str]:
-        _all_paths = []
-        _all_paths.append(cls.__Testing_Value.group_state_zookeeper_path)
-        _all_paths.extend(cls.all_node_state(size, paths))
-        _all_paths.extend(cls.all_task(size, paths))
-        _all_paths.extend(cls.all_heartbeat(size, paths))
-        return _all_paths
-
-    @classmethod
-    def all_node_state(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.node_state_zookeeper_path)
-
-    @classmethod
-    def all_task(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.task_zookeeper_path)
-
-    @classmethod
-    def all_heartbeat(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.heartbeat_zookeeper_path)
-
-    @classmethod
-    def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str) -> List[str]:
-        if len(target_list) == size:
-            return target_list
-
-        target_list.clear()
-        for i in range(1, size + 1):
-            target_list.append(metadata_path.replace("0", str(i)))
-        return target_list
 
 
 class MultiCrawlerTestSuite(ZK):

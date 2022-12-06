@@ -1,5 +1,6 @@
 from smoothcrawler_cluster.model import GroupState, NodeState, Task, Heartbeat
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from typing import List
 import json
 
 from .._values import (
@@ -108,4 +109,40 @@ class _TestValue:
         if self.__Testing_Heartbeat_Data_Str == "":
             self.__Testing_Heartbeat_Data_Str = json.dumps(self.heartbeat.to_readable_object())
         return self.__Testing_Heartbeat_Data_Str
+
+
+class _ZKNodePathUtils:
+
+    __Testing_Value: _TestValue = _TestValue()
+
+    @classmethod
+    def all(cls, size: int, paths: List[str] = []) -> List[str]:
+        _all_paths = []
+        _all_paths.append(cls.__Testing_Value.group_state_zookeeper_path)
+        _all_paths.extend(cls.all_node_state(size, paths))
+        _all_paths.extend(cls.all_task(size, paths))
+        _all_paths.extend(cls.all_heartbeat(size, paths))
+        return _all_paths
+
+    @classmethod
+    def all_node_state(cls, size: int, paths: List[str] = []) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.node_state_zookeeper_path)
+
+    @classmethod
+    def all_task(cls, size: int, paths: List[str] = []) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.task_zookeeper_path)
+
+    @classmethod
+    def all_heartbeat(cls, size: int, paths: List[str] = []) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.heartbeat_zookeeper_path)
+
+    @classmethod
+    def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str) -> List[str]:
+        if len(target_list) == size:
+            return target_list
+
+        target_list.clear()
+        for i in range(1, size + 1):
+            target_list.append(metadata_path.replace("0", str(i)))
+        return target_list
 
