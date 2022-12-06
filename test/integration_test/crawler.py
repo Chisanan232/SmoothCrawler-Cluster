@@ -629,19 +629,22 @@ class MultiCrawlerTestSuite(ZK):
     @staticmethod
     def _clean_environment(function):
         def _(self):
+            # Initial Zookeeper session
             self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
             self._PyTest_ZK_Client.start()
 
-            # Reset Zookeeper nodes
+            # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
 
             try:
+                # Run the test item
                 function(self)
             finally:
+                # Kill all processes
                 for _process in self.__Processes:
                     _process.terminate()
-                _all_paths = _ZKNodePathUtils.all(size=_Total_Crawler_Value)
-                self._delete_zk_nodes(_all_paths)
+                # Reset Zookeeper nodes fianlly
+                self._reset_all_metadata(size=_Total_Crawler_Value)
         return _
 
 
