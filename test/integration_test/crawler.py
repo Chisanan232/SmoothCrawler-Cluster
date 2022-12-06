@@ -12,7 +12,7 @@ import json
 import time
 import re
 
-from ._instance_value import _TestValue
+from ._instance_value import _TestValue, _ZKNodePathUtils
 from ._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from .._config import Zookeeper_Hosts
 from .._values import (
@@ -270,8 +270,8 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
         _zk_crawler_instances: List[ZookeeperCrawler] = []
 
         _running_flag: Dict[str, bool] = {}
-        _group_state_path: str = ""
-        _node_state_path: str = ""
+        # _group_state_path: str = ""
+        # _node_state_path: str = ""
         _index_sep_char: str = "_"
         _all_paths: List[str] = []
 
@@ -294,14 +294,14 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
 
                 _zk_crawler_instances.append(_zk_crawler)
 
-                nonlocal _group_state_path
-                if _group_state_path == "":
-                    _group_state_path = _zk_crawler.group_state_zookeeper_path
-                _all_paths.append(_group_state_path)
-                nonlocal _node_state_path
-                if _node_state_path == "":
-                    _node_state_path = _zk_crawler.node_state_zookeeper_path
-                _all_paths.append(_node_state_path)
+                # nonlocal _group_state_path
+                # if _group_state_path == "":
+                #     _group_state_path = _zk_crawler.group_state_zookeeper_path
+                # _all_paths.append(_group_state_path)
+                # nonlocal _node_state_path
+                # if _node_state_path == "":
+                #     _node_state_path = _zk_crawler.node_state_zookeeper_path
+                # _all_paths.append(_node_state_path)
                 _all_paths.append(_zk_crawler.task_zookeeper_path)
                 _all_paths.append(_zk_crawler.heartbeat_zookeeper_path)
 
@@ -323,9 +323,9 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
             self._check_heartbeat_info(list(_heartbeat_paths))
 
             # Verify the running result by the value from Zookeeper
-            _data, _state = self._PyTest_ZK_Client.get(path=_group_state_path)
+            _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
             _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG] _state_path: {_group_state_path}, _json_data: {_json_data}")
+            print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
             self._check_current_crawler(_json_data, _running_flag)
             self._check_current_runner(_json_data, _index_sep_char)
             self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
@@ -629,19 +629,22 @@ class MultiCrawlerTestSuite(ZK):
     @staticmethod
     def _clean_environment(function):
         def _(self):
+            # Initial Zookeeper session
             self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
             self._PyTest_ZK_Client.start()
 
-            # Reset Zookeeper nodes
+            # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
 
             try:
+                # Run the test item
                 function(self)
             finally:
+                # Kill all processes
                 for _process in self.__Processes:
                     _process.terminate()
-                _all_paths = self._get_all_path(size=_Total_Crawler_Value)
-                self._delete_zk_nodes(_all_paths)
+                # Reset Zookeeper nodes fianlly
+                self._reset_all_metadata(size=_Total_Crawler_Value)
         return _
 
 
@@ -722,42 +725,15 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         pass
 
     def _reset_all_metadata(self, size: int):
-        _all_paths = self._get_all_path(size)
+        _all_paths = _ZKNodePathUtils.all(size)
         self._delete_zk_nodes(_all_paths)
-
-    def _get_all_path(self, size: int):
-        _all_paths = []
-        _all_paths.append(_Testing_Value.group_state_zookeeper_path)
-        _all_paths.extend(self._get_all_node_state_paths(size))
-        _all_paths.extend(self._get_all_task_paths(size))
-        _all_paths.extend(self._get_all_heartbeat_paths(size))
-        return _all_paths
-
-    def _get_all_node_state_paths(self, size: int) -> List[str]:
-        return self._opt_paths_list(self.__All_Node_State_Paths, size, _Testing_Value.node_state_zookeeper_path)
-
-    def _get_all_task_paths(self, size: int) -> List[str]:
-        return self._opt_paths_list(self.__All_Task_State_Paths, size, _Testing_Value.task_zookeeper_path)
-
-    def _get_all_heartbeat_paths(self, size: int) -> List[str]:
-        return self._opt_paths_list(self.__All_Heartbeat_State_Paths, size, _Testing_Value.heartbeat_zookeeper_path)
-
-    @classmethod
-    def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str):
-        if len(target_list) == size:
-            return target_list
-
-        target_list.clear()
-        for i in range(1, size + 1):
-            target_list.append(metadata_path.replace("0", str(i)))
-        return target_list
 
     def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
         def _assign_task() -> None:
-            _task_paths = self._get_all_task_paths(runner)
+            _task_paths = _ZKNodePathUtils.all_task(runner)
             for _task_path in _task_paths:
                 if delay is True and "2" in _task_path:
                     _task_running_content = _One_Running_Content
@@ -876,7 +852,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         assert len(_group_json_data["fail_backup"]) == 0, ""
 
     def _verify_state_role(self, runner: int, backup: int, expected_role: dict):
-        _state_paths = self._get_all_node_state_paths(runner + backup)
+        _state_paths = _ZKNodePathUtils.all_node_state(runner + backup)
         for _state_path in list(_state_paths):
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
@@ -888,7 +864,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                 assert False, ""
 
     def _verify_task_detail(self, runner: int, backup: int, expected_task_result: dict):
-        _task_paths = self._get_all_task_paths(runner + backup)
+        _task_paths = _ZKNodePathUtils.all_task(runner + backup)
         for _task_path in list(_task_paths):
             _data, _state = self._PyTest_ZK_Client.get(path=_task_path)
             _json_data = json.loads(_data.decode("utf-8"))
