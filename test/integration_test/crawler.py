@@ -252,118 +252,6 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
             else:
                 assert _role is CrawlerStateRole.Backup_Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Backup_Runner}'."
 
-    def test_wait_for_standby(self, uit_object: ZookeeperCrawler):
-        # Prepare the meta data for testing this scenario
-        # Set a *GroupState* with only 2 crawlers and standby ID is '1'
-
-        _all_paths: list = []
-
-        def _initial_group_state() -> None:
-            _state = Initial.group_state(
-                crawler_name="sc-crawler_0",
-                total_crawler=3,
-                total_runner=2,
-                total_backup=1,
-                standby_id="1",
-                current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
-                current_runner=["sc-crawler_0", "sc-crawler_2"],
-                current_backup=["sc-crawler_1"]
-            )
-            if self._exist_node(path=uit_object.group_state_zookeeper_path) is None:
-                _state_data_str = json.dumps(_state.to_readable_object())
-                self._create_node(path=uit_object.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
-
-        def _initial_node_state(_node_path: str) -> None:
-            _all_paths.append(_node_path)
-            _node_state = Initial.node_state(group=uit_object._crawler_group, role=CrawlerStateRole.Runner)
-            if self._exist_node(path=_node_path) is None:
-                _node_state_data_str = json.dumps(_node_state.to_readable_object())
-                self._create_node(path=_node_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
-
-        def _initial_task(_task_path: str) -> None:
-            _all_paths.append(_task_path)
-            _task = Initial.task(running_state=TaskResult.Processing)
-            if self._exist_node(path=_task_path) is None:
-                _task_data_str = json.dumps(_task.to_readable_object())
-                self._create_node(path=_task_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
-
-        def _initial_heartbeat(_heartbeat_path: str) -> None:
-            _all_paths.append(_heartbeat_path)
-            _heartbeat = Initial.heartbeat()
-            if self._exist_node(path=_heartbeat_path) is None:
-                _heartbeat_data_str = json.dumps(_heartbeat.to_readable_object())
-                self._create_node(path=_heartbeat_path, value=bytes(_heartbeat_data_str, "utf-8"), include_data=True)
-
-        _initial_group_state()
-        _all_paths.append(uit_object.group_state_zookeeper_path)
-        _all_paths.append(uit_object.node_state_zookeeper_path)
-        _all_paths.append(uit_object.task_zookeeper_path)
-        _all_paths.append(uit_object.heartbeat_zookeeper_path)
-
-        # Set a *NodeState* of sc-crawler_0
-        _initial_node_state(uit_object.node_state_zookeeper_path.replace("1", "0"))
-
-        # Set a *NodeState* of sc-crawler_1
-        _initial_node_state(uit_object.node_state_zookeeper_path)
-
-        # Set a *NodeState* of sc-crawler_2
-        _initial_node_state(uit_object.node_state_zookeeper_path.replace("1", "2"))
-
-        # Set a *Task* of sc-crawler_0
-        _initial_task(uit_object.task_zookeeper_path.replace("1", "0"))
-
-        # Set a *Task* of sc-crawler_1
-        _initial_task(uit_object.task_zookeeper_path)
-
-        # Set a *Task* of sc-crawler_2
-        _initial_task(uit_object.task_zookeeper_path.replace("1", "2"))
-
-        # Set a *Heartbeat* of sc-crawler_0 is dead
-        _initial_heartbeat(uit_object.heartbeat_zookeeper_path.replace("1", "0"))
-
-        # Set a *Heartbeat* of sc-crawler_2 is dead
-        _initial_heartbeat(uit_object.heartbeat_zookeeper_path.replace("1", "2"))
-
-        try:
-            if uit_object.is_ready_for_run(timeout=5):
-                uit_object.wait_and_standby()
-            else:
-                assert False, "It should be ready to run. Please check the detail implementation or other settings in testing has problem or not."
-
-            # Verify the result should be correct as expected
-            # Verify the *GroupState* info
-            _data, _state = self._get_value_from_node(path=uit_object.group_state_zookeeper_path)
-            _json_data = json.loads(str(_data.decode("utf-8")))
-            print(f"[DEBUG in testing] _json_data: {_json_data}")
-            assert _json_data["standby_id"] == "2", ""
-
-            assert len(_json_data["current_crawler"]) == 2, ""
-            assert uit_object._crawler_name in _json_data["current_crawler"], ""
-            assert len(_json_data["current_runner"]) == 2, ""
-            assert uit_object._crawler_name in _json_data["current_runner"], ""
-            assert len(_json_data["current_backup"]) == 0, ""
-
-            assert len(_json_data["fail_crawler"]) == 1, ""
-            assert _json_data["fail_crawler"][0] != "sc-crawler_1", ""
-            assert len(_json_data["fail_runner"]) == 1, ""
-            assert _json_data["fail_runner"][0] != "sc-crawler_1", ""
-            assert len(_json_data["fail_backup"]) == 0, ""
-
-            # Verify the *NodeState* info
-            _node_data, _state = self._get_value_from_node(path=uit_object.node_state_zookeeper_path)
-            _json_node_data = json.loads(str(_node_data.decode("utf-8")))
-            print(f"[DEBUG in testing] _json_node_data: {_json_node_data}")
-            assert _json_node_data["group"] == uit_object._crawler_group, ""
-            assert _json_node_data["role"] == CrawlerStateRole.Runner.value, ""
-
-            _0_node_data, _state = self._get_value_from_node(path=uit_object.node_state_zookeeper_path.replace("1", "0"))
-            _json_0_node_data = json.loads(str(_0_node_data.decode("utf-8")))
-            print(f"[DEBUG in testing] _json_0_node_data: {_json_0_node_data}")
-            assert _json_0_node_data["group"] == uit_object._crawler_group, ""
-            assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
-        finally:
-            self._delete_zk_nodes(_all_paths)
-
     def test_wait_for_to_be_standby(self):
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
@@ -620,6 +508,103 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             "response": "Example Domain",
             "error_msg": None
         }, "The detail should be completely same as above."
+
+    @MultiCrawlerTestSuite._clean_environment
+    def test_wait_for_standby(self):
+        # Instantiate ZookeeperCrawler
+        _zk_crawler = ZookeeperCrawler(
+            runner=1,
+            backup=1,
+            initial=False,
+            zk_hosts=Zookeeper_Hosts
+        )
+
+        def _initial_group_state() -> None:
+            _state = Initial.group_state(
+                crawler_name="sc-crawler_0",
+                total_crawler=2,
+                total_runner=1,
+                total_backup=1,
+                standby_id="1",
+                current_crawler=["sc-crawler_0", "sc-crawler_1"],
+                current_runner=["sc-crawler_0"],
+                current_backup=["sc-crawler_1"]
+            )
+            if self._exist_node(path=_Testing_Value.group_state_zookeeper_path) is None:
+                _state_data_str = json.dumps(_state.to_readable_object())
+                self._create_node(path=_Testing_Value.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
+
+        def _initial_node_state(_node_path: str) -> None:
+            _node_state = Initial.node_state(group=_zk_crawler.group, role=CrawlerStateRole.Runner)
+            if self._exist_node(path=_node_path) is None:
+                _node_state_data_str = json.dumps(_node_state.to_readable_object())
+                self._create_node(path=_node_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
+
+        def _initial_task(_task_path: str) -> None:
+            _task = Initial.task(running_state=TaskResult.Processing)
+            if self._exist_node(path=_task_path) is None:
+                _task_data_str = json.dumps(_task.to_readable_object())
+                self._create_node(path=_task_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
+
+        def _initial_heartbeat(_heartbeat_path: str) -> None:
+            _heartbeat = Initial.heartbeat()
+            if self._exist_node(path=_heartbeat_path) is None:
+                _heartbeat_data_str = json.dumps(_heartbeat.to_readable_object())
+                self._create_node(path=_heartbeat_path, value=bytes(_heartbeat_data_str, "utf-8"), include_data=True)
+
+        _initial_group_state()
+
+        # Set a *NodeState* of all crawler instances
+        _all_node_state_paths = _ZKNodePathUtils.all_node_state(size=2, start_index=0)
+        for _node_state_path in _all_node_state_paths:
+            _initial_node_state(_node_state_path)
+
+        # Set a *Task* of all crawler instances
+        _all_task_paths = _ZKNodePathUtils.all_task(size=2, start_index=0)
+        for _task_path in _all_task_paths:
+            _initial_task(_task_path)
+
+        # Set a *Task* of all crawler instances
+        _all_heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=2, start_index=0)
+        for _heartbeat_path in _all_heartbeat_paths:
+            _initial_heartbeat(_heartbeat_path)
+
+        if _zk_crawler.is_ready_for_run(timeout=5):
+            _zk_crawler.wait_and_standby()
+        else:
+            assert False, "It should be ready to run. Please check the detail implementation or other settings in testing has problem or not."
+
+        # Verify the result should be correct as expected
+        # Verify the *GroupState* info
+        _data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+        _json_data = json.loads(str(_data.decode("utf-8")))
+        print(f"[DEBUG in testing] _json_data: {_json_data}")
+        assert _json_data["standby_id"] == "2", ""
+
+        assert len(_json_data["current_crawler"]) == 1, ""
+        assert _zk_crawler._crawler_name in _json_data["current_crawler"], ""
+        assert len(_json_data["current_runner"]) == 1, ""
+        assert _zk_crawler._crawler_name in _json_data["current_runner"], ""
+        assert len(_json_data["current_backup"]) == 0, ""
+
+        assert len(_json_data["fail_crawler"]) == 1, ""
+        assert _json_data["fail_crawler"][0] != "sc-crawler_1", ""
+        assert len(_json_data["fail_runner"]) == 1, ""
+        assert _json_data["fail_runner"][0] != "sc-crawler_1", ""
+        assert len(_json_data["fail_backup"]) == 0, ""
+
+        # Verify the *NodeState* info
+        _node_data, _state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
+        _json_node_data = json.loads(str(_node_data.decode("utf-8")))
+        print(f"[DEBUG in testing] _json_node_data: {_json_node_data}")
+        assert _json_node_data["group"] == _zk_crawler._crawler_group, ""
+        assert _json_node_data["role"] == CrawlerStateRole.Runner.value, ""
+
+        _0_node_data, _state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path.replace("1", "0"))
+        _json_0_node_data = json.loads(str(_0_node_data.decode("utf-8")))
+        print(f"[DEBUG in testing] _json_0_node_data: {_json_0_node_data}")
+        assert _json_0_node_data["group"] == _zk_crawler._crawler_group, ""
+        assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
 
     def _run_multi_processes(self, target_function, index_sep_char: str = "_") -> None:
         self.__Processes = []
