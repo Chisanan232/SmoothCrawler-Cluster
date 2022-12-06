@@ -426,73 +426,6 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
         assert _result is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end - _start) <= 6, "It should NOT run more than 6 seconds."
 
-    def test_wait_for_task(self, uit_object: ZookeeperCrawler):
-        _empty_task = Empty.task()
-        if self._exist_node(path=uit_object.task_zookeeper_path) is None:
-            _task_data_str = json.dumps(_empty_task.to_readable_object())
-            self._create_node(path=uit_object.task_zookeeper_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
-
-        def _assign_task() -> None:
-            time.sleep(5)
-            _task = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.task_zookeeper_path, as_obj=Task)
-            _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
-            _updated_task_str = json.dumps(_updated_task.to_readable_object())
-            self._set_value_to_node(path=uit_object.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
-
-        def _wait_for_task() -> None:
-            try:
-                uit_object.wait_for_task()
-            except NotImplementedError:
-                assert True, "It works finely."
-            else:
-                assert False, "It should raise an error about *NotImplementedError* of registering SmoothCrawler components."
-
-            try:
-                uit_object.register_factory(
-                    http_req_sender=RequestsHTTPRequest(),
-                    http_resp_parser=RequestsHTTPResponseParser(),
-                    data_process=ExampleWebDataHandler()
-                )
-                uit_object.wait_for_task()
-            except Exception:
-                assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
-            else:
-                assert True, "It works finely."
-
-        try:
-            _assign_task_thread = threading.Thread(target=_assign_task)
-            _run_task_thread = threading.Thread(target=_wait_for_task)
-            _run_task_thread.daemon = True
-
-            _assign_task_thread.start()
-            _run_task_thread.start()
-
-            _assign_task_thread.join()
-
-            time.sleep(3)
-
-            # Verify the running result
-            _task_data, state = self._get_value_from_node(path=uit_object.task_zookeeper_path)
-            _json_task_data = json.loads(str(_task_data.decode("utf-8")))
-            print(f"[DEBUG in testing] _json_task_data: {_json_task_data}")
-            assert _json_task_data["in_progressing_id"] == "-1", "It should be reset as '-1' finally in crawl processing."
-            assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, "It should has 1 successful and 0 fail result."
-            assert _json_task_data["running_status"] == TaskResult.Done.value, "It should be 'TaskResult.Done' state."
-            assert len(_json_task_data["result_detail"]) == 1, "It's size should be 1."
-            assert _json_task_data["result_detail"][0] == {
-                "task_id": _Task_Running_Content_Value[0]["task_id"],
-                "state": TaskResult.Done.value,
-                "status_code": 200,
-                "response": "Example Domain",
-                "error_msg": None
-            }, "The detail should be completely same as above."
-        finally:
-            _under_test_task_path = uit_object.task_zookeeper_path
-            del uit_object
-            time.sleep(5)    # Wait for kill instance of thread and ensure it's clear for all behind testing items
-            if self._exist_node(path=_under_test_task_path):
-                self._delete_node(path=_under_test_task_path)
-
 
 class MultiCrawlerTestSuite(ZK):
 
@@ -626,6 +559,68 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
         self._check_role(_role_results, _index_sep_char)
 
+    @MultiCrawlerTestSuite._clean_environment
+    def test_wait_for_task(self):
+        _empty_task = Empty.task()
+        if self._exist_node(path=_Testing_Value.task_zookeeper_path) is None:
+            _task_data_str = json.dumps(_empty_task.to_readable_object())
+            self._create_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
+
+        # Instantiate ZookeeperCrawler
+        _zk_crawler = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value,
+            backup=_Backup_Crawler_Value,
+            initial=False,
+            zk_hosts=Zookeeper_Hosts
+        )
+
+        def _assign_task() -> None:
+            time.sleep(5)
+            _task = _zk_crawler._MetaData_Util.get_metadata_from_zookeeper(path=_Testing_Value.task_zookeeper_path, as_obj=Task)
+            _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
+            _updated_task_str = json.dumps(_updated_task.to_readable_object())
+            self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+
+        def _wait_for_task() -> None:
+            try:
+                _zk_crawler.wait_for_task()
+            except NotImplementedError:
+                assert True, "It works finely."
+            else:
+                assert False, "It should raise an error about *NotImplementedError* of registering SmoothCrawler components."
+
+            try:
+                _zk_crawler.register_factory(
+                    http_req_sender=RequestsHTTPRequest(),
+                    http_resp_parser=RequestsHTTPResponseParser(),
+                    data_process=ExampleWebDataHandler()
+                )
+                _zk_crawler.wait_for_task()
+            except Exception:
+                assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+            else:
+                assert True, "It works finely."
+
+        self._run_2_diff_processes(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True))
+
+        time.sleep(3)
+
+        # Verify the running result
+        _task_data, state = self._get_value_from_node(path=_zk_crawler.task_zookeeper_path)
+        _json_task_data = json.loads(str(_task_data.decode("utf-8")))
+        print(f"[DEBUG in testing] _json_task_data: {_json_task_data}")
+        assert _json_task_data["in_progressing_id"] == "-1", "It should be reset as '-1' finally in crawl processing."
+        assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, "It should has 1 successful and 0 fail result."
+        assert _json_task_data["running_status"] == TaskResult.Done.value, "It should be 'TaskResult.Done' state."
+        assert len(_json_task_data["result_detail"]) == 1, "It's size should be 1."
+        assert _json_task_data["result_detail"][0] == {
+            "task_id": _Task_Running_Content_Value[0]["task_id"],
+            "state": TaskResult.Done.value,
+            "status_code": 200,
+            "response": "Example Domain",
+            "error_msg": None
+        }, "The detail should be completely same as above."
+
     def _run_multi_processes(self, target_function, index_sep_char: str = "_") -> None:
         self.__Processes = []
         for i in range(1, _Total_Crawler_Value + 1):
@@ -638,6 +633,24 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         for _process in self.__Processes:
             _process.join()
+
+    def _run_2_diff_processes(self, func1_ps: tuple, func2_ps: tuple):
+        func1, func1_args, func1_daemon = func1_ps
+        func2, func2_args, func2_daemon = func2_ps
+
+        self.__Processes = []
+        _func1_process = threading.Thread(target=func1, args=(func1_args or ()))
+        _func2_process = threading.Thread(target=func2, args=(func2_args or ()))
+        _func1_process.daemon = func1_daemon
+        _func2_process.daemon = func2_daemon
+
+        _func1_process.start()
+        _func2_process.start()
+
+        if func1_daemon is False:
+            _func1_process.join()
+        if func2_daemon is False:
+            _func2_process.join()
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
