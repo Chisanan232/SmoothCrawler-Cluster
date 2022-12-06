@@ -25,6 +25,7 @@ _Crawler_Name_Value: str = "sc-crawler_1"
 _Crawler_Role_Value: str = CrawlerStateRole.Initial.value
 _Runner_Crawler_Value: int = 2
 _Backup_Crawler_Value: int = 1
+_Fail_Runner_Crawler_Value: int = 1
 _Total_Crawler_Value: int = _Runner_Crawler_Value + _Backup_Crawler_Value
 _State_Standby_ID_Value: str = "3"
 _Empty_List_Value: list = []
