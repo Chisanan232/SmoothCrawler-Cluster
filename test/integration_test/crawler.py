@@ -715,10 +715,10 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         _running_flag, _role_results = self._run_multiple_crawler_instances(
             runner=_Runner_Crawler_Value,
             backup=_Backup_Crawler_Value,
-            delay_assign_task=3
+            delay_assign_task=5
         )
 
-        time.sleep(3)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+        time.sleep(8)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
         self._verify_exception()
         self._check_running_status(_running_flag)
@@ -736,7 +736,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             expected_task_result={
                 "1": "available",
                 "2": "available",
-                "3": "available"
+                "3": "nothing"
             }
         )
 
@@ -749,10 +749,11 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         _running_flag, _role_results = self._run_multiple_crawler_instances(
             runner=_Multiple_Backup_Scenarios_Runner_Crawler,
             backup=_Multiple_Backup_Scenarios_Backup_Crawler,
-            delay=True
+            delay=True,
+            delay_assign_task=5
         )
 
-        time.sleep(15)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+        time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
         self._verify_exception()
         self._check_running_status(_running_flag)
