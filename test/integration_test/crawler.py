@@ -624,10 +624,12 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
 
 class _ZKNodePathUtils:
 
+    __Testing_Value: _TestValue = _TestValue()
+
     @classmethod
     def all(cls, size: int, paths: List[str] = []) -> List[str]:
         _all_paths = []
-        _all_paths.append(_Testing_Value.group_state_zookeeper_path)
+        _all_paths.append(cls.__Testing_Value.group_state_zookeeper_path)
         _all_paths.extend(cls.all_node_state(size, paths))
         _all_paths.extend(cls.all_task(size, paths))
         _all_paths.extend(cls.all_heartbeat(size, paths))
@@ -635,15 +637,15 @@ class _ZKNodePathUtils:
 
     @classmethod
     def all_node_state(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, _Testing_Value.node_state_zookeeper_path)
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.node_state_zookeeper_path)
 
     @classmethod
     def all_task(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, _Testing_Value.task_zookeeper_path)
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.task_zookeeper_path)
 
     @classmethod
     def all_heartbeat(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, _Testing_Value.heartbeat_zookeeper_path)
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.heartbeat_zookeeper_path)
 
     @classmethod
     def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str) -> List[str]:
@@ -657,8 +659,6 @@ class _ZKNodePathUtils:
 
 
 class MultiCrawlerTestSuite(ZK):
-
-    _Path_Utils = _ZKNodePathUtils()
 
     __Processes: List[mp.Process] = []
 
@@ -676,7 +676,7 @@ class MultiCrawlerTestSuite(ZK):
             finally:
                 for _process in self.__Processes:
                     _process.terminate()
-                _all_paths = self._Path_Utils.all(size=_Total_Crawler_Value)
+                _all_paths = _ZKNodePathUtils.all(size=_Total_Crawler_Value)
                 self._delete_zk_nodes(_all_paths)
         return _
 
@@ -758,7 +758,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         pass
 
     def _reset_all_metadata(self, size: int):
-        _all_paths = self._Path_Utils.all(size)
+        _all_paths = _ZKNodePathUtils.all(size)
         self._delete_zk_nodes(_all_paths)
 
     def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
@@ -766,7 +766,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
         def _assign_task() -> None:
-            _task_paths = self._Path_Utils.all_task(runner)
+            _task_paths = _ZKNodePathUtils.all_task(runner)
             for _task_path in _task_paths:
                 if delay is True and "2" in _task_path:
                     _task_running_content = _One_Running_Content
@@ -885,7 +885,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         assert len(_group_json_data["fail_backup"]) == 0, ""
 
     def _verify_state_role(self, runner: int, backup: int, expected_role: dict):
-        _state_paths = self._Path_Utils.all_node_state(runner + backup)
+        _state_paths = _ZKNodePathUtils.all_node_state(runner + backup)
         for _state_path in list(_state_paths):
             _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
             _json_data = json.loads(_data.decode("utf-8"))
@@ -897,7 +897,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                 assert False, ""
 
     def _verify_task_detail(self, runner: int, backup: int, expected_task_result: dict):
-        _task_paths = self._Path_Utils.all_task(runner + backup)
+        _task_paths = _ZKNodePathUtils.all_task(runner + backup)
         for _task_path in list(_task_paths):
             _data, _state = self._PyTest_ZK_Client.get(path=_task_path)
             _json_data = json.loads(_data.decode("utf-8"))
