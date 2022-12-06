@@ -595,17 +595,12 @@ class MultiCrawlerTestSuite(ZK):
 
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
+    @MultiCrawlerTestSuite._clean_environment
     def test_many_crawler_instances_with_initial(self):
-        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-        self._PyTest_ZK_Client.start()
-
         _running_flag: Dict[str, bool] = _Manager.dict()
-        _index_sep_char: str = "_"
-
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
-        _all_paths = _ZKNodePathUtils.all(size=_Runner_Crawler_Value + _Backup_Crawler_Value)
-        self._delete_zk_nodes(_all_paths)
+        _index_sep_char: str = "_"
 
         def _run_and_test(_name):
             _zk_crawler = None
@@ -630,45 +625,37 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             else:
                 _running_flag[_name] = True
 
-        processes = []
-        try:
-            # Run the target methods by multi-threads
-            processes = self._run_multi_processes(target_function=_run_and_test, index_sep_char=_index_sep_char)
-            self._check_running_status(_running_flag)
+        # Run the target methods by multi-threads
+        self._run_multi_processes(target_function=_run_and_test, index_sep_char=_index_sep_char)
 
-            # Verify the heartbeat info
-            _heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=_Runner_Crawler_Value + _Backup_Crawler_Value)
-            self._check_heartbeat_info(list(_heartbeat_paths))
+        # Verify the running state
+        self._check_running_status(_running_flag)
 
-            # Verify the running result by the value from Zookeeper
-            _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
-            _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
-            self._check_current_crawler(_json_data, _running_flag)
-            self._check_current_runner(_json_data, _index_sep_char)
-            self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
-            self._check_role(_role_results, _index_sep_char)
-        finally:
-            for _process in processes:
-                _process.kill()
-            _all_paths = _ZKNodePathUtils.all(size=_Runner_Crawler_Value + _Backup_Crawler_Value)
-            self._delete_zk_nodes(_all_paths)
+        # Verify the heartbeat info
+        _heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=_Runner_Crawler_Value + _Backup_Crawler_Value)
+        self._check_heartbeat_info(list(_heartbeat_paths))
 
-    @classmethod
-    def _run_multi_processes(cls, target_function, index_sep_char: str = "_") -> List[mp.Process]:
-        _processes = []
+        # Verify the running result by the value from Zookeeper
+        _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
+        _json_data = json.loads(_data.decode("utf-8"))
+        print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
+        self._check_current_crawler(_json_data, _running_flag)
+        self._check_current_runner(_json_data, _index_sep_char)
+        self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
+        self._check_role(_role_results, _index_sep_char)
+
+    def _run_multi_processes(self, target_function, index_sep_char: str = "_") -> None:
+        self.__Processes = []
         for i in range(1, _Total_Crawler_Value + 1):
             _crawler_process = mp.Process(target=target_function, args=(f"sc-crawler{index_sep_char}{i}",))
             _crawler_process.daemon = True
-            _processes.append(_crawler_process)
+            self.__Processes.append(_crawler_process)
 
-        for _process in _processes:
+        for _process in self.__Processes:
             _process.start()
 
-        for _process in _processes:
+        for _process in self.__Processes:
             _process.join()
-
-        return _processes
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
