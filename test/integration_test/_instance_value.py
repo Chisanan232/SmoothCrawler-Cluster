@@ -116,33 +116,33 @@ class _ZKNodePathUtils:
     __Testing_Value: _TestValue = _TestValue()
 
     @classmethod
-    def all(cls, size: int, paths: List[str] = []) -> List[str]:
+    def all(cls, size: int, paths: List[str] = [], start_index: int = 1) -> List[str]:
         _all_paths = []
         _all_paths.append(cls.__Testing_Value.group_state_zookeeper_path)
-        _all_paths.extend(cls.all_node_state(size, paths))
-        _all_paths.extend(cls.all_task(size, paths))
-        _all_paths.extend(cls.all_heartbeat(size, paths))
+        _all_paths.extend(cls.all_node_state(size, paths, start_index))
+        _all_paths.extend(cls.all_task(size, paths, start_index))
+        _all_paths.extend(cls.all_heartbeat(size, paths, start_index))
         return _all_paths
 
     @classmethod
-    def all_node_state(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.node_state_zookeeper_path)
+    def all_node_state(cls, size: int, paths: List[str] = [], start_index: int = 1) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.node_state_zookeeper_path, start_index)
 
     @classmethod
-    def all_task(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.task_zookeeper_path)
+    def all_task(cls, size: int, paths: List[str] = [], start_index: int = 1) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.task_zookeeper_path, start_index)
 
     @classmethod
-    def all_heartbeat(cls, size: int, paths: List[str] = []) -> List[str]:
-        return cls._opt_paths_list(paths, size, cls.__Testing_Value.heartbeat_zookeeper_path)
+    def all_heartbeat(cls, size: int, paths: List[str] = [], start_index: int = 1) -> List[str]:
+        return cls._opt_paths_list(paths, size, cls.__Testing_Value.heartbeat_zookeeper_path, start_index)
 
     @classmethod
-    def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str) -> List[str]:
+    def _opt_paths_list(cls, target_list: List[str], size: int, metadata_path: str, start_index: int = 1) -> List[str]:
         if len(target_list) == size:
             return target_list
 
         target_list.clear()
-        for i in range(1, size + 1):
-            target_list.append(metadata_path.replace("0", str(i)))
+        for i in range(start_index, size + 1):
+            target_list.append(metadata_path.replace("1", str(i)))
         return target_list
 
