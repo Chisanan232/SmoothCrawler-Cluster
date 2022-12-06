@@ -12,8 +12,6 @@ import json
 import time
 import re
 
-from ._instance_value import _TestValue, _ZKNodePathUtils
-from ._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from .._config import Zookeeper_Hosts
 from .._values import (
     # Crawler
@@ -24,6 +22,8 @@ from .._values import (
     _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
+from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
+from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
 
 
 _Manager = mp.Manager()

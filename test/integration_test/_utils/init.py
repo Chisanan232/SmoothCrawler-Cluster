@@ -3,8 +3,6 @@ from smoothcrawler_cluster.model import GroupState, NodeState, Task, Heartbeat
 from kazoo.client import KazooClient
 import pytest
 
-from .._instance_value import _TestValue
-from .._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from ..._config import Zookeeper_Hosts
 from ..._values import (
     # GroupState
@@ -16,6 +14,8 @@ from ..._values import (
     # Heartbeat
     _Time_Value, _Time_Format_Value,
 )
+from .._test_utils._instance_value import _TestValue
+from .._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
 
 
 _Not_None_Assertion_Error: str = "It should not be None object."
