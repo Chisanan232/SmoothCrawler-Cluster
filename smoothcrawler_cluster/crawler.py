@@ -388,9 +388,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
+        _state = Initial.node_state(group=self._crawler_group)
         if self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path) is None:
-            _state = Initial.node_state(group=self._crawler_group)
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_state, create_node=True)
+            _create_node = True
+        else:
+            _create_node = False
+        self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_state, create_node=_create_node)
 
     def register_task(self) -> None:
         """
@@ -399,9 +402,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
+        _task = Initial.task()
         if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
-            _task = Initial.task()
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task, create_node=True)
+            _create_node = True
+        else:
+            _create_node = False
+        self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task, create_node=_create_node)
 
     def register_heartbeat(self) -> None:
         """
@@ -410,13 +416,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
+        # TODO: It needs to parameterize these settings
+        _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
         if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
-            # TODO: It needs to parameterize these settings
-            _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
             _create_node = True
         else:
             _current_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path, as_obj=Heartbeat)
-            _heartbeat = Update.heartbeat(_current_heartbeat, update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
             _create_node = False
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat, create_node=_create_node)
 
@@ -749,6 +754,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: Any type object (The running result of crawling).
         """
 
+        # TODO: Consider about how to let crawler core implementation to be more scalable and flexible.
         _parsed_response = self.crawl(method=content.method, url=content.url)
         _data = self.data_process(_parsed_response)
         # self.persist(data=_data)
