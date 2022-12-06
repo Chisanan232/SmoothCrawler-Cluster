@@ -252,68 +252,6 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
             else:
                 assert _role is CrawlerStateRole.Backup_Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Backup_Runner}'."
 
-    def test_wait_for_to_be_standby(self):
-        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-        self._PyTest_ZK_Client.start()
-
-        # # Prepare the meta data
-        # Instantiate a ZookeeperCrawler for testing
-        _zk_crawler = ZookeeperCrawler(
-            runner=_Runner_Crawler_Value,
-            backup=_Backup_Crawler_Value,
-            name="sc-crawler_2",
-            initial=False,
-            zk_hosts=Zookeeper_Hosts
-        )
-
-        # Set a *State* with only 2 crawlers and standby ID is '1'
-        _state = Initial.group_state(
-            crawler_name="sc-crawler_0",
-            total_crawler=3,
-            total_runner=2,
-            total_backup=1,
-            standby_id="1",
-            current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
-            current_runner=["sc-crawler_0"],
-            current_backup=["sc-crawler_1", "sc-crawler_2"]
-        )
-        if self._exist_node(path=_zk_crawler.group_state_zookeeper_path) is None:
-            _state_data_str = json.dumps(_state.to_readable_object())
-            self._create_node(path=_zk_crawler.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
-
-        _result = None
-        _start = None
-        _end = None
-
-        def _update_state_standby_id():
-            time.sleep(5)
-            _state.standby_id = "2"
-            _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
-
-        def _run_target_test_func():
-            try:
-                nonlocal _result, _start, _end
-                _start = time.time()
-                # # Run target function
-                _result = _zk_crawler.wait_for_to_be_standby()
-                _end = time.time()
-            finally:
-                if self._exist_node(path=_zk_crawler.group_state_zookeeper_path):
-                    self._delete_node(path=_zk_crawler.group_state_zookeeper_path)
-
-        _updating_thread = threading.Thread(target=_update_state_standby_id)
-        _run_target_thread = threading.Thread(target=_run_target_test_func)
-
-        _updating_thread.start()
-        _run_target_thread.start()
-
-        _updating_thread.join()
-        _run_target_thread.join()
-
-        # # Verify the result
-        assert _result is True, "It should be True after it detect the stand ID to be '2'."
-        assert 5 < int(_end - _start) <= 6, "It should NOT run more than 6 seconds."
-
 
 class MultiCrawlerTestSuite(ZK):
 
@@ -606,6 +544,59 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         assert _json_0_node_data["group"] == _zk_crawler._crawler_group, ""
         assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
 
+    @MultiCrawlerTestSuite._clean_environment
+    def test_wait_for_to_be_standby(self):
+        # # Prepare the meta data
+        # Instantiate a ZookeeperCrawler for testing
+        _zk_crawler = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value,
+            backup=_Backup_Crawler_Value,
+            name="sc-crawler_2",
+            initial=False,
+            zk_hosts=Zookeeper_Hosts
+        )
+
+        # Set a *State* with only 2 crawlers and standby ID is '1'
+        _state = Initial.group_state(
+            crawler_name="sc-crawler_0",
+            total_crawler=3,
+            total_runner=2,
+            total_backup=1,
+            standby_id="1",
+            current_crawler=["sc-crawler_0", "sc-crawler_1", "sc-crawler_2"],
+            current_runner=["sc-crawler_0"],
+            current_backup=["sc-crawler_1", "sc-crawler_2"]
+        )
+        if self._exist_node(path=_zk_crawler.group_state_zookeeper_path) is None:
+            _state_data_str = json.dumps(_state.to_readable_object())
+            self._create_node(path=_zk_crawler.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
+
+        _result = _Manager.Value("_result", None)
+        _start = _Manager.Value("_start", None)
+        _end = _Manager.Value("_end", None)
+
+        def _update_state_standby_id():
+            time.sleep(5)
+            _state.standby_id = "2"
+            _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+
+        def _run_target_test_func():
+            try:
+                nonlocal _result, _start, _end
+                _start.value = time.time()
+                # # Run target function
+                _result.value = _zk_crawler.wait_for_to_be_standby()
+                _end.value = time.time()
+            finally:
+                if self._exist_node(path=_zk_crawler.group_state_zookeeper_path):
+                    self._delete_node(path=_zk_crawler.group_state_zookeeper_path)
+
+        self._run_2_diff_processes(func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False))
+
+        # # Verify the result
+        assert _result.value is True, "It should be True after it detect the stand ID to be '2'."
+        assert 5 < int(_end.value - _start.value) <= 6, "It should NOT run more than 6 seconds."
+
     def _run_multi_processes(self, target_function, index_sep_char: str = "_") -> None:
         self.__Processes = []
         for i in range(1, _Total_Crawler_Value + 1):
@@ -717,10 +708,6 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
 
 class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
-
-    __All_Node_State_Paths: List[str] = []
-    __All_Task_State_Paths: List[str] = []
-    __All_Heartbeat_State_Paths: List[str] = []
 
     @MultiCrawlerTestSuite._clean_environment
     def test_run_with_2_runner_and_1_backup(self):
@@ -961,6 +948,22 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             "response": "Example Domain",
             "error_msg": None
         }, "The detail should be completely same as above."
+
+    @classmethod
+    def _chk_nothing_task_detail(cls, _one_detail: dict) -> None:
+        assert len(_one_detail["running_content"]) == 0, ""
+        assert _one_detail["in_progressing_id"] == "0", ""
+        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
+        assert _one_detail["running_status"] == TaskResult.Nothing.value, ""
+        assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
+
+    @classmethod
+    def _chk_processing_task_detail(cls, _one_detail: dict) -> None:
+        assert len(_one_detail["running_content"]) == 1, ""
+        assert _one_detail["in_progressing_id"] == "0", ""
+        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
+        assert _one_detail["running_status"] == TaskResult.Processing.value, ""
+        assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
 
     @classmethod
     def _chk_backup_task_detail(cls, _one_detail: dict) -> None:
