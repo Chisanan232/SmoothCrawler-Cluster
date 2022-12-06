@@ -588,6 +588,10 @@ class MultiCrawlerTestSuite(ZK):
                 self._reset_all_metadata(size=_Total_Crawler_Value)
         return _
 
+    def _reset_all_metadata(self, size: int) -> None:
+        _all_paths = _ZKNodePathUtils.all(size)
+        self._delete_zk_nodes(_all_paths)
+
 
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
@@ -810,10 +814,6 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
     def test_run_with_multiple_fail_runners(self):
         pass
-
-    def _reset_all_metadata(self, size: int):
-        _all_paths = _ZKNodePathUtils.all(size)
-        self._delete_zk_nodes(_all_paths)
 
     def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
         _running_flag: Dict[str, bool] = _Manager.dict()
