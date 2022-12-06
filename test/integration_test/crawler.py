@@ -684,7 +684,6 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_run_with_multiple_backup(self):
-        _Multiple_Backup_Scenarios_Total_Crawler: int = 4
         _Multiple_Backup_Scenarios_Runner_Crawler: int = 2
         _Multiple_Backup_Scenarios_Backup_Crawler: int = 2
 
