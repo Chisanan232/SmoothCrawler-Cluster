@@ -147,75 +147,6 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
         # Verify the values
         assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
 
-    def test_register_metadata_and_elect_with_many_crawler_instances(self):
-        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-        self._PyTest_ZK_Client.start()
-
-        _running_flag: Dict[str, bool] = {}
-        _group_state_path: str = ""
-        _node_state_path: str = ""
-        _index_sep_char: str = "_"
-        _all_paths: List[str] = []
-
-        _is_ready_flag: Dict[str, bool] = {}
-        _election_results: Dict[str, ElectionResult] = {}
-
-        def _run_and_test(_name):
-            _zk_crawler = None
-            try:
-                # Instantiate ZookeeperCrawler
-                _zk_crawler = ZookeeperCrawler(
-                    runner=_Runner_Crawler_Value,
-                    backup=_Backup_Crawler_Value,
-                    name=_name,
-                    initial=False,
-                    zk_hosts=Zookeeper_Hosts
-                )
-                nonlocal _group_state_path
-                if _group_state_path == "":
-                    _group_state_path = _zk_crawler.group_state_zookeeper_path
-                _all_paths.append(_group_state_path)
-                nonlocal _node_state_path
-                if _node_state_path == "":
-                    _node_state_path = _zk_crawler.node_state_zookeeper_path
-                _all_paths.append(_node_state_path)
-                _all_paths.append(_zk_crawler.task_zookeeper_path)
-                _all_paths.append(_zk_crawler.heartbeat_zookeeper_path)
-
-                # Run target methods
-                _zk_crawler.ensure_register = True
-                _zk_crawler.ensure_timeout = 10
-                _zk_crawler.ensure_wait = 0.5
-                _zk_crawler.register_metadata()
-
-                # Verify the running result
-                _zk_crawler_ready = _zk_crawler.is_ready_for_election(timeout=10)
-                _is_ready_flag[_name] = _zk_crawler_ready
-
-                # Try to run election
-                _elect_result = _zk_crawler.elect()
-                _election_results[_name] = _elect_result
-            except:
-                _running_flag[_name] = False
-                raise
-            else:
-                _running_flag[_name] = True
-
-        try:
-            # Run the target methods by multi-threads
-            self._run_multi_threads(target_function=_run_and_test, index_sep_char=_index_sep_char)
-            self._check_running_status(_running_flag)
-
-            # Verify the running result by the value from Zookeeper
-            _data, _state = self._PyTest_ZK_Client.get(path=_group_state_path)
-            _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG] _state_path: {_group_state_path}, _json_data: {_json_data}")
-            self._check_current_crawler(_json_data, _running_flag)
-            self._check_is_ready_flags(_is_ready_flag)
-            self._check_election_results(_election_results, _index_sep_char)
-        finally:
-            self._delete_zk_nodes(_all_paths)
-
     def _run_multi_threads(self, target_function, index_sep_char: str) -> None:
         _threads = []
         for i in range(1, _Total_Crawler_Value + 1):
@@ -596,6 +527,57 @@ class MultiCrawlerTestSuite(ZK):
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
+    def test_register_metadata_and_elect_with_many_crawler_instances(self):
+        _running_flag: Dict[str, bool] = _Manager.dict()
+        _is_ready_flag: Dict[str, bool] = _Manager.dict()
+        _election_results: Dict[str, ElectionResult] = _Manager.dict()
+
+        _index_sep_char: str = "_"
+
+        def _run_and_test(_name):
+            _zk_crawler = None
+            try:
+                # Instantiate ZookeeperCrawler
+                _zk_crawler = ZookeeperCrawler(
+                    runner=_Runner_Crawler_Value,
+                    backup=_Backup_Crawler_Value,
+                    name=_name,
+                    initial=False,
+                    zk_hosts=Zookeeper_Hosts
+                )
+
+                # Run target methods
+                _zk_crawler.ensure_register = True
+                _zk_crawler.ensure_timeout = 10
+                _zk_crawler.ensure_wait = 0.5
+                _zk_crawler.register_metadata()
+
+                # Verify the running result
+                _zk_crawler_ready = _zk_crawler.is_ready_for_election(timeout=10)
+                _is_ready_flag[_name] = _zk_crawler_ready
+
+                # Try to run election
+                _elect_result = _zk_crawler.elect()
+                _election_results[_name] = _elect_result
+            except:
+                _running_flag[_name] = False
+                raise
+            else:
+                _running_flag[_name] = True
+
+        # Run the target methods by multi-threads
+        self._run_multi_processes(target_function=_run_and_test, index_sep_char=_index_sep_char)
+        self._check_running_status(_running_flag)
+
+        # Verify the running result by the value from Zookeeper
+        _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
+        _json_data = json.loads(_data.decode("utf-8"))
+        print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
+        self._check_current_crawler(_json_data, _running_flag)
+        self._check_is_ready_flags(_is_ready_flag)
+        self._check_election_results(_election_results, _index_sep_char)
+
+    @MultiCrawlerTestSuite._clean_environment
     def test_many_crawler_instances_with_initial(self):
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
@@ -703,6 +685,16 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= _Runner_Crawler_Value,
                 _current_runner))
         assert False not in _runer_checksum_list, f"The index of all crawler name should be <= {_Runner_Crawler_Value} (the count of runner)."
+
+    def _check_election_results(self, election_results: Dict[str, ElectionResult], index_sep_char: str) -> None:
+        assert len(election_results.keys()) == _Total_Crawler_Value, \
+            f"The size of *elect* feature checksum should be {_Total_Crawler_Value}."
+        for _crawler_name, _election_result in election_results.items():
+            _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
+            if _crawler_index <= _Runner_Crawler_Value:
+                assert _election_result is ElectionResult.Winner, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
+            else:
+                assert _election_result is ElectionResult.Loser, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
 
     def _check_current_backup_and_standby_id(self, json_data, index_sep_char: str) -> None:
         _current_backup = json_data["current_backup"]
