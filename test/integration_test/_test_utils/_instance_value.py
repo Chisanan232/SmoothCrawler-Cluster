@@ -3,7 +3,7 @@ from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from typing import List
 import json
 
-from .._values import (
+from ..._values import (
     # GroupState
     _Runner_Crawler_Value, _Backup_Crawler_Value,
     # common functions
