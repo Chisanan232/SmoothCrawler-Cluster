@@ -22,6 +22,7 @@ from .._values import (
     _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
+from .._verify_metadata import Verify
 from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
 
@@ -152,12 +153,16 @@ class MultiCrawlerTestSuite(ZK):
 
     __Processes: List[mp.Process] = []
 
+    _Verify = Verify()
+
     @staticmethod
     def _clean_environment(function):
         def _(self):
             # Initial Zookeeper session
             self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
             self._PyTest_ZK_Client.start()
+
+            self._Verify.initial_zk_session(self._PyTest_ZK_Client)
 
             # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
@@ -628,6 +633,11 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                 "2": CrawlerStateRole.Dead_Runner,
                 "3": CrawlerStateRole.Runner
             },
+            expected_group={
+                "1": "sc-crawler-cluster",
+                "2": "sc-crawler-cluster",
+                "3": "sc-crawler-cluster"
+            },
             expected_task_result={
                 "1": "available",
                 "2": "available",
@@ -663,6 +673,12 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                 "2": CrawlerStateRole.Dead_Runner,
                 "3": CrawlerStateRole.Runner,
                 "4": CrawlerStateRole.Backup_Runner
+            },
+            expected_group={
+                "1": "sc-crawler-cluster",
+                "2": "sc-crawler-cluster",
+                "3": "sc-crawler-cluster",
+                "4": "sc-crawler-cluster"
             },
             expected_task_result={
                 "1": "available",
@@ -765,64 +781,13 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         if _Global_Exception_Record is not None:
             assert False, traceback.print_exception(_Global_Exception_Record)
 
-    def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role, expected_task_result):
+    def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role: dict, expected_group: dict, expected_task_result: dict):
         # Verify the group info
-        self._verify_group_info(runner=runner, backup=backup, fail_runner=fail_runner)
+        self._Verify.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner)
         # Verify the state info
-        self._verify_state_role(runner=runner, backup=backup, expected_role=expected_role)
+        self._Verify.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
         # Verify the task info
-        self._verify_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
-
-
-    def _verify_group_info(self, runner: int, backup: int, fail_runner: int):
-        _group_data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
-        assert len(_group_data) != 0, "The data content of meta data *GroupState* should NOT be empty."
-        _group_json_data = json.loads(_group_data.decode("utf-8"))
-        print(f"[DEBUG in testing] _group_state_path.value: {_Testing_Value.group_state_zookeeper_path}, _group_json_data: {_group_json_data} - {datetime.now()}")
-
-        assert _group_json_data["total_crawler"] == runner + backup, ""
-        assert _group_json_data["total_runner"] == runner, ""
-        assert _group_json_data["total_backup"] == backup - fail_runner, ""
-
-        assert len(_group_json_data["current_crawler"]) == runner + backup - fail_runner, ""
-        assert False not in ["2" not in _crawler for _crawler in _group_json_data["current_crawler"]], ""
-        assert len(_group_json_data["current_runner"]) == runner, ""
-        assert False not in ["2" not in _crawler for _crawler in _group_json_data["current_runner"]], ""
-        assert len(_group_json_data["current_backup"]) == backup - fail_runner, ""
-
-        assert _group_json_data["standby_id"] == "4", ""
-
-        assert len(_group_json_data["fail_crawler"]) == fail_runner, ""
-        assert False not in ["2" in _crawler for _crawler in _group_json_data["fail_crawler"]], ""
-        assert len(_group_json_data["fail_runner"]) == fail_runner, ""
-        assert False not in ["2" in _crawler for _crawler in _group_json_data["fail_runner"]], ""
-        assert len(_group_json_data["fail_backup"]) == 0, ""
-
-    def _verify_state_role(self, runner: int, backup: int, expected_role: dict):
-        _state_paths = _ZKNodePathUtils.all_node_state(runner + backup)
-        for _state_path in list(_state_paths):
-            _data, _state = self._PyTest_ZK_Client.get(path=_state_path)
-            _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG in testing] _state_path: {_state_path}, _json_data: {_json_data} - {datetime.now()}")
-            _chksum = re.search(r"[0-9]{1,3}", _state_path)
-            if _chksum is not None:
-                assert _json_data["role"] == expected_role[_chksum.group(0)].value, ""
-            else:
-                assert False, ""
-
-    def _verify_task_detail(self, runner: int, backup: int, expected_task_result: dict):
-        _task_paths = _ZKNodePathUtils.all_task(runner + backup)
-        for _task_path in list(_task_paths):
-            _data, _state = self._PyTest_ZK_Client.get(path=_task_path)
-            _json_data = json.loads(_data.decode("utf-8"))
-            print(f"[DEBUG in testing] _task_path: {_task_path}, _json_data: {_json_data}")
-            assert _json_data is not None, ""
-            _chksum = re.search(r"[0-9]{1,3}", _task_path)
-            if _chksum is not None:
-                _chk_detail_assert = getattr(self, f"_chk_{expected_task_result[_chksum.group(0)]}_task_detail")
-                _chk_detail_assert(_json_data)
-            else:
-                assert False, ""
+        self._Verify.all_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
@@ -830,41 +795,3 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             assert True, "Work finely."
         elif False in running_flag:
             assert False, "It should NOT have any thread gets any exception in running."
-
-    @classmethod
-    def _chk_available_task_detail(cls, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 0, ""
-        assert _one_detail["in_progressing_id"] == "-1", ""
-        assert _one_detail["running_result"] == {"success_count": 1, "fail_count": 0}, ""
-        assert _one_detail["running_status"] == TaskResult.Done.value, ""
-        assert _one_detail["result_detail"][0] == {
-            "task_id": _Task_Running_Content_Value[0]["task_id"],
-            "state": TaskResult.Done.value,
-            "status_code": 200,
-            "response": "Example Domain",
-            "error_msg": None
-        }, "The detail should be completely same as above."
-
-    @classmethod
-    def _chk_nothing_task_detail(cls, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 0, ""
-        assert _one_detail["in_progressing_id"] == "0", ""
-        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail["running_status"] == TaskResult.Nothing.value, ""
-        assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
-
-    @classmethod
-    def _chk_processing_task_detail(cls, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 1, ""
-        assert _one_detail["in_progressing_id"] == "0", ""
-        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail["running_status"] == TaskResult.Processing.value, ""
-        assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
-
-    @classmethod
-    def _chk_backup_task_detail(cls, _one_detail: dict) -> None:
-        assert len(_one_detail["running_content"]) == 0, ""
-        assert _one_detail["in_progressing_id"] == "-1", ""
-        assert _one_detail["running_result"] == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail["running_status"] == TaskResult.Nothing.value, ""
-        assert len(_one_detail["result_detail"]) == 0, "It should NOT have any running result because it is backup role."
