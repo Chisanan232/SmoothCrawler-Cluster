@@ -25,7 +25,8 @@ class Verify:
     def initial_zk_session(self, client: KazooClient) -> None:
         self._client = client
 
-    def group_state_info(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None, standby_id: str = None, index_sep_char: str = "_", review_data: Union[str, bytes, GroupState] = None) -> None:
+    def group_state_info(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None, standby_id: str = None,
+                         index_sep_char: str = "_", review_data: Union[str, bytes, GroupState] = None) -> None:
         _group_state = self.__get_metadata_opts(
             review_data,
             metadata_type=GroupState,
@@ -74,8 +75,10 @@ class Verify:
 
         # Verify current_crawler
         if verify_crawler is True:
-            assert len(_group_state.current_crawler) == runner + backup - fail_runner, f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'."
-            assert len(_group_state.current_crawler) == len(set(_group_state.current_crawler)), "Attribute *current_crawler* should NOT have any element is repeated."
+            assert len(_group_state.current_crawler) == runner + backup - fail_runner, \
+                f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'."
+            assert len(_group_state.current_crawler) == len(set(_group_state.current_crawler)), \
+                "Attribute *current_crawler* should NOT have any element is repeated."
             # TODO: How to let fail crawler name to be parameter?
             if fail_runner != 0 and fail_runner_name is not None:
                 assert False not in [fail_runner_name not in _crawler for _crawler in _group_state.current_crawler], ""
@@ -165,7 +168,8 @@ class Verify:
         if running_status is not None:
             assert _task.running_status == running_status, f"The attribute 'running_status' should be '{running_status}'."
         if running_result is not None:
-            assert ("success_count", "fail_count") == tuple(_task.running_result.keys()), "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'."
+            assert ("success_count", "fail_count") == tuple(_task.running_result.keys()), \
+                "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'."
             assert _task.running_result == running_result, f"The attribute 'running_result' should be '{running_result}'."
         if result_detail_len is not None:
             assert len(_task.result_detail) == result_detail_len, f"The authorization should be '{authorization}'."
