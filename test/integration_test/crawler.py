@@ -1,7 +1,6 @@
-from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task
+from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, GroupState, NodeState, Task
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from datetime import datetime
 from kazoo.client import KazooClient
 from typing import List, Dict
 import multiprocessing as mp
@@ -10,7 +9,6 @@ import threading
 import pytest
 import json
 import time
-import re
 
 from .._config import Zookeeper_Hosts
 from .._values import (
@@ -232,7 +230,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
         _json_data = json.loads(_data.decode("utf-8"))
         print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
-        self._check_current_crawler(_json_data, _running_flag)
+        self._Verify.group_state_current_section(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, verify_runner=False, verify_backup=False)
         self._check_is_ready_flags(_is_ready_flag)
         self._check_election_results(_election_results, _index_sep_char)
 
@@ -273,16 +271,10 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._check_running_status(_running_flag)
 
         # Verify the heartbeat info
-        _heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=_Runner_Crawler_Value + _Backup_Crawler_Value)
-        self._check_heartbeat_info(list(_heartbeat_paths))
+        self._Verify.all_heartbeat_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value)
 
         # Verify the running result by the value from Zookeeper
-        _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
-        _json_data = json.loads(_data.decode("utf-8"))
-        print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
-        self._check_current_crawler(_json_data, _running_flag)
-        self._check_current_runner(_json_data, _index_sep_char)
-        self._check_current_backup_and_standby_id(_json_data, _index_sep_char)
+        self._Verify.group_state_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="3")
         self._check_role(_role_results, _index_sep_char)
 
     @MultiCrawlerTestSuite._clean_environment
@@ -333,19 +325,19 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Verify the running result
         _task_data, state = self._get_value_from_node(path=_zk_crawler.task_zookeeper_path)
-        _json_task_data = json.loads(str(_task_data.decode("utf-8")))
-        print(f"[DEBUG in testing] _json_task_data: {_json_task_data}")
-        assert _json_task_data["in_progressing_id"] == "-1", "It should be reset as '-1' finally in crawl processing."
-        assert _json_task_data["running_result"] == {"success_count": 1, "fail_count": 0}, "It should has 1 successful and 0 fail result."
-        assert _json_task_data["running_status"] == TaskResult.Done.value, "It should be 'TaskResult.Done' state."
-        assert len(_json_task_data["result_detail"]) == 1, "It's size should be 1."
-        assert _json_task_data["result_detail"][0] == {
-            "task_id": _Task_Running_Content_Value[0]["task_id"],
-            "state": TaskResult.Done.value,
-            "status_code": 200,
-            "response": "Example Domain",
-            "error_msg": None
-        }, "The detail should be completely same as above."
+        print(f"[DEBUG in testing] _task_data: {_task_data}")
+        self._Verify.one_task_info(
+            _task_data,
+            in_progressing_id="-1",
+            running_result={"success_count": 1, "fail_count": 0},
+            running_status=TaskResult.Done.value,
+            result_detail_len=1
+        )
+        self._Verify.one_task_result_detail(
+            _task_data,
+            task_path=_zk_crawler.task_zookeeper_path,
+            expected_task_result={"1": "available"}
+        )
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_standby(self):
@@ -414,35 +406,15 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Verify the result should be correct as expected
         # Verify the *GroupState* info
-        _data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
-        _json_data = json.loads(str(_data.decode("utf-8")))
-        print(f"[DEBUG in testing] _json_data: {_json_data}")
-        assert _json_data["standby_id"] == "2", ""
-
-        assert len(_json_data["current_crawler"]) == 1, ""
-        assert _zk_crawler._crawler_name in _json_data["current_crawler"], ""
-        assert len(_json_data["current_runner"]) == 1, ""
-        assert _zk_crawler._crawler_name in _json_data["current_runner"], ""
-        assert len(_json_data["current_backup"]) == 0, ""
-
-        assert len(_json_data["fail_crawler"]) == 1, ""
-        assert _json_data["fail_crawler"][0] != "sc-crawler_1", ""
-        assert len(_json_data["fail_runner"]) == 1, ""
-        assert _json_data["fail_runner"][0] != "sc-crawler_1", ""
-        assert len(_json_data["fail_backup"]) == 0, ""
+        self._Verify.group_state_info(runner=1, backup=1, fail_runner=1, standby_id="2")
 
         # Verify the *NodeState* info
-        _node_data, _state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
-        _json_node_data = json.loads(str(_node_data.decode("utf-8")))
-        print(f"[DEBUG in testing] _json_node_data: {_json_node_data}")
-        assert _json_node_data["group"] == _zk_crawler._crawler_group, ""
-        assert _json_node_data["role"] == CrawlerStateRole.Runner.value, ""
-
-        _0_node_data, _state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path.replace("1", "0"))
-        _json_0_node_data = json.loads(str(_0_node_data.decode("utf-8")))
-        print(f"[DEBUG in testing] _json_0_node_data: {_json_0_node_data}")
-        assert _json_0_node_data["group"] == _zk_crawler._crawler_group, ""
-        assert _json_0_node_data["role"] == CrawlerStateRole.Dead_Runner.value, ""
+        self._Verify.all_node_state_role(
+            runner=1, backup=1,
+            expected_role={"0": CrawlerStateRole.Dead_Runner, "1": CrawlerStateRole.Runner},
+            expected_group={"0": _zk_crawler._crawler_group, "1": _zk_crawler._crawler_group},
+            start_index=0
+        )
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_to_be_standby(self):
@@ -535,49 +507,14 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         elif False in running_flag:
             assert False, "It should NOT have any thread gets any exception in running."
 
-    def _check_heartbeat_info(self, heartbeat_paths: List[str]) -> None:
-        for _path in heartbeat_paths:
-            _task, _state = self._PyTest_ZK_Client.get(path=_path)
-            print(f"[DEBUG] _path: {_path}, _task: {_task}")
-            _task_json_data = json.loads(_task.decode("utf-8"))
-            assert _task_json_data["time_format"] == "%Y-%m-%d %H:%M:%S", ""
-            _heart_rhythm_time = _task_json_data["heart_rhythm_time"]
-            _heart_rhythm_datetime = datetime.strptime(_heart_rhythm_time, _task_json_data["time_format"])
-            _now_datetime = datetime.now()
-            _diff_datetime = _now_datetime - _heart_rhythm_datetime
-            assert _diff_datetime.total_seconds() < 2, ""
-            assert _task_json_data["healthy_state"] == HeartState.Healthy.value, ""
-            assert _task_json_data["task_state"] == TaskResult.Nothing.value, ""
-
-    def _check_current_crawler(self, json_data, running_flag: Dict[str, bool]) -> None:
-        _current_crawler = json_data["current_crawler"]
-        assert _current_crawler is not None, "Attribute *current_crawler* should NOT be None."
-        assert type(_current_crawler) is list, "The data type of attribute *current_crawler* should NOT be list."
-        assert len(_current_crawler) == _Total_Crawler_Value, \
-            f"The size of attribute *current_crawler* should NOT be '{_Total_Crawler_Value}'."
-        assert len(_current_crawler) == len(set(_current_crawler)), \
-            "Attribute *current_crawler* should NOT have any element is repeated."
-        for _crawler_name in running_flag.keys():
-            assert _crawler_name in _current_crawler, \
-                f"The element '{_crawler_name}' should be one of attribute *current_crawler*."
-
     def _check_is_ready_flags(self, is_ready_flag: Dict[str, bool]) -> None:
         assert len(is_ready_flag.keys()) == _Total_Crawler_Value, \
             f"The size of *is_ready* feature checksum should be {_Total_Crawler_Value}."
         assert False not in is_ready_flag, \
             "It should NOT exist any checksum element is False (it means crawler doesn't ready for running election)."
 
-    def _check_current_runner(self, json_data, index_sep_char: str) -> None:
-        _current_runner = json_data["current_runner"]
-        assert len(_current_runner) == _Runner_Crawler_Value, f"The size of attribute *current_runner* should be same as {_Runner_Crawler_Value}."
-        _runer_checksum_list = list(
-            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= _Runner_Crawler_Value,
-                _current_runner))
-        assert False not in _runer_checksum_list, f"The index of all crawler name should be <= {_Runner_Crawler_Value} (the count of runner)."
-
     def _check_election_results(self, election_results: Dict[str, ElectionResult], index_sep_char: str) -> None:
-        assert len(election_results.keys()) == _Total_Crawler_Value, \
-            f"The size of *elect* feature checksum should be {_Total_Crawler_Value}."
+        assert len(election_results.keys()) == _Total_Crawler_Value, f"The size of *elect* feature checksum should be {_Total_Crawler_Value}."
         for _crawler_name, _election_result in election_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
             if _crawler_index <= _Runner_Crawler_Value:
@@ -585,20 +522,8 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             else:
                 assert _election_result is ElectionResult.Loser, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
 
-    def _check_current_backup_and_standby_id(self, json_data, index_sep_char: str) -> None:
-        _current_backup = json_data["current_backup"]
-        assert len(_current_backup) == _Backup_Crawler_Value, f"The size of attribute *current_backup* should be same as {_Backup_Crawler_Value}."
-        _backup_checksum_list = list(
-            map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > _Backup_Crawler_Value, _current_backup))
-        assert False not in _backup_checksum_list, f"The index of all crawler name should be > {_Backup_Crawler_Value} (the count of runner)."
-
-        _standby_id = json_data["standby_id"]
-        _standby_id_checksum_list = list(map(lambda _crawler: _standby_id in _crawler, _current_backup))
-        assert True in _standby_id_checksum_list, "The standby ID (the index of crawler name) should be included in the one name of backup crawlers list."
-
     def _check_role(self, role_results: Dict[str, CrawlerStateRole], index_sep_char: str) -> None:
-        assert len(role_results.keys()) == _Total_Crawler_Value, \
-            f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."
+        assert len(role_results.keys()) == _Total_Crawler_Value, f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."
         for _crawler_name, _role in role_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
             if _crawler_index <= _Runner_Crawler_Value:

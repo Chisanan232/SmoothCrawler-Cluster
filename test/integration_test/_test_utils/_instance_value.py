@@ -139,7 +139,7 @@ class _ZKNodePathUtils:
     @classmethod
     def _opt_paths_list(cls, size: int, metadata_path: str, start_index: int = 1) -> List[str]:
         target_list = []
-        for i in range(start_index, size + 1):
+        for i in range(start_index, size + start_index):
             target_list.append(metadata_path.replace("1", str(i)))
         return target_list
 
