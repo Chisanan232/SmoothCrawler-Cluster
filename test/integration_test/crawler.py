@@ -1,7 +1,6 @@
-from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task
+from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, GroupState, NodeState, Task
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from datetime import datetime
 from kazoo.client import KazooClient
 from typing import List, Dict
 import multiprocessing as mp
@@ -10,7 +9,6 @@ import threading
 import pytest
 import json
 import time
-import re
 
 from .._config import Zookeeper_Hosts
 from .._values import (
