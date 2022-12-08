@@ -5,7 +5,6 @@ from kazoo.client import KazooClient
 from typing import List, Dict
 import multiprocessing as mp
 import traceback
-import threading
 import pytest
 import json
 import time
@@ -23,6 +22,7 @@ from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPRe
 from .._verify_metadata import Verify
 from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
+from ._test_utils._multirunner import run_multi_processes, run_2_diff_workers
 
 
 _Manager = mp.Manager()
@@ -149,7 +149,7 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
 
 class MultiCrawlerTestSuite(ZK):
 
-    __Processes: List[mp.Process] = []
+    _Processes: List[mp.Process] = []
 
     _Verify = Verify()
 
@@ -165,13 +165,17 @@ class MultiCrawlerTestSuite(ZK):
             # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
 
+            # Reset workers collection
+            self._Processes.clear()
+
             try:
                 # Run the test item
                 function(self)
             finally:
                 # Kill all processes
-                for _process in self.__Processes:
-                    _process.terminate()
+                for _process in self._Processes:
+                    if type(_process) is mp.Process:
+                        _process.terminate()
                 # Reset Zookeeper nodes fianlly
                 self._reset_all_metadata(size=_Total_Crawler_Value)
         return _
@@ -223,7 +227,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 _running_flag[_name] = True
 
         # Run the target methods by multi-threads
-        self._run_multi_processes(target_function=_run_and_test, index_sep_char=_index_sep_char)
+        self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
         self._check_running_status(_running_flag)
 
         # Verify the running result by the value from Zookeeper
@@ -265,7 +269,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 _running_flag[_name] = True
 
         # Run the target methods by multi-threads
-        self._run_multi_processes(target_function=_run_and_test, index_sep_char=_index_sep_char)
+        self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
 
         # Verify the running state
         self._check_running_status(_running_flag)
@@ -279,27 +283,25 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_task(self):
-        _empty_task = Empty.task()
-        if self._exist_node(path=_Testing_Value.task_zookeeper_path) is None:
-            _task_data_str = json.dumps(_empty_task.to_readable_object())
-            self._create_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
-
-        # Instantiate ZookeeperCrawler
-        _zk_crawler = ZookeeperCrawler(
-            runner=_Runner_Crawler_Value,
-            backup=_Backup_Crawler_Value,
-            initial=False,
-            zk_hosts=Zookeeper_Hosts
-        )
 
         def _assign_task() -> None:
-            time.sleep(5)
-            _task = _zk_crawler._MetaData_Util.get_metadata_from_zookeeper(path=_Testing_Value.task_zookeeper_path, as_obj=Task)
+            time.sleep(2)
+            _task = Initial.task()
             _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
             _updated_task_str = json.dumps(_updated_task.to_readable_object())
             self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
 
         def _wait_for_task() -> None:
+            # Instantiate ZookeeperCrawler
+            _zk_crawler = ZookeeperCrawler(
+                name=_Testing_Value.name,
+                runner=_Runner_Crawler_Value,
+                backup=_Backup_Crawler_Value,
+                initial=False,
+                zk_hosts=Zookeeper_Hosts
+            )
+            _zk_crawler.register_task()
+
             try:
                 _zk_crawler.wait_for_task()
             except NotImplementedError:
@@ -319,12 +321,12 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             else:
                 assert True, "It works finely."
 
-        self._run_2_diff_processes(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True))
+        run_2_diff_workers(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True), worker="thread")
 
         time.sleep(3)
 
         # Verify the running result
-        _task_data, state = self._get_value_from_node(path=_zk_crawler.task_zookeeper_path)
+        _task_data, state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
         print(f"[DEBUG in testing] _task_data: {_task_data}")
         self._Verify.one_task_info(
             _task_data,
@@ -335,7 +337,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         )
         self._Verify.one_task_result_detail(
             _task_data,
-            task_path=_zk_crawler.task_zookeeper_path,
+            task_path=_Testing_Value.task_zookeeper_path,
             expected_task_result={"1": "available"}
         )
 
@@ -463,42 +465,11 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 if self._exist_node(path=_zk_crawler.group_state_zookeeper_path):
                     self._delete_node(path=_zk_crawler.group_state_zookeeper_path)
 
-        self._run_2_diff_processes(func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False))
+        run_2_diff_workers(func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False), worker="thread")
 
         # # Verify the result
         assert _result.value is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end.value - _start.value) <= 6, "It should NOT run more than 6 seconds."
-
-    def _run_multi_processes(self, target_function, index_sep_char: str = "_") -> None:
-        self.__Processes = []
-        for i in range(1, _Total_Crawler_Value + 1):
-            _crawler_process = mp.Process(target=target_function, args=(f"sc-crawler{index_sep_char}{i}",))
-            _crawler_process.daemon = True
-            self.__Processes.append(_crawler_process)
-
-        for _process in self.__Processes:
-            _process.start()
-
-        for _process in self.__Processes:
-            _process.join()
-
-    def _run_2_diff_processes(self, func1_ps: tuple, func2_ps: tuple):
-        func1, func1_args, func1_daemon = func1_ps
-        func2, func2_args, func2_daemon = func2_ps
-
-        self.__Processes = []
-        _func1_process = threading.Thread(target=func1, args=(func1_args or ()))
-        _func2_process = threading.Thread(target=func2, args=(func2_args or ()))
-        _func1_process.daemon = func1_daemon
-        _func2_process.daemon = func2_daemon
-
-        _func1_process.start()
-        _func2_process.start()
-
-        if func1_daemon is False:
-            _func1_process.join()
-        if func2_daemon is False:
-            _func2_process.join()
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
@@ -684,14 +655,14 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             else:
                 _running_flag[_name] = True
 
-        self.__Processes = []
+        self._Processes = []
         # Run the target methods by multi-processes
         for i in range(1, (runner + backup + 1)):
             _crawler_process = mp.Process(target=_run_and_test, args=(f"sc-crawler_{i}",))
             _crawler_process.daemon = True
-            self.__Processes.append(_crawler_process)
+            self._Processes.append(_crawler_process)
 
-        for _process in self.__Processes:
+        for _process in self._Processes:
             _process.start()
 
         if delay_assign_task is not None:
