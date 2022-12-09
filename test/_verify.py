@@ -2,6 +2,7 @@ from smoothcrawler_cluster.model import TaskResult, HeartState, GroupState, Node
 from kazoo.client import KazooClient
 from datetime import datetime
 from typing import Dict, Type, Union
+import traceback
 import re
 
 from .integration_test._test_utils._instance_value import _TestValue, _ZKNodePathUtils
@@ -15,6 +16,15 @@ from ._values import _Task_Running_Content_Value, _Time_Format_Value
 
 
 _Testing_Value: _TestValue = _TestValue()
+
+
+class Verify:
+
+    @classmethod
+    def exception(cls, exception: Exception):
+        print(f"[DEBUG in testing] _Global_Exception_Record: {exception}")
+        if exception is not None:
+            assert False, traceback.print_exception(exception)
 
 
 class VerifyMetaData:
