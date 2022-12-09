@@ -591,7 +591,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             delay_assign_task=5
         )
 
-        time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+        time.sleep(10)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
         self._Verify.exception(_running_exception)
         self._Verify.running_status(_running_flag)
