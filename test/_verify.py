@@ -1,4 +1,5 @@
 from smoothcrawler_cluster.model import TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
+from multiprocessing.managers import DictProxy
 from kazoo.client import KazooClient
 from datetime import datetime
 from typing import Dict, Type, Union
@@ -21,10 +22,27 @@ _Testing_Value: _TestValue = _TestValue()
 class Verify:
 
     @classmethod
-    def exception(cls, exception: Exception) -> None:
-        print(f"[DEBUG in testing] _Global_Exception_Record: {exception}")
-        if exception is not None:
-            assert False, traceback.print_exception(exception)
+    def exception(cls, exception: Union[Exception, Dict[str, Exception]]) -> None:
+
+        def _print_traced_exception(_e_name: str, _e: Exception) -> str:
+            print(f"[DEBUG in Verify] _e_name: {_e_name}")
+            print(f"[DEBUG in Verify] _e: {_e}")
+            return f"=========================== {_e_name} ===========================" \
+                   f"{traceback.format_exception(_e)}" \
+                   f"================================================================="
+
+        print(f"[DEBUG in Verify] exception: {exception}")
+        if type(exception) in [dict, DictProxy]:
+            _has_except = list(filter(lambda e: e is not None, exception.values()))
+            if len(_has_except) == 0:
+                assert True, "It doesn't have any exception in any thread or process."
+            elif len(_has_except) == 1:
+                raise _has_except[0]
+            else:
+                assert False, map(_print_traced_exception, exception.items())
+        else:
+            if exception is not None:
+                assert False, traceback.print_exception(exception)
 
     @classmethod
     def running_status(cls, running_flag: Dict[str, bool]) -> None:
