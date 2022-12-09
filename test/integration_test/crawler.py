@@ -1,4 +1,4 @@
-from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, GroupState, NodeState, Task
+from smoothcrawler_cluster.model import Initial, Update, CrawlerStateRole, TaskResult, GroupState, NodeState
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
