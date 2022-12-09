@@ -461,8 +461,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         def _chk_by_condition(_state: GroupState) -> bool:
-            return len(
-                _state.current_crawler) == self._total_crawler and self._crawler_name in _state.current_crawler and \
+            return len(_state.current_crawler) == self._total_crawler and self._crawler_name in _state.current_crawler and \
                    len(_state.current_runner) == self._runner and len(_state.current_backup) == self._backup
 
         return self._is_ready_by_groupstate(
