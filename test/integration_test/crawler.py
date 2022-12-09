@@ -65,8 +65,53 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         assert _updated_node_state.role == CrawlerStateRole.Runner.value, \
             "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
+    @ZK.reset_testing_env(path=[ZKNode.GroupState])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState])
+    def test_register_group_state_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.GroupState])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState])
+    def test_register_group_state_with_existed_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.NodeState])
+    @ZK.remove_node_finally(path=[ZKNode.NodeState])
+    def test_register_node_state_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.NodeState])
+    @ZK.remove_node_finally(path=[ZKNode.NodeState])
+    def test_register_node_state_with_existed_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.Task])
+    @ZK.remove_node_finally(path=[ZKNode.Task])
+    def test_register_task_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.Task])
+    @ZK.remove_node_finally(path=[ZKNode.Task])
+    def test_register_task_with_existed_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_register_heartbeat_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_register_heartbeat_with_existed_node(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_stop_update_heartbeat(self, uit_object: ZookeeperCrawler):
+        pass
+
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_not_exist_node(self, uit_object: ZookeeperCrawler):
         self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
 
@@ -118,6 +163,17 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
         _heartbeat_json = json.loads(_heartbeat.decode("utf-8"))
         assert _heartbeat_json["heart_rhythm_time"] is not None, _assertion
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_initial(self, uit_object: ZookeeperCrawler):
+        pass
+
+    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    def test_is_ready_for_run_with_positive_timeout(self, uit_object: ZookeeperCrawler):
+        # Operate target method to test
+        pass
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
