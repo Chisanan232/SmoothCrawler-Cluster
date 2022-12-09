@@ -10,7 +10,7 @@ from ._metadata_values import (
     GroupStateData, GroupStateByObject, GroupStateByJsonData,
     NodeStateData, NodeStateByObject, NodeStateByJsonData,
     TaskData, TaskDataFromObject, TaskDataFromJsonData,
-    HeartbeatFromObject, HeartbeatFromJsonData
+    HeartbeatData, HeartbeatFromObject, HeartbeatFromJsonData
 )
 from ._values import _Task_Running_Content_Value, _Time_Format_Value
 
@@ -21,10 +21,17 @@ _Testing_Value: _TestValue = _TestValue()
 class Verify:
 
     @classmethod
-    def exception(cls, exception: Exception):
+    def exception(cls, exception: Exception) -> None:
         print(f"[DEBUG in testing] _Global_Exception_Record: {exception}")
         if exception is not None:
             assert False, traceback.print_exception(exception)
+
+    @classmethod
+    def running_status(cls, running_flag: Dict[str, bool]) -> None:
+        if False not in running_flag.values():
+            assert True, "Work finely."
+        elif False in running_flag:
+            assert False, "It should NOT have any thread or process gets any exception in running."
 
 
 class VerifyMetaData:
@@ -71,7 +78,7 @@ class VerifyMetaData:
 
     def group_state_current_section(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None,
                                     index_sep_char: str = "_", review_data: Union[str, bytes, GroupState, GroupStateData] = None,
-                                    verify_crawler: bool = True, verify_runner: bool = True, verify_backup: bool = True):
+                                    verify_crawler: bool = True, verify_runner: bool = True, verify_backup: bool = True) -> None:
         if type(review_data) is GroupStateData:
             _group_state = review_data
         else:
@@ -139,7 +146,7 @@ class VerifyMetaData:
 
     def all_task_info(self, runner: int, backup: int, running_content_len: int = None, cookies: dict = None,
                       authorization: dict = None, in_progressing_id: str = None, running_status: str = None,
-                      running_result: dict = None, result_detail_len: int = None, start_index: int = 1):
+                      running_result: dict = None, result_detail_len: int = None, start_index: int = 1) -> None:
         _task_paths = _ZKNodePathUtils.all_task(size=runner + backup, start_index=start_index)
         for _task_path in list(_task_paths):
             _data, _state = self._client.get(path=_task_path)
@@ -284,7 +291,8 @@ class VerifyMetaData:
     def __get_metadata_opts(self, review_data: Union[str, bytes, GroupState, NodeState, Task, Heartbeat],
                             zk_path: str, metadata_type: Type[Union[GroupState, NodeState, Task, Heartbeat]],
                             data_by_json_obj: Type[Union[GroupStateByJsonData, NodeStateByJsonData, TaskDataFromJsonData, HeartbeatFromJsonData]],
-                            data_by_object: Type[Union[GroupStateByObject, NodeStateByObject, TaskDataFromObject, HeartbeatFromObject]]):
+                            data_by_object: Type[Union[GroupStateByObject, NodeStateByObject, TaskDataFromObject, HeartbeatFromObject]]
+                            ) -> Union[GroupStateData, NodeStateData, TaskData, HeartbeatData]:
         if review_data is None:
             _data, _state = self._client.get(path=zk_path)
             assert len(_data) != 0, "The data content of meta data *GroupState* should NOT be empty."
