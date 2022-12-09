@@ -39,6 +39,14 @@ class _TestValue:
         self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False)
 
     @property
+    def name(self):
+        return self._zk_client_inst.name
+
+    @property
+    def group(self):
+        return self._zk_client_inst.group
+
+    @property
     def group_state_zookeeper_path(self) -> str:
         if self.__Group_State_ZK_Path == "":
             self.__Group_State_ZK_Path = self._zk_client_inst.group_state_zookeeper_path
