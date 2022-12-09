@@ -149,6 +149,21 @@ class VerifyMetaData:
                 _backup_checksum_iter = map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup, _group_state.current_backup)
                 assert False not in list(_backup_checksum_iter), f"The index of all crawler name should be > {backup} (the count of runner)."
 
+    def node_state_is_not_empty(self, role: str, group: str, review_data: Union[str, bytes, GroupState] = None) -> None:
+        _node_state = self.__get_metadata_opts(
+            review_data,
+            metadata_type=NodeState,
+            zk_path=_Testing_Value.node_state_zookeeper_path,
+            data_by_object=NodeStateByObject,
+            data_by_json_obj=NodeStateByJsonData
+        )
+
+        def _assertion(under_test, expect) -> None:
+            assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
+
+        _assertion(_node_state.role, role)
+        _assertion(_node_state.group, group)
+
     def all_node_state_role(self, runner: int, backup: int, expected_role: dict, expected_group: dict, start_index: int = 1) -> None:
         _state_paths = _ZKNodePathUtils.all_node_state(size=runner + backup, start_index=start_index)
         for _state_path in list(_state_paths):
