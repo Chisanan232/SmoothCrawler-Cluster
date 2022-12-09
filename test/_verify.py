@@ -19,8 +19,11 @@ from ._values import _Task_Running_Content_Value, _Time_Format_Value
 _Testing_Value: _TestValue = _TestValue()
 
 
-def _equal_assertion(under_test, expect) -> None:
-    assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
+def _equal_assertion(under_test, expect=None, none_check: bool = False) -> None:
+    if none_check is True:
+        assert under_test is not None, f"The value should be the same. Under test: {under_test}, expected value: not None."
+    else:
+        assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
 
 
 class Verify:
@@ -152,7 +155,7 @@ class VerifyMetaData:
                 _backup_checksum_iter = map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup, _group_state.current_backup)
                 assert False not in list(_backup_checksum_iter), f"The index of all crawler name should be > {backup} (the count of runner)."
 
-    def node_state_is_not_empty(self, role: str, group: str, review_data: Union[str, bytes, GroupState] = None) -> None:
+    def node_state_is_not_empty(self, role: str, group: str, review_data: Union[str, bytes, NodeState] = None) -> None:
         _node_state = self.__get_metadata_opts(
             review_data,
             metadata_type=NodeState,
@@ -193,7 +196,7 @@ class VerifyMetaData:
             assert _node_state.group == group, f"The attribute 'group' should be '{group}'."
 
     def task_is_not_empty(self, running_content: list = [], cookies: dict = {}, authorization: dict = {}, running_result: dict = None,
-                          running_status: str = None, review_data: Union[str, bytes, GroupState] = None, result_detail: list = []) -> None:
+                          running_status: str = None, result_detail: list = [], review_data: Union[str, bytes, Task] = None) -> None:
         _task = self.__get_metadata_opts(
             review_data,
             metadata_type=Task,
@@ -283,6 +286,23 @@ class VerifyMetaData:
             _chk_detail_assert(_task)
         else:
             assert False, ""
+
+    def heartbeat_is_not_empty(self, review_data: Union[str, bytes, Heartbeat] = None) -> None:
+        _heartbeat = self.__get_metadata_opts(
+            review_data,
+            metadata_type=Heartbeat,
+            zk_path=_Testing_Value.heartbeat_zookeeper_path,
+            data_by_object=HeartbeatFromObject,
+            data_by_json_obj=HeartbeatFromJsonData
+        )
+
+        _equal_assertion(_heartbeat.heart_rhythm_time, none_check=True)
+        _equal_assertion(_heartbeat.update_time, none_check=True)
+        _equal_assertion(_heartbeat.time_format, none_check=True)
+        _equal_assertion(_heartbeat.update_timeout, none_check=True)
+        _equal_assertion(_heartbeat.heart_rhythm_timeout, none_check=True)
+        _equal_assertion(_heartbeat.task_state, none_check=True)
+        _equal_assertion(_heartbeat.healthy_state, none_check=True)
 
     def all_heartbeat_info(self, runner: int, backup: int, start_index: int = 1) -> None:
         _heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=runner + backup, start_index=start_index)
