@@ -2,7 +2,7 @@ from smoothcrawler_cluster.model import Initial, Update, CrawlerStateRole, TaskR
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
-from typing import List, Dict
+from typing import List, Dict, Optional
 import multiprocessing as mp
 import traceback
 import pytest
@@ -229,7 +229,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Run the target methods by multi-threads
         self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
-        self._check_running_status(_running_flag)
+        self._Verify.running_status(_running_flag)
 
         # Verify the running result by the value from Zookeeper
         _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
@@ -273,7 +273,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
 
         # Verify the running state
-        self._check_running_status(_running_flag)
+        self._Verify.running_status(_running_flag)
 
         # Verify the heartbeat info
         self._VerifyMetaData.all_heartbeat_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value)
@@ -284,13 +284,19 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_task(self):
+        _running_flag: Dict[str, bool] = _Manager.dict()
 
         def _assign_task() -> None:
-            time.sleep(2)
-            _task = Initial.task()
-            _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
-            _updated_task_str = json.dumps(_updated_task.to_readable_object())
-            self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+            try:
+                time.sleep(2)
+                _task = Initial.task()
+                _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
+                _updated_task_str = json.dumps(_updated_task.to_readable_object())
+                self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+            except Exception:
+                _running_flag["_assign_task"] = False
+            else:
+                _running_flag["_assign_task"] = True
 
         def _wait_for_task() -> None:
             # Instantiate ZookeeperCrawler
@@ -318,13 +324,17 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 )
                 _zk_crawler.wait_for_task()
             except Exception:
+                _running_flag["_assign_task"] = False
                 assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
             else:
+                _running_flag["_assign_task"] = True
                 assert True, "It works finely."
 
         run_2_diff_workers(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True), worker="thread")
 
         time.sleep(3)
+
+        self._Verify.running_status(_running_flag)
 
         # Verify the running result
         _task_data, state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
@@ -421,6 +431,8 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_to_be_standby(self):
+        _running_flag: Dict[str, bool] = _Manager.dict()
+
         # # Prepare the meta data
         # Instantiate a ZookeeperCrawler for testing
         _zk_crawler = ZookeeperCrawler(
@@ -451,9 +463,14 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         _end = _Manager.Value("_end", None)
 
         def _update_state_standby_id():
-            time.sleep(5)
-            _state.standby_id = "2"
-            _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+            try:
+                time.sleep(5)
+                _state.standby_id = "2"
+                _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+            except Exception:
+                _running_flag["_update_state_standby_id"] = False
+            else:
+                _running_flag["_update_state_standby_id"] = True
 
         def _run_target_test_func():
             try:
@@ -462,6 +479,10 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 # # Run target function
                 _result.value = _zk_crawler.wait_for_to_be_standby()
                 _end.value = time.time()
+            except Exception:
+                _running_flag["_update_state_standby_id"] = False
+            else:
+                _running_flag["_update_state_standby_id"] = True
             finally:
                 if self._exist_node(path=_zk_crawler.group_state_zookeeper_path):
                     self._delete_node(path=_zk_crawler.group_state_zookeeper_path)
@@ -469,15 +490,10 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         run_2_diff_workers(func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False), worker="thread")
 
         # # Verify the result
+        self._Verify.running_status(_running_flag)
+
         assert _result.value is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end.value - _start.value) <= 6, "It should NOT run more than 6 seconds."
-
-    @classmethod
-    def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
-        if False not in running_flag.values():
-            assert True, "Work finely."
-        elif False in running_flag:
-            assert False, "It should NOT have any thread gets any exception in running."
 
     def _check_is_ready_flags(self, is_ready_flag: Dict[str, bool]) -> None:
         assert len(is_ready_flag.keys()) == _Total_Crawler_Value, \
@@ -519,7 +535,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
         global _Global_Exception_Record
         self._Verify.exception(_Global_Exception_Record)
-        self._check_running_status(_running_flag)
+        self._Verify.running_status(_running_flag)
 
         # Verify running result from meta-data
         self._verify_results(
@@ -560,7 +576,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
         global _Global_Exception_Record
         self._Verify.exception(_Global_Exception_Record)
-        self._check_running_status(_running_flag)
+        self._Verify.running_status(_running_flag)
 
         # Verify running result from meta-data
         self._verify_results(
@@ -681,10 +697,3 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         self._VerifyMetaData.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
         # Verify the task info
         self._VerifyMetaData.all_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
-
-    @classmethod
-    def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
-        if False not in running_flag.values():
-            assert True, "Work finely."
-        elif False in running_flag:
-            assert False, "It should NOT have any thread gets any exception in running."
