@@ -224,7 +224,6 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             except Exception as e:
                 _running_flag[_name] = False
                 _running_exception[_name] = e
-                # raise
             else:
                 _running_flag[_name] = True
                 _running_exception[_name] = None
@@ -271,7 +270,6 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             except Exception as e:
                 _running_flag[_name] = False
                 _running_exception[_name] = e
-                # raise
             else:
                 _running_flag[_name] = True
                 _running_exception[_name] = None
@@ -337,11 +335,9 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             except Exception as e:
                 _running_flag["_wait_for_task"] = False
                 _running_exception["_wait_for_task"] = e
-                # assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
             else:
                 _running_flag["_wait_for_task"] = True
                 _running_exception["_wait_for_task"] = None
-                # assert True, "It works finely."
 
         run_2_diff_workers(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True), worker="thread")
 
@@ -687,10 +683,6 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             except Exception as e:
                 _running_flag[_name] = False
                 _running_exception[_name] = e
-                # global _Global_Exception_Record
-                # _Global_Exception_Record = e
-                # print(f"[DEBUG - {_name}] e: {e}")
-                # raise e
             else:
                 _running_flag[_name] = True
                 _running_exception[_name] = None
