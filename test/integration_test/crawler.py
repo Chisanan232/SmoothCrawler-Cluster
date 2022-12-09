@@ -28,7 +28,7 @@ _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
 
 
-class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
+class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
     @pytest.fixture(scope="function")
     def uit_object(self) -> ZookeeperCrawler:
