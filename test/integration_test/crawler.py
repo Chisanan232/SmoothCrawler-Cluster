@@ -25,8 +25,6 @@ from ._test_utils._multirunner import run_multi_processes, run_2_diff_workers
 
 
 _Manager = mp.Manager()
-# _ZK_Crawler_Instances: List[ZookeeperCrawler] = _Manager.list()
-# _Global_Exception_Record: Exception = None
 _Testing_Value: _TestValue = _TestValue()
 
 
