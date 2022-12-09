@@ -19,7 +19,7 @@ from .._values import (
     _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
-from .._verify_metadata import Verify
+from .._verify import VerifyMetaData
 from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from ._test_utils._multirunner import run_multi_processes, run_2_diff_workers
@@ -151,7 +151,7 @@ class MultiCrawlerTestSuite(ZK):
 
     _Processes: List[mp.Process] = []
 
-    _Verify = Verify()
+    _Verify = VerifyMetaData()
 
     @staticmethod
     def _clean_environment(function):

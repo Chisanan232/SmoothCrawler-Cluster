@@ -17,7 +17,7 @@ from ._values import _Task_Running_Content_Value, _Time_Format_Value
 _Testing_Value: _TestValue = _TestValue()
 
 
-class Verify:
+class VerifyMetaData:
 
     def __init__(self):
         self._client = None
