@@ -60,6 +60,21 @@ class VerifyMetaData:
     def initial_zk_session(self, client: KazooClient) -> None:
         self._client = client
 
+    def group_state_is_not_empty(self, runner: int, backup: int, standby_id: str, review_data: Union[str, bytes, GroupState] = None) -> None:
+        _group_state = self.__get_metadata_opts(
+            review_data,
+            metadata_type=GroupState,
+            zk_path=_Testing_Value.group_state_zookeeper_path,
+            data_by_object=GroupStateByObject,
+            data_by_json_obj=GroupStateByJsonData
+        )
+
+        _assertion = "The value should be the same."
+        assert _group_state.total_crawler == runner + backup, _assertion
+        assert _group_state.total_runner == runner, _assertion
+        assert _group_state.total_backup == backup, _assertion
+        assert _group_state.standby_id == standby_id, _assertion
+
     def group_state_info(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None, standby_id: str = None,
                          index_sep_char: str = "_", review_data: Union[str, bytes, GroupState] = None) -> None:
         _group_state = self.__get_metadata_opts(
