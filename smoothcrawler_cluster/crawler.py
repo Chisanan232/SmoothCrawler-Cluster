@@ -91,7 +91,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._ensure_register = ensure_initial
         self._ensure_timeout = ensure_timeout
         self._ensure_wait = ensure_wait
-        self._initialized: bool = False
 
         if name == "":
             name = "sc-crawler_1"
