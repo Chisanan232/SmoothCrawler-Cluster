@@ -2,6 +2,7 @@ from smoothcrawler_cluster.model import Initial, Update, CrawlerStateRole, TaskR
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
+from datetime import datetime
 from typing import List, Dict, Optional
 import multiprocessing as mp
 import pytest
@@ -165,11 +166,6 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         assert _exist_node is not None, ""
         self._Verify_MetaData.heartbeat_is_not_empty()
 
-    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
-    def test_stop_update_heartbeat(self, uit_object: ZookeeperCrawler):
-        pass
-
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_not_exist_node(self, uit_object: ZookeeperCrawler):
@@ -218,6 +214,23 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         self._Verify_MetaData.heartbeat_is_not_empty()
 
     @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_stop_update_heartbeat(self, uit_object: ZookeeperCrawler):
+        _previous_heartbeat = self._Verify_MetaData._generate_heartbeat_data_opt()
+        _previous_heart_rhythm_time = _previous_heartbeat.heart_rhythm_time
+        _update_time = _previous_heartbeat.update_time
+
+        uit_object.stop_update_heartbeat()
+
+        time.sleep(float(_update_time[:-1]) * 5)
+
+        _heartbeat = self._Verify_MetaData._generate_heartbeat_data_opt()
+        _heart_rhythm_time = _heartbeat.heart_rhythm_time
+        _diff_time = datetime.strptime(_heart_rhythm_time, _heartbeat.time_format) - datetime.strptime(_previous_heart_rhythm_time, _heartbeat.time_format)
+        assert _diff_time.total_seconds() == 0, ""
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
     def test_initial(self, uit_object: ZookeeperCrawler):
         pass
@@ -252,7 +265,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         # Verify the values
         assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
 
-    def test_processing_crawling_task(self, zk_crawler: ZookeeperCrawler):
+    def test_processing_crawling_task(self, uit_object: ZookeeperCrawler):
         pass
 
 
