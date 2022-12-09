@@ -19,7 +19,6 @@ from .model import (
 )
 from .model.metadata import _BaseMetaData
 from .election import BaseElection, IndexElection, ElectionResult
-from .exceptions import ZookeeperCrawlerNotReady
 from ._utils import parse_timer, MetaDataUtil
 from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
 from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
@@ -92,6 +91,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._ensure_register = ensure_initial
         self._ensure_timeout = ensure_timeout
         self._ensure_wait = ensure_wait
+        self._initialized: bool = False
 
         if name == "":
             name = "sc-crawler_1"
@@ -617,10 +617,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
-        if _state.current_crawler is None or len(_state.current_crawler) != self._total_crawler or \
-                _state.current_runner is None or len(_state.current_runner) != self._runner or \
-                _state.current_backup is None or len(_state.current_backup) != self._backup:
-            raise ZookeeperCrawlerNotReady
 
         _timeout_records: Dict[str, int] = {}
         _no_timeout_records: Dict[str, int] = {}
