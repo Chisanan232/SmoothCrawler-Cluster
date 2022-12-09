@@ -230,16 +230,27 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         _diff_time = datetime.strptime(_heart_rhythm_time, _heartbeat.time_format) - datetime.strptime(_previous_heart_rhythm_time, _heartbeat.time_format)
         assert _diff_time.total_seconds() == 0, ""
 
-    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
-    def test_initial(self, uit_object: ZookeeperCrawler):
-        pass
-
-    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.reset_testing_env(path=ZKNode.GroupState)
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.GroupState: _Testing_Value.group_state_data_str})
+    @ZK.remove_node_finally(path=ZKNode.GroupState)
     def test_is_ready_for_run_with_positive_timeout(self, uit_object: ZookeeperCrawler):
         # Operate target method to test
-        pass
+        _is_ready = uit_object.is_ready_for_run(timeout=1)
+        assert _is_ready is False, "It should be False because it isn't ready for running by checking *GroupState*."
+
+        # Update the meta-data *GroupState*
+        _group_state_data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+        _group_state = json.loads(_group_state_data.decode("utf-8"))
+        _group_state["current_crawler"].extend([uit_object.name, "test_runner", "test_backup"])
+        _group_state["current_runner"].extend([uit_object.name, "test_runner"])
+        _group_state["current_backup"].append("test_backup")
+        self._set_value_to_node(path=_Testing_Value.group_state_zookeeper_path, value=bytes(json.dumps(_group_state), "utf-8"))
+
+        # Operate target method to test again
+        _is_ready = uit_object.is_ready_for_run(timeout=_Waiting_Time)
+
+        # Verify
+        assert _is_ready is True, "It should be True because its conditions has been satisfied."
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
