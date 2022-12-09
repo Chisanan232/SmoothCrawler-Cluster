@@ -5,6 +5,7 @@ from kazoo.client import KazooClient
 from datetime import datetime
 from typing import List, Dict, Optional
 import multiprocessing as mp
+import traceback
 import pytest
 import json
 import time
@@ -14,9 +15,9 @@ from .._values import (
     # Crawler
     _Waiting_Time,
     # GroupState
-    _Runner_Crawler_Value, _Backup_Crawler_Value, _Fail_Runner_Crawler_Value, _Total_Crawler_Value, _Crawler_Role_Value,
+    _Runner_Crawler_Value, _Backup_Crawler_Value, _Fail_Runner_Crawler_Value, _Total_Crawler_Value,
     # Task
-    _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
+    _One_Running_Content, _One_Running_Content_As_Object, _Task_Running_Content_Value
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
 from .._verify import Verify, VerifyMetaData
@@ -276,8 +277,26 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         # Verify the values
         assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
 
-    def test_processing_crawling_task(self, uit_object: ZookeeperCrawler):
-        pass
+    def test__run_crawling_processing(self, uit_object: ZookeeperCrawler):
+        try:
+            uit_object._run_crawling_processing(content=_One_Running_Content_As_Object)
+        except NotImplementedError as e:
+            assert str(e) == "You should implement the SmoothCrawler components and register them.", "The error message should be the same."
+        else:
+            assert False, "It should raise an error *NotImplementedError* about developer should implement and register SmoothCrawler components."
+
+        uit_object.register_factory(
+            http_req_sender=RequestsHTTPRequest(),
+            http_resp_parser=RequestsHTTPResponseParser(),
+            data_process=ExampleWebDataHandler()
+        )
+        try:
+            _result = uit_object._run_crawling_processing(content=_One_Running_Content_As_Object)
+        except:
+            assert False, f"It should not occur any issue. The exception: {traceback.format_exc()}"
+        else:
+            assert True, "It works finely!"
+            assert _result == "Example Domain", "It crawling result should be 'Example Domain' (the title of example.com)."
 
 
 class MultiCrawlerTestSuite(ZK):
