@@ -19,6 +19,10 @@ from ._values import _Task_Running_Content_Value, _Time_Format_Value
 _Testing_Value: _TestValue = _TestValue()
 
 
+def _equal_assertion(under_test, expect) -> None:
+    assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
+
+
 class Verify:
 
     @classmethod
@@ -69,11 +73,10 @@ class VerifyMetaData:
             data_by_json_obj=GroupStateByJsonData
         )
 
-        _assertion = "The value should be the same."
-        assert _group_state.total_crawler == runner + backup, _assertion
-        assert _group_state.total_runner == runner, _assertion
-        assert _group_state.total_backup == backup, _assertion
-        assert _group_state.standby_id == standby_id, _assertion
+        _equal_assertion(_group_state.total_crawler, runner + backup)
+        _equal_assertion(_group_state.total_runner, runner)
+        _equal_assertion(_group_state.total_backup, backup)
+        _equal_assertion(_group_state.standby_id, standby_id)
 
     def group_state_info(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None, standby_id: str = None,
                          index_sep_char: str = "_", review_data: Union[str, bytes, GroupState] = None) -> None:
@@ -158,11 +161,8 @@ class VerifyMetaData:
             data_by_json_obj=NodeStateByJsonData
         )
 
-        def _assertion(under_test, expect) -> None:
-            assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
-
-        _assertion(_node_state.role, role)
-        _assertion(_node_state.group, group)
+        _equal_assertion(_node_state.role, role)
+        _equal_assertion(_node_state.group, group)
 
     def all_node_state_role(self, runner: int, backup: int, expected_role: dict, expected_group: dict, start_index: int = 1) -> None:
         _state_paths = _ZKNodePathUtils.all_node_state(size=runner + backup, start_index=start_index)
@@ -191,6 +191,27 @@ class VerifyMetaData:
             assert _node_state.role == role, f"The attribute 'role' should be '{role}'."
         if group is not None:
             assert _node_state.group == group, f"The attribute 'group' should be '{group}'."
+
+    def task_is_not_empty(self, running_content: list = [], cookies: dict = {}, authorization: dict = {}, running_result: dict = None,
+                          running_status: str = None, review_data: Union[str, bytes, GroupState] = None, result_detail: list = []) -> None:
+        _task = self.__get_metadata_opts(
+            review_data,
+            metadata_type=Task,
+            zk_path=_Testing_Value.task_zookeeper_path,
+            data_by_object=TaskDataFromObject,
+            data_by_json_obj=TaskDataFromJsonData
+        )
+
+        _equal_assertion(_task.running_content, running_content)
+        _equal_assertion(_task.cookies, cookies)
+        _equal_assertion(_task.authorization, authorization)
+        if running_status is None:
+            running_status = TaskResult.Nothing.value
+        _equal_assertion(_task.running_status, running_status)
+        if running_result is None:
+            running_result = {"success_count": 0, "fail_count": 0}
+        _equal_assertion(_task.running_result, running_result)
+        _equal_assertion(_task.result_detail, result_detail)
 
     def all_task_info(self, runner: int, backup: int, running_content_len: int = None, cookies: dict = None,
                       authorization: dict = None, in_progressing_id: str = None, running_status: str = None,
