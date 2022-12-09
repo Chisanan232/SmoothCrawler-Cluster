@@ -1,10 +1,9 @@
-from smoothcrawler_cluster.model import Initial, Empty, Update, CrawlerStateRole, TaskResult, GroupState, NodeState, Task
+from smoothcrawler_cluster.model import Initial, Update, CrawlerStateRole, TaskResult, GroupState, NodeState
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
-from typing import List, Dict
+from typing import List, Dict, Optional
 import multiprocessing as mp
-import traceback
 import pytest
 import json
 import time
@@ -19,15 +18,13 @@ from .._values import (
     _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
-from .._verify_metadata import Verify
+from .._verify import Verify, VerifyMetaData
 from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
 from ._test_utils._multirunner import run_multi_processes, run_2_diff_workers
 
 
 _Manager = mp.Manager()
-_ZK_Crawler_Instances: List[ZookeeperCrawler] = _Manager.list()
-_Global_Exception_Record: Exception = None
 _Testing_Value: _TestValue = _TestValue()
 
 
@@ -152,6 +149,7 @@ class MultiCrawlerTestSuite(ZK):
     _Processes: List[mp.Process] = []
 
     _Verify = Verify()
+    _VerifyMetaData = VerifyMetaData()
 
     @staticmethod
     def _clean_environment(function):
@@ -160,7 +158,7 @@ class MultiCrawlerTestSuite(ZK):
             self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
             self._PyTest_ZK_Client.start()
 
-            self._Verify.initial_zk_session(self._PyTest_ZK_Client)
+            self._VerifyMetaData.initial_zk_session(self._PyTest_ZK_Client)
 
             # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
@@ -189,6 +187,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_register_metadata_and_elect_with_many_crawler_instances(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
         _is_ready_flag: Dict[str, bool] = _Manager.dict()
         _election_results: Dict[str, ElectionResult] = _Manager.dict()
@@ -220,26 +219,30 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 # Try to run election
                 _elect_result = _zk_crawler.elect()
                 _election_results[_name] = _elect_result
-            except:
+            except Exception as e:
                 _running_flag[_name] = False
-                raise
+                _running_exception[_name] = e
             else:
                 _running_flag[_name] = True
+                _running_exception[_name] = None
 
         # Run the target methods by multi-threads
         self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
-        self._check_running_status(_running_flag)
+
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
 
         # Verify the running result by the value from Zookeeper
         _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
         _json_data = json.loads(_data.decode("utf-8"))
         print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
-        self._Verify.group_state_current_section(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, verify_runner=False, verify_backup=False)
+        self._VerifyMetaData.group_state_current_section(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, verify_runner=False, verify_backup=False)
         self._check_is_ready_flags(_is_ready_flag)
         self._check_election_results(_election_results, _index_sep_char)
 
     @MultiCrawlerTestSuite._clean_environment
     def test_many_crawler_instances_with_initial(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
@@ -262,34 +265,45 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
                 # Get the instance role of the crawler cluster
                 _role_results[_name] = _zk_crawler.role
-            except:
+            except Exception as e:
                 _running_flag[_name] = False
-                raise
+                _running_exception[_name] = e
             else:
                 _running_flag[_name] = True
+                _running_exception[_name] = None
 
         # Run the target methods by multi-threads
         self._Processes = run_multi_processes(processes_num=_Total_Crawler_Value, target_function=_run_and_test, index_sep_char=_index_sep_char)
 
         # Verify the running state
-        self._check_running_status(_running_flag)
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
 
         # Verify the heartbeat info
-        self._Verify.all_heartbeat_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value)
+        self._VerifyMetaData.all_heartbeat_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value)
 
         # Verify the running result by the value from Zookeeper
-        self._Verify.group_state_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="3")
+        self._VerifyMetaData.group_state_info(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="3")
         self._check_role(_role_results, _index_sep_char)
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_task(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
+        _running_flag: Dict[str, bool] = _Manager.dict()
 
         def _assign_task() -> None:
-            time.sleep(2)
-            _task = Initial.task()
-            _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
-            _updated_task_str = json.dumps(_updated_task.to_readable_object())
-            self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+            try:
+                time.sleep(2)
+                _task = Initial.task()
+                _updated_task = Update.task(_task, running_content=_Task_Running_Content_Value)
+                _updated_task_str = json.dumps(_updated_task.to_readable_object())
+                self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(_updated_task_str, "utf-8"))
+            except Exception as e:
+                _running_flag["_assign_task"] = False
+                _running_exception["_assign_task"] = e
+            else:
+                _running_flag["_assign_task"] = True
+                _running_exception["_assign_task"] = None
 
         def _wait_for_task() -> None:
             # Instantiate ZookeeperCrawler
@@ -316,26 +330,31 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     data_process=ExampleWebDataHandler()
                 )
                 _zk_crawler.wait_for_task()
-            except Exception:
-                assert False, f"It should work finely without any issue.\n The error is: {traceback.format_exc()}"
+            except Exception as e:
+                _running_flag["_wait_for_task"] = False
+                _running_exception["_wait_for_task"] = e
             else:
-                assert True, "It works finely."
+                _running_flag["_wait_for_task"] = True
+                _running_exception["_wait_for_task"] = None
 
         run_2_diff_workers(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True), worker="thread")
 
         time.sleep(3)
 
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
         # Verify the running result
         _task_data, state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
         print(f"[DEBUG in testing] _task_data: {_task_data}")
-        self._Verify.one_task_info(
+        self._VerifyMetaData.one_task_info(
             _task_data,
             in_progressing_id="-1",
             running_result={"success_count": 1, "fail_count": 0},
             running_status=TaskResult.Done.value,
             result_detail_len=1
         )
-        self._Verify.one_task_result_detail(
+        self._VerifyMetaData.one_task_result_detail(
             _task_data,
             task_path=_Testing_Value.task_zookeeper_path,
             expected_task_result={"1": "available"}
@@ -408,10 +427,10 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Verify the result should be correct as expected
         # Verify the *GroupState* info
-        self._Verify.group_state_info(runner=1, backup=1, fail_runner=1, standby_id="2")
+        self._VerifyMetaData.group_state_info(runner=1, backup=1, fail_runner=1, standby_id="2")
 
         # Verify the *NodeState* info
-        self._Verify.all_node_state_role(
+        self._VerifyMetaData.all_node_state_role(
             runner=1, backup=1,
             expected_role={"0": CrawlerStateRole.Dead_Runner, "1": CrawlerStateRole.Runner},
             expected_group={"0": _zk_crawler._crawler_group, "1": _zk_crawler._crawler_group},
@@ -420,6 +439,9 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_wait_for_to_be_standby(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
+        _running_flag: Dict[str, bool] = _Manager.dict()
+
         # # Prepare the meta data
         # Instantiate a ZookeeperCrawler for testing
         _zk_crawler = ZookeeperCrawler(
@@ -450,9 +472,16 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         _end = _Manager.Value("_end", None)
 
         def _update_state_standby_id():
-            time.sleep(5)
-            _state.standby_id = "2"
-            _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+            try:
+                time.sleep(5)
+                _state.standby_id = "2"
+                _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+            except Exception as e:
+                _running_flag["_update_state_standby_id"] = False
+                _running_exception["_update_state_standby_id"] = e
+            else:
+                _running_flag["_update_state_standby_id"] = True
+                _running_exception["_update_state_standby_id"] = None
 
         def _run_target_test_func():
             try:
@@ -461,6 +490,12 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 # # Run target function
                 _result.value = _zk_crawler.wait_for_to_be_standby()
                 _end.value = time.time()
+            except Exception as e:
+                _running_flag["_run_target_test_func"] = False
+                _running_exception["_run_target_test_func"] = e
+            else:
+                _running_flag["_run_target_test_func"] = True
+                _running_exception["_run_target_test_func"] = None
             finally:
                 if self._exist_node(path=_zk_crawler.group_state_zookeeper_path):
                     self._delete_node(path=_zk_crawler.group_state_zookeeper_path)
@@ -468,15 +503,11 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         run_2_diff_workers(func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False), worker="thread")
 
         # # Verify the result
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
         assert _result.value is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(_end.value - _start.value) <= 6, "It should NOT run more than 6 seconds."
-
-    @classmethod
-    def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
-        if False not in running_flag.values():
-            assert True, "Work finely."
-        elif False in running_flag:
-            assert False, "It should NOT have any thread gets any exception in running."
 
     def _check_is_ready_flags(self, is_ready_flag: Dict[str, bool]) -> None:
         assert len(is_ready_flag.keys()) == _Total_Crawler_Value, \
@@ -508,7 +539,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
     @MultiCrawlerTestSuite._clean_environment
     def test_run_with_2_runner_and_1_backup(self):
         # Run the target methods by multi-processes
-        _running_flag, _role_results = self._run_multiple_crawler_instances(
+        _running_exception, _running_flag, _role_results = self._run_multiple_crawler_instances(
             runner=_Runner_Crawler_Value,
             backup=_Backup_Crawler_Value,
             delay_assign_task=5
@@ -516,8 +547,8 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
         time.sleep(8)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
-        self._verify_exception()
-        self._check_running_status(_running_flag)
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
 
         # Verify running result from meta-data
         self._verify_results(
@@ -547,17 +578,17 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         _Multiple_Backup_Scenarios_Backup_Crawler: int = 2
 
         # Run the target methods by multi-processes
-        _running_flag, _role_results = self._run_multiple_crawler_instances(
+        _running_exception, _running_flag, _role_results = self._run_multiple_crawler_instances(
             runner=_Multiple_Backup_Scenarios_Runner_Crawler,
             backup=_Multiple_Backup_Scenarios_Backup_Crawler,
             delay=True,
             delay_assign_task=5
         )
 
-        time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+        time.sleep(10)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
 
-        self._verify_exception()
-        self._check_running_status(_running_flag)
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
 
         # Verify running result from meta-data
         self._verify_results(
@@ -588,6 +619,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         pass
 
     def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
 
@@ -648,12 +680,10 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                 _zk_crawler.run()
             except Exception as e:
                 _running_flag[_name] = False
-                global _Global_Exception_Record
-                _Global_Exception_Record = e
-                print(f"[DEBUG - {_name}] e: {e}")
-                raise e
+                _running_exception[_name] = e
             else:
                 _running_flag[_name] = True
+                _running_exception[_name] = None
 
         self._Processes = []
         # Run the target methods by multi-processes
@@ -669,25 +699,12 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             time.sleep(delay_assign_task)
         _assign_task()
 
-        return _running_flag, _role_results
-
-    def _verify_exception(self):
-        global _Global_Exception_Record
-        print(f"[DEBUG in testing] _Global_Exception_Record: {_Global_Exception_Record}")
-        if _Global_Exception_Record is not None:
-            assert False, traceback.print_exception(_Global_Exception_Record)
+        return _running_exception, _running_flag, _role_results
 
     def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role: dict, expected_group: dict, expected_task_result: dict):
         # Verify the group info
-        self._Verify.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner)
+        self._VerifyMetaData.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner)
         # Verify the state info
-        self._Verify.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
+        self._VerifyMetaData.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
         # Verify the task info
-        self._Verify.all_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
-
-    @classmethod
-    def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
-        if False not in running_flag.values():
-            assert True, "Work finely."
-        elif False in running_flag:
-            assert False, "It should NOT have any thread gets any exception in running."
+        self._VerifyMetaData.all_task_detail(runner=runner, backup=backup, expected_task_result=expected_task_result)
