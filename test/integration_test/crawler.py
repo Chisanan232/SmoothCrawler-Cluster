@@ -199,6 +199,9 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         # Verify the values
         assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
 
+    def test_processing_crawling_task(self, zk_crawler: ZookeeperCrawler):
+        pass
+
 
 class MultiCrawlerTestSuite(ZK):
 
