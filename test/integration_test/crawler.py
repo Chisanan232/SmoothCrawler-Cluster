@@ -173,7 +173,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_not_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object, exist_node=False)
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.add_node_with_value_first(
@@ -185,44 +185,37 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         })
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object, exist_node=True)
 
-    def __operate_register_metadata_and_verify_result(self, zk_crawler: ZookeeperCrawler):
+    def __operate_register_metadata_and_verify_result(self, zk_crawler: ZookeeperCrawler, exist_node: bool):
 
-        def _not_none_assertion(obj_type: str):
-            return f"It should get something data and its data type is *{obj_type}*."
+        def _verify_exist(should_be_none: bool) -> None:
+            _exist_group_state_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
+            _exist_node_state_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+            _exist_task_node = self._exist_node(path=_Testing_Value.task_zookeeper_path)
+            _exist_heartbeat_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+            if should_be_none is True:
+                assert _exist_group_state_node is None, ""
+                assert _exist_node_state_node is None, ""
+                assert _exist_task_node is None, ""
+                assert _exist_heartbeat_node is None, ""
+            else:
+                assert _exist_group_state_node is not None, ""
+                assert _exist_node_state_node is not None, ""
+                assert _exist_task_node is not None, ""
+                assert _exist_heartbeat_node is not None, ""
+
+        _verify_exist(should_be_none=(exist_node is False))
 
         # Operate target method to test
         zk_crawler.register_metadata()
 
-        # Get the result which would be generated or modified by target method
-        _group_state, _znode_state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
-        _node_state, _znode_state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
-        _task, _znode_state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
-        _heartbeat, _znode_state = self._get_value_from_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        _verify_exist(should_be_none=False)
 
-        # Verify the values
-        assert _group_state is not None, _not_none_assertion("GroupState")
-        assert _node_state is not None, _not_none_assertion("NodeState")
-        assert _task is not None, _not_none_assertion("Task")
-        assert _heartbeat is not None, _not_none_assertion("Heartbeat")
-
-        _assertion = "The value should be the same."
-        _state_json = json.loads(_group_state.decode("utf-8"))
-        assert _state_json["total_crawler"] == _Total_Crawler_Value, _assertion
-        assert _state_json["total_runner"] == _Runner_Crawler_Value, _assertion
-        assert _state_json["total_backup"] == _Backup_Crawler_Value, _assertion
-        assert _state_json["standby_id"] == "0", _assertion
-
-        _node_state_json = json.loads(_node_state.decode("utf-8"))
-        assert _node_state_json["role"] == _Crawler_Role_Value, _assertion
-
-        _task_json = json.loads(_task.decode("utf-8"))
-        assert _task_json["running_content"] == [], _assertion
-        assert _task_json["running_status"] == _Task_Running_State, _assertion
-
-        _heartbeat_json = json.loads(_heartbeat.decode("utf-8"))
-        assert _heartbeat_json["heart_rhythm_time"] is not None, _assertion
+        self._Verify_MetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
+        self._Verify_MetaData.task_is_not_empty()
+        self._Verify_MetaData.heartbeat_is_not_empty()
 
     @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
