@@ -903,7 +903,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                     self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
 
                     # Sleep ...
-                    time.sleep(parse_timer(_heartbeat.update_timeout))
+                    time.sleep(parse_timer(_heartbeat.update_time))
                 except Exception as e:
                     self.__Updating_Exception = e
                     break
