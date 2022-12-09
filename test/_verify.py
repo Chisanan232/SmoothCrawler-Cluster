@@ -314,8 +314,8 @@ class VerifyMetaData:
         if review_data is None:
             _data, _state = self._client.get(path=zk_path)
             assert len(_data) != 0, "The data content of meta data *GroupState* should NOT be empty."
+            print(f"[DEBUG in testing] path: {zk_path}, _data: {_data}")
             _meta_data_opt = data_by_json_obj(data=_data)
-            print(f"[DEBUG in testing] path: {zk_path}, json_data: {_meta_data_opt}")
         else:
             if type(review_data) is metadata_type:
                 _meta_data_opt = data_by_object(data=review_data)
