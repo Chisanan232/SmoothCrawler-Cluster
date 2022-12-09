@@ -144,13 +144,26 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
     def test_register_heartbeat_with_not_exist_node(self, uit_object: ZookeeperCrawler):
-        pass
+        self.__opt_register_heartbeat_and_verify_result(uit_object, node_exist=False)
 
     @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
     @ZK.add_node_with_value_first(path_and_value={ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str})
     @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
     def test_register_heartbeat_with_existed_node(self, uit_object: ZookeeperCrawler):
-        pass
+        self.__opt_register_heartbeat_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_heartbeat_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_heartbeat()
+
+        _exist_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.heartbeat_is_not_empty()
 
     @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
