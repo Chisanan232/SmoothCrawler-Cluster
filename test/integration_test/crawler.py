@@ -96,13 +96,26 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.reset_testing_env(path=[ZKNode.NodeState])
     @ZK.remove_node_finally(path=[ZKNode.NodeState])
     def test_register_node_state_with_not_exist_node(self, uit_object: ZookeeperCrawler):
-        pass
+        self.__opt_register_node_state_and_verify_result(uit_object, node_exist=False)
 
     @ZK.reset_testing_env(path=[ZKNode.NodeState])
     @ZK.add_node_with_value_first(path_and_value={ZKNode.NodeState: _Testing_Value.node_state_data_str})
     @ZK.remove_node_finally(path=[ZKNode.NodeState])
     def test_register_node_state_with_existed_node(self, uit_object: ZookeeperCrawler):
-        pass
+        self.__opt_register_node_state_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_node_state_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_node_state()
+
+        _exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
 
     @ZK.reset_testing_env(path=[ZKNode.Task])
     @ZK.remove_node_finally(path=[ZKNode.Task])
