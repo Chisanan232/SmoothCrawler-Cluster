@@ -3,7 +3,7 @@ from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 import multiprocessing as mp
 import traceback
 import pytest
@@ -832,10 +832,64 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             }
         )
 
+    @MultiCrawlerTestSuite._clean_environment
     def test_run_with_multiple_fail_runners(self):
-        pass
+        _Multiple_Fail_Scenarios_Runner_Crawler: int = 3
+        _Multiple_Fail_Scenarios_Backup_Crawler: int = 3
+        _Multiple_Fail_Scenarios_Fail_Crawler: int = 2
 
-    def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
+        # Run the target methods by multi-processes
+        _running_exception, _running_flag, _role_results = self._run_multiple_crawler_instances(
+            runner=_Multiple_Fail_Scenarios_Runner_Crawler,
+            backup=_Multiple_Fail_Scenarios_Backup_Crawler,
+            multi_fail=_Multiple_Fail_Scenarios_Fail_Crawler,
+            delay=10,
+            delay_assign_task=5
+        )
+
+        time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
+        # Verify running result from meta-data
+        self._verify_results(
+            runner=_Multiple_Fail_Scenarios_Runner_Crawler,
+            backup=_Multiple_Fail_Scenarios_Backup_Crawler,
+            fail_runner=_Multiple_Fail_Scenarios_Fail_Crawler,
+            expected_role={
+                "1": CrawlerStateRole.Dead_Runner,
+                "2": CrawlerStateRole.Dead_Runner,
+                "3": CrawlerStateRole.Runner,
+                "4": CrawlerStateRole.Runner,
+                "5": CrawlerStateRole.Runner,
+                "6": CrawlerStateRole.Backup_Runner
+            },
+            expected_group={
+                "1": "sc-crawler-cluster",
+                "2": "sc-crawler-cluster",
+                "3": "sc-crawler-cluster",
+                "4": "sc-crawler-cluster",
+                "5": "sc-crawler-cluster",
+                "6": "sc-crawler-cluster"
+            },
+            expected_task_result={
+                "1": "available",
+                "2": "available",
+                "3": "available",
+                "4": "nothing",
+                "5": "available",
+                "6": "backup",
+            }
+        )
+
+    def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: Union[bool, int] = False, delay_assign_task: int = None,
+                                        multi_fail: int = None) -> (dict, dict, dict):
+        fail_index_criteria = None
+        if multi_fail is not None:
+            assert runner >= 2 and backup >= 2, "Runner and backup all should be more than 2 instances."
+            fail_index_criteria = multi_fail + 1
+
         _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
@@ -843,12 +897,18 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         def _assign_task() -> None:
             _task_paths = _ZKNodePathUtils.all_task(runner)
             for _task_path in _task_paths:
-                if delay is True and "2" in _task_path:
-                    _task_running_content = _One_Running_Content
-                    _task_running_content["url"] = _One_Running_Content["url"] + "?sleep=5"
-                    _task_running_contents = [_task_running_content]
+                _task_running_content = _One_Running_Content
+                _sleep_arg = ""
+                if type(delay) is bool:
+                    if delay is True and "2" in _task_path:
+                        _sleep_arg = "?sleep=5"
+                elif type(delay) is int:
+                    _sleep_arg = f"?sleep={delay}"
                 else:
-                    _task_running_contents = _Task_Running_Content_Value
+                    raise ValueError("Argument ** only support boolean and integer type value.")
+                _One_Running_Content["url"] = _One_Running_Content["url"].split("?")[0]
+                _task_running_content["url"] = _One_Running_Content["url"] + _sleep_arg
+                _task_running_contents = [_task_running_content]
                 _task = Initial.task(running_content=_task_running_contents)
                 if self._exist_node(_task_path) is None:
                     self._create_node(path=_task_path, value=bytes(json.dumps(_task.to_readable_object()), "utf-8"), include_data=True)
@@ -859,7 +919,8 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             _zk_crawler = None
             try:
                 # Instantiate ZookeeperCrawler
-                if "2" in _name:
+                if (fail_index_criteria is None and "2" in _name) or \
+                        (fail_index_criteria is not None and int(_name.split("_")[-1]) < fail_index_criteria):
                     _zk_crawler = ZookeeperCrawler(
                         runner=runner,
                         backup=backup,
@@ -873,7 +934,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                     _zk_crawler.stop_update_heartbeat()
                     _zk_crawler.initial()
                 else:
-                    if delay is True and "3" in _name:
+                    if delay is True and backup > 1 and str(runner + 1) in _name:
                         time.sleep(3)
                     _zk_crawler = ZookeeperCrawler(
                         runner=runner,
@@ -920,7 +981,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
     def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role: dict, expected_group: dict, expected_task_result: dict):
         # Verify the group info
-        self._VerifyMetaData.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner)
+        self._VerifyMetaData.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner, standby_id=str(runner + fail_runner + 1))
         # Verify the state info
         self._VerifyMetaData.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
         # Verify the task info
