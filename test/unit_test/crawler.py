@@ -1,3 +1,5 @@
+import re
+
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
 from unittest.mock import patch
@@ -30,6 +32,13 @@ class TestZookeeperCrawler:
         # Verify values
         ValueFormatAssertion(target=_group_name, regex=r"sc-crawler-cluster")
 
+    def test_property_zookeeper_hosts(self, zk_crawler: ZookeeperCrawler):
+        # Get value by target method for testing (with default, doesn't modify it by the initial options)
+        _zookeeper_hosts = zk_crawler.zookeeper_hosts
+
+        # Verify values
+        ValueFormatAssertion(target=_zookeeper_hosts, regex="(localhost|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):[0-9]{1,6}")
+
     def test_property_group_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         _path = zk_crawler.group_state_zookeeper_path
@@ -57,3 +66,21 @@ class TestZookeeperCrawler:
 
         # Verify values
         ValueFormatAssertion(target=_path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
+
+    def test_property_ensure_register(self, zk_crawler: ZookeeperCrawler):
+        pass
+
+    def test_property_ensure_timeout(self, zk_crawler: ZookeeperCrawler):
+        pass
+
+    def test_property_ensure_wait(self, zk_crawler: ZookeeperCrawler):
+        pass
+
+    def test_run_as_role(self, zk_crawler: ZookeeperCrawler):
+        pass
+
+    def test_pre_running(self, zk_crawler: ZookeeperCrawler):
+        pass
+
+    def test_before_dead(self, zk_crawler: ZookeeperCrawler):
+        pass
