@@ -68,13 +68,34 @@ class TestZookeeperCrawler:
         ValueFormatAssertion(target=_path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
 
     def test_property_ensure_register(self, zk_crawler: ZookeeperCrawler):
-        pass
+        # Test getter
+        _ensure_register = zk_crawler.ensure_register
+        assert _ensure_register is not None, "After instantiate ZookeeperCrawler, its property 'ensure_register' should NOT be None."
+
+        # Test setter
+        zk_crawler.ensure_register = True
+        _ensure_register = zk_crawler.ensure_register
+        assert _ensure_register is True, "Property 'ensure_register' should be True as it assigning."
 
     def test_property_ensure_timeout(self, zk_crawler: ZookeeperCrawler):
-        pass
+        # Test getter
+        _ensure_register = zk_crawler.ensure_timeout
+        assert _ensure_register is not None, "After instantiate ZookeeperCrawler, its property 'ensure_timeout' should NOT be None."
+
+        # Test setter
+        zk_crawler.ensure_timeout = 2
+        _ensure_register = zk_crawler.ensure_timeout
+        assert _ensure_register == 2, "Property 'ensure_timeout' should be True as it assigning."
 
     def test_property_ensure_wait(self, zk_crawler: ZookeeperCrawler):
-        pass
+        # Test getter
+        _ensure_register = zk_crawler.ensure_wait
+        assert _ensure_register is not None, "After instantiate ZookeeperCrawler, its property 'ensure_wait' should NOT be None."
+
+        # Test setter
+        zk_crawler.ensure_wait = 2
+        _ensure_register = zk_crawler.ensure_wait
+        assert _ensure_register == 2, "Property 'ensure_wait' should be True as it assigning."
 
     def test_run_as_role(self, zk_crawler: ZookeeperCrawler):
         pass
