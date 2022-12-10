@@ -341,6 +341,68 @@ class MultiCrawlerTestSuite(ZK):
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
+    def test_initial(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
+        _running_flag: Dict[str, bool] = _Manager.dict()
+        _done_flag = _Manager.Value("done_flag", False)
+
+        def _update_group_state() -> None:
+            try:
+                time.sleep(1)
+
+                # Update the meta-data *GroupState*
+                _group_state_data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+                _group_state = json.loads(_group_state_data.decode("utf-8"))
+                _group_state["current_crawler"].extend(
+                    [_Testing_Value.name.replace("1", "2"), _Testing_Value.name.replace("1", "3")])
+                self._set_value_to_node(path=_Testing_Value.group_state_zookeeper_path,
+                                        value=bytes(json.dumps(_group_state), "utf-8"))
+
+                time.sleep(1)
+
+                if _done_flag.value is False:
+                    raise Exception("Test fail")
+            except Exception as e:
+                _running_flag["_chk_running"] = False
+                _running_exception["_chk_running"] = e
+            else:
+                _running_flag["_chk_running"] = False
+                _running_exception["_chk_running"] = None
+
+        def _run_initial() -> None:
+            # Instantiate ZookeeperCrawler
+            _zk_crawler = ZookeeperCrawler(
+                runner=_Runner_Crawler_Value,
+                backup=_Backup_Crawler_Value,
+                initial=False,
+                zk_hosts=Zookeeper_Hosts
+            )
+
+            try:
+                # Operate target method to test
+                _zk_crawler.initial()
+            except Exception as e:
+                _running_flag["_run_initial"] = False
+                _running_exception["_run_initial"] = e
+            else:
+                _running_flag["_run_initial"] = False
+                _running_exception["_run_initial"] = None
+                _done_flag.value = True
+
+        run_2_diff_workers(func1_ps=(_update_group_state, None, False), func2_ps=(_run_initial, None, True), worker="thread")
+
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
+        assert _done_flag.value is True, "The initialing process should be done."
+
+        # Verify
+        self._VerifyMetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
+        self._VerifyMetaData.node_state_is_not_empty(role=CrawlerStateRole.Runner.value, group=_Testing_Value.group)
+        self._VerifyMetaData.task_is_not_empty()
+        self._VerifyMetaData.heartbeat_is_not_empty()
+
+    @MultiCrawlerTestSuite._clean_environment
     def test_register_metadata_and_elect_with_many_crawler_instances(self):
         _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
