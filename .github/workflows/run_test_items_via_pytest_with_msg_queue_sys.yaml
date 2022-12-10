@@ -142,7 +142,7 @@ jobs:
 
       - name: Setup and run HTTP server for testing
         if: ${{ inputs.setup_http_server == true }}
-        run: gunicorn --bind ${{ inputs.http_server_host }}:${{ inputs.http_server_port }} '${{ inputs.http_server_app_module }}:${{ inputs.http_server_enter_point }}' --daemon
+        run: gunicorn --bind ${{ inputs.http_server_host }}:${{ inputs.http_server_port }} --workers 10 '${{ inputs.http_server_app_module }}:${{ inputs.http_server_enter_point }}' --daemon
 
       - name: Test to send HTTP request to sample HTTP server
         if: ${{ inputs.setup_http_server == true }}
