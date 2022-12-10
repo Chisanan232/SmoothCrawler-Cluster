@@ -19,6 +19,13 @@ from ._values import _Task_Running_Content_Value, _Time_Format_Value
 _Testing_Value: _TestValue = _TestValue()
 
 
+def _equal_assertion(under_test, expect=None, none_check: bool = False) -> None:
+    if none_check is True:
+        assert under_test is not None, f"The value should be the same. Under test: {under_test}, expected value: not None."
+    else:
+        assert under_test == expect, f"The value should be the same. Under test: {under_test}, expected value: {expect}."
+
+
 class Verify:
 
     @classmethod
@@ -60,15 +67,17 @@ class VerifyMetaData:
     def initial_zk_session(self, client: KazooClient) -> None:
         self._client = client
 
+    def group_state_is_not_empty(self, runner: int, backup: int, standby_id: str, review_data: Union[str, bytes, GroupState] = None) -> None:
+        _group_state = self._generate_group_state_data_opt(review_data)
+
+        _equal_assertion(_group_state.total_crawler, runner + backup)
+        _equal_assertion(_group_state.total_runner, runner)
+        _equal_assertion(_group_state.total_backup, backup)
+        _equal_assertion(_group_state.standby_id, standby_id)
+
     def group_state_info(self, runner: int, backup: int, fail_runner: int = 0, fail_runner_name: str = None, standby_id: str = None,
                          index_sep_char: str = "_", review_data: Union[str, bytes, GroupState] = None) -> None:
-        _group_state = self.__get_metadata_opts(
-            review_data,
-            metadata_type=GroupState,
-            zk_path=_Testing_Value.group_state_zookeeper_path,
-            data_by_object=GroupStateByObject,
-            data_by_json_obj=GroupStateByJsonData
-        )
+        _group_state = self._generate_group_state_data_opt(review_data)
 
         # Verify total parts
         assert _group_state.total_crawler == runner + backup, f"The attribute 'total_crawler' should be '{runner + backup}'."
@@ -100,13 +109,7 @@ class VerifyMetaData:
         if type(review_data) is GroupStateData:
             _group_state = review_data
         else:
-            _group_state = self.__get_metadata_opts(
-                review_data,
-                metadata_type=GroupState,
-                zk_path=_Testing_Value.group_state_zookeeper_path,
-                data_by_object=GroupStateByObject,
-                data_by_json_obj=GroupStateByJsonData
-            )
+            _group_state = self._generate_group_state_data_opt(review_data)
 
         # Verify current_crawler
         if verify_crawler is True:
@@ -134,6 +137,21 @@ class VerifyMetaData:
                 _backup_checksum_iter = map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup, _group_state.current_backup)
                 assert False not in list(_backup_checksum_iter), f"The index of all crawler name should be > {backup} (the count of runner)."
 
+    def _generate_group_state_data_opt(self, review_data: Union[str, bytes, GroupState] = None) -> GroupStateData:
+        return self.__get_metadata_opts(
+            review_data,
+            metadata_type=GroupState,
+            zk_path=_Testing_Value.group_state_zookeeper_path,
+            data_by_object=GroupStateByObject,
+            data_by_json_obj=GroupStateByJsonData
+        )
+
+    def node_state_is_not_empty(self, role: str, group: str, review_data: Union[str, bytes, NodeState] = None) -> None:
+        _node_state = self._generate_node_state_data_opt(review_data)
+
+        _equal_assertion(_node_state.role, role)
+        _equal_assertion(_node_state.group, group)
+
     def all_node_state_role(self, runner: int, backup: int, expected_role: dict, expected_group: dict, start_index: int = 1) -> None:
         _state_paths = _ZKNodePathUtils.all_node_state(size=runner + backup, start_index=start_index)
         for _state_path in list(_state_paths):
@@ -149,7 +167,15 @@ class VerifyMetaData:
                 assert False, ""
 
     def one_node_state(self, node_state: Union[str, bytes, NodeStateData], role: str = None, group: str = None) -> None:
-        _node_state = self.__get_metadata_opts(
+        _node_state = self._generate_node_state_data_opt(node_state)
+
+        if role is not None:
+            assert _node_state.role == role, f"The attribute 'role' should be '{role}'."
+        if group is not None:
+            assert _node_state.group == group, f"The attribute 'group' should be '{group}'."
+
+    def _generate_node_state_data_opt(self, node_state: Union[str, bytes, NodeStateData] = None) -> NodeStateData:
+        return self.__get_metadata_opts(
             node_state,
             metadata_type=NodeState,
             zk_path=_Testing_Value.node_state_zookeeper_path,
@@ -157,10 +183,20 @@ class VerifyMetaData:
             data_by_json_obj=NodeStateByJsonData
         )
 
-        if role is not None:
-            assert _node_state.role == role, f"The attribute 'role' should be '{role}'."
-        if group is not None:
-            assert _node_state.group == group, f"The attribute 'group' should be '{group}'."
+    def task_is_not_empty(self, running_content: list = [], cookies: dict = {}, authorization: dict = {}, running_result: dict = None,
+                          running_status: str = None, result_detail: list = [], review_data: Union[str, bytes, Task] = None) -> None:
+        _task = self._generate_task_data_opt(review_data)
+
+        _equal_assertion(_task.running_content, running_content)
+        _equal_assertion(_task.cookies, cookies)
+        _equal_assertion(_task.authorization, authorization)
+        if running_status is None:
+            running_status = TaskResult.Nothing.value
+        _equal_assertion(_task.running_status, running_status)
+        if running_result is None:
+            running_result = {"success_count": 0, "fail_count": 0}
+        _equal_assertion(_task.running_result, running_result)
+        _equal_assertion(_task.result_detail, result_detail)
 
     def all_task_info(self, runner: int, backup: int, running_content_len: int = None, cookies: dict = None,
                       authorization: dict = None, in_progressing_id: str = None, running_status: str = None,
@@ -183,13 +219,7 @@ class VerifyMetaData:
     def one_task_info(self, task: Union[str, bytes, Task], running_content_len: int = None, cookies: dict = None,
                       authorization: dict = None, in_progressing_id: str = None, running_status: str = None,
                       running_result: dict = None, result_detail_len: int = None) -> None:
-        _task = self.__get_metadata_opts(
-            task,
-            metadata_type=Task,
-            zk_path=_Testing_Value.task_zookeeper_path,
-            data_by_object=TaskDataFromObject,
-            data_by_json_obj=TaskDataFromJsonData
-        )
+        _task = self._generate_task_data_opt(task)
 
         assert type(_task.running_content) is list, "The data type of attribute 'running_content' should be list."
         if running_content_len is not None:
@@ -217,13 +247,7 @@ class VerifyMetaData:
             self.one_task_result_detail(_data, task_path=_task_path, expected_task_result=expected_task_result)
 
     def one_task_result_detail(self, task: Union[str, bytes, Task], task_path: str, expected_task_result: dict) -> None:
-        _task = self.__get_metadata_opts(
-            task,
-            metadata_type=Task,
-            zk_path=_Testing_Value.task_zookeeper_path,
-            data_by_object=TaskDataFromObject,
-            data_by_json_obj=TaskDataFromJsonData
-        )
+        _task = self._generate_task_data_opt(task)
 
         assert _task is not None, ""
         _chksum = re.search(r"[0-9]{1,3}", task_path)
@@ -233,6 +257,26 @@ class VerifyMetaData:
         else:
             assert False, ""
 
+    def _generate_task_data_opt(self, task: Union[str, bytes, Task] = None) -> TaskData:
+        return self.__get_metadata_opts(
+            task,
+            metadata_type=Task,
+            zk_path=_Testing_Value.task_zookeeper_path,
+            data_by_object=TaskDataFromObject,
+            data_by_json_obj=TaskDataFromJsonData
+        )
+
+    def heartbeat_is_not_empty(self, review_data: Union[str, bytes, Heartbeat] = None) -> None:
+        _heartbeat = self._generate_heartbeat_data_opt(review_data)
+
+        _equal_assertion(_heartbeat.heart_rhythm_time, none_check=True)
+        _equal_assertion(_heartbeat.update_time, none_check=True)
+        _equal_assertion(_heartbeat.time_format, none_check=True)
+        _equal_assertion(_heartbeat.update_timeout, none_check=True)
+        _equal_assertion(_heartbeat.heart_rhythm_timeout, none_check=True)
+        _equal_assertion(_heartbeat.task_state, none_check=True)
+        _equal_assertion(_heartbeat.healthy_state, none_check=True)
+
     def all_heartbeat_info(self, runner: int, backup: int, start_index: int = 1) -> None:
         _heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=runner + backup, start_index=start_index)
         for _path in _heartbeat_paths:
@@ -241,13 +285,7 @@ class VerifyMetaData:
             self.one_heartbeat(_heartbeat)
 
     def one_heartbeat(self, heartbeat: Union[str, bytes, Heartbeat]) -> None:
-        _heartbeat = self.__get_metadata_opts(
-            heartbeat,
-            metadata_type=Heartbeat,
-            zk_path=_Testing_Value.heartbeat_zookeeper_path,
-            data_by_object=HeartbeatFromObject,
-            data_by_json_obj=HeartbeatFromJsonData
-        )
+        _heartbeat = self._generate_heartbeat_data_opt(heartbeat)
 
         assert _heartbeat.heart_rhythm_time is not None and _heartbeat.heart_rhythm_time != "", ""
         assert _heartbeat.time_format == _Time_Format_Value, ""
@@ -260,6 +298,15 @@ class VerifyMetaData:
         assert _diff_datetime.total_seconds() < float(_heartbeat.update_time[:-1]) + float(_heartbeat.update_timeout[:-1]), ""
         assert _heartbeat.healthy_state == HeartState.Healthy.value, ""
         assert _heartbeat.task_state == TaskResult.Nothing.value, ""
+
+    def _generate_heartbeat_data_opt(self, heartbeat: Union[str, bytes, Heartbeat] = None) -> HeartbeatData:
+        return self.__get_metadata_opts(
+            heartbeat,
+            metadata_type=Heartbeat,
+            zk_path=_Testing_Value.heartbeat_zookeeper_path,
+            data_by_object=HeartbeatFromObject,
+            data_by_json_obj=HeartbeatFromJsonData
+        )
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:

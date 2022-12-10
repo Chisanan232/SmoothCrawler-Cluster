@@ -2,8 +2,10 @@ from smoothcrawler_cluster.model import Initial, Update, CrawlerStateRole, TaskR
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from kazoo.client import KazooClient
-from typing import List, Dict, Optional
+from datetime import datetime
+from typing import List, Dict, Optional, Union
 import multiprocessing as mp
+import traceback
 import pytest
 import json
 import time
@@ -13,9 +15,9 @@ from .._values import (
     # Crawler
     _Waiting_Time,
     # GroupState
-    _Runner_Crawler_Value, _Backup_Crawler_Value, _Fail_Runner_Crawler_Value, _Total_Crawler_Value, _Crawler_Role_Value,
+    _Runner_Crawler_Value, _Backup_Crawler_Value, _Fail_Runner_Crawler_Value, _Total_Crawler_Value,
     # Task
-    _One_Running_Content, _Task_Running_Content_Value, _Task_Running_State
+    _One_Running_Content, _One_Running_Content_As_Object, _Task_Running_Content_Value
 )
 from .._sample_components._components import RequestsHTTPRequest, RequestsHTTPResponseParser, ExampleWebDataHandler
 from .._verify import Verify, VerifyMetaData
@@ -28,12 +30,16 @@ _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
 
 
-class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
+class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
+
+    _Verify_MetaData = VerifyMetaData()
 
     @pytest.fixture(scope="function")
     def uit_object(self) -> ZookeeperCrawler:
         self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
         self._PyTest_ZK_Client.start()
+
+        self._Verify_MetaData.initial_zk_session(client=self._PyTest_ZK_Client)
 
         return ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts=Zookeeper_Hosts)
 
@@ -65,10 +71,106 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
         assert _updated_node_state.role == CrawlerStateRole.Runner.value, \
             "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
+    @ZK.reset_testing_env(path=[ZKNode.GroupState])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState])
+    def test_register_group_state_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=False)
+
+    @ZK.reset_testing_env(path=[ZKNode.GroupState])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.GroupState: _Testing_Value.group_state_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.GroupState])
+    def test_register_group_state_with_existed_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_group_state_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_group_state()
+
+        _exist_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
+
+    @ZK.reset_testing_env(path=[ZKNode.NodeState])
+    @ZK.remove_node_finally(path=[ZKNode.NodeState])
+    def test_register_node_state_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_node_state_and_verify_result(uit_object, node_exist=False)
+
+    @ZK.reset_testing_env(path=[ZKNode.NodeState])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.NodeState: _Testing_Value.node_state_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.NodeState])
+    def test_register_node_state_with_existed_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_node_state_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_node_state_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_node_state()
+
+        _exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
+
+    @ZK.reset_testing_env(path=[ZKNode.Task])
+    @ZK.remove_node_finally(path=[ZKNode.Task])
+    def test_register_task_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_task_and_verify_result(uit_object, node_exist=False)
+
+    @ZK.reset_testing_env(path=[ZKNode.Task])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.Task: _Testing_Value.task_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.Task])
+    def test_register_task_with_existed_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_task_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_task_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.task_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_task()
+
+        _exist_node = self._exist_node(path=_Testing_Value.task_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.task_is_not_empty()
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_register_heartbeat_with_not_exist_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_heartbeat_and_verify_result(uit_object, node_exist=False)
+
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_register_heartbeat_with_existed_node(self, uit_object: ZookeeperCrawler):
+        self.__opt_register_heartbeat_and_verify_result(uit_object, node_exist=True)
+
+    def __opt_register_heartbeat_and_verify_result(self, zk_crawler: ZookeeperCrawler, node_exist: bool):
+        _exist_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        if node_exist is True:
+            assert _exist_node is not None, ""
+        else:
+            assert _exist_node is None, ""
+
+        zk_crawler.register_heartbeat()
+
+        _exist_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        assert _exist_node is not None, ""
+        self._Verify_MetaData.heartbeat_is_not_empty()
+
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_not_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object, exist_node=False)
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.add_node_with_value_first(
@@ -80,44 +182,76 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
         })
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     def test_register_metadata_with_exist_node(self, uit_object: ZookeeperCrawler):
-        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object)
+        self.__operate_register_metadata_and_verify_result(zk_crawler=uit_object, exist_node=True)
 
-    def __operate_register_metadata_and_verify_result(self, zk_crawler: ZookeeperCrawler):
+    def __operate_register_metadata_and_verify_result(self, zk_crawler: ZookeeperCrawler, exist_node: bool):
 
-        def _not_none_assertion(obj_type: str):
-            return f"It should get something data and its data type is *{obj_type}*."
+        def _verify_exist(should_be_none: bool) -> None:
+            _exist_group_state_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
+            _exist_node_state_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
+            _exist_task_node = self._exist_node(path=_Testing_Value.task_zookeeper_path)
+            _exist_heartbeat_node = self._exist_node(path=_Testing_Value.heartbeat_zookeeper_path)
+            if should_be_none is True:
+                assert _exist_group_state_node is None, ""
+                assert _exist_node_state_node is None, ""
+                assert _exist_task_node is None, ""
+                assert _exist_heartbeat_node is None, ""
+            else:
+                assert _exist_group_state_node is not None, ""
+                assert _exist_node_state_node is not None, ""
+                assert _exist_task_node is not None, ""
+                assert _exist_heartbeat_node is not None, ""
+
+        _verify_exist(should_be_none=(exist_node is False))
 
         # Operate target method to test
         zk_crawler.register_metadata()
 
-        # Get the result which would be generated or modified by target method
-        _group_state, _znode_state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
-        _node_state, _znode_state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
-        _task, _znode_state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
-        _heartbeat, _znode_state = self._get_value_from_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        _verify_exist(should_be_none=False)
 
-        # Verify the values
-        assert _group_state is not None, _not_none_assertion("GroupState")
-        assert _node_state is not None, _not_none_assertion("NodeState")
-        assert _task is not None, _not_none_assertion("Task")
-        assert _heartbeat is not None, _not_none_assertion("Heartbeat")
+        self._Verify_MetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
+        self._Verify_MetaData.task_is_not_empty()
+        self._Verify_MetaData.heartbeat_is_not_empty()
 
-        _assertion = "The value should be the same."
-        _state_json = json.loads(_group_state.decode("utf-8"))
-        assert _state_json["total_crawler"] == _Total_Crawler_Value, _assertion
-        assert _state_json["total_runner"] == _Runner_Crawler_Value, _assertion
-        assert _state_json["total_backup"] == _Backup_Crawler_Value, _assertion
-        assert _state_json["standby_id"] == "0", _assertion
+    @ZK.reset_testing_env(path=[ZKNode.Heartbeat])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.Heartbeat])
+    def test_stop_update_heartbeat(self, uit_object: ZookeeperCrawler):
+        _previous_heartbeat = self._Verify_MetaData._generate_heartbeat_data_opt()
+        _previous_heart_rhythm_time = _previous_heartbeat.heart_rhythm_time
+        _update_time = _previous_heartbeat.update_time
 
-        _node_state_json = json.loads(_node_state.decode("utf-8"))
-        assert _node_state_json["role"] == _Crawler_Role_Value, _assertion
+        uit_object.stop_update_heartbeat()
 
-        _task_json = json.loads(_task.decode("utf-8"))
-        assert _task_json["running_content"] == [], _assertion
-        assert _task_json["running_status"] == _Task_Running_State, _assertion
+        time.sleep(float(_update_time[:-1]) * 5)
 
-        _heartbeat_json = json.loads(_heartbeat.decode("utf-8"))
-        assert _heartbeat_json["heart_rhythm_time"] is not None, _assertion
+        _heartbeat = self._Verify_MetaData._generate_heartbeat_data_opt()
+        _heart_rhythm_time = _heartbeat.heart_rhythm_time
+        _diff_time = datetime.strptime(_heart_rhythm_time, _heartbeat.time_format) - datetime.strptime(_previous_heart_rhythm_time, _heartbeat.time_format)
+        assert _diff_time.total_seconds() == 0, ""
+
+    @ZK.reset_testing_env(path=ZKNode.GroupState)
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.GroupState: _Testing_Value.group_state_data_str})
+    @ZK.remove_node_finally(path=ZKNode.GroupState)
+    def test_is_ready_for_run_with_positive_timeout(self, uit_object: ZookeeperCrawler):
+        # Operate target method to test
+        _is_ready = uit_object.is_ready_for_run(timeout=1)
+        assert _is_ready is False, "It should be False because it isn't ready for running by checking *GroupState*."
+
+        # Update the meta-data *GroupState*
+        _group_state_data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+        _group_state = json.loads(_group_state_data.decode("utf-8"))
+        _group_state["current_crawler"].extend([uit_object.name, "test_runner", "test_backup"])
+        _group_state["current_runner"].extend([uit_object.name, "test_runner"])
+        _group_state["current_backup"].append("test_backup")
+        self._set_value_to_node(path=_Testing_Value.group_state_zookeeper_path, value=bytes(json.dumps(_group_state), "utf-8"))
+
+        # Operate target method to test again
+        _is_ready = uit_object.is_ready_for_run(timeout=_Waiting_Time)
+
+        # Verify
+        assert _is_ready is True, "It should be True because its conditions has been satisfied."
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
@@ -142,6 +276,27 @@ class TestZookeeperCrawlerSingleMajorFeature(ZKTestSpec):
 
         # Verify the values
         assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
+
+    def test__run_crawling_processing(self, uit_object: ZookeeperCrawler):
+        try:
+            uit_object._run_crawling_processing(content=_One_Running_Content_As_Object)
+        except NotImplementedError as e:
+            assert str(e) == "You should implement the SmoothCrawler components and register them.", "The error message should be the same."
+        else:
+            assert False, "It should raise an error *NotImplementedError* about developer should implement and register SmoothCrawler components."
+
+        uit_object.register_factory(
+            http_req_sender=RequestsHTTPRequest(),
+            http_resp_parser=RequestsHTTPResponseParser(),
+            data_process=ExampleWebDataHandler()
+        )
+        try:
+            _result = uit_object._run_crawling_processing(content=_One_Running_Content_As_Object)
+        except:
+            assert False, f"It should not occur any issue. The exception: {traceback.format_exc()}"
+        else:
+            assert True, "It works finely!"
+            assert _result == "Example Domain", "It crawling result should be 'Example Domain' (the title of example.com)."
 
 
 class MultiCrawlerTestSuite(ZK):
@@ -184,6 +339,68 @@ class MultiCrawlerTestSuite(ZK):
 
 
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
+
+    @MultiCrawlerTestSuite._clean_environment
+    def test_initial(self):
+        _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
+        _running_flag: Dict[str, bool] = _Manager.dict()
+        _done_flag = _Manager.Value("done_flag", False)
+
+        def _update_group_state() -> None:
+            try:
+                time.sleep(1)
+
+                # Update the meta-data *GroupState*
+                _group_state_data, _state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+                _group_state = json.loads(_group_state_data.decode("utf-8"))
+                _group_state["current_crawler"].extend(
+                    [_Testing_Value.name.replace("1", "2"), _Testing_Value.name.replace("1", "3")])
+                self._set_value_to_node(path=_Testing_Value.group_state_zookeeper_path,
+                                        value=bytes(json.dumps(_group_state), "utf-8"))
+
+                time.sleep(1)
+
+                if _done_flag.value is False:
+                    raise Exception("Test fail")
+            except Exception as e:
+                _running_flag["_chk_running"] = False
+                _running_exception["_chk_running"] = e
+            else:
+                _running_flag["_chk_running"] = False
+                _running_exception["_chk_running"] = None
+
+        def _run_initial() -> None:
+            # Instantiate ZookeeperCrawler
+            _zk_crawler = ZookeeperCrawler(
+                runner=_Runner_Crawler_Value,
+                backup=_Backup_Crawler_Value,
+                initial=False,
+                zk_hosts=Zookeeper_Hosts
+            )
+
+            try:
+                # Operate target method to test
+                _zk_crawler.initial()
+            except Exception as e:
+                _running_flag["_run_initial"] = False
+                _running_exception["_run_initial"] = e
+            else:
+                _running_flag["_run_initial"] = False
+                _running_exception["_run_initial"] = None
+                _done_flag.value = True
+
+        run_2_diff_workers(func1_ps=(_update_group_state, None, False), func2_ps=(_run_initial, None, True), worker="thread")
+
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
+        assert _done_flag.value is True, "The initialing process should be done."
+
+        # Verify
+        self._VerifyMetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
+        self._VerifyMetaData.node_state_is_not_empty(role=CrawlerStateRole.Runner.value, group=_Testing_Value.group)
+        self._VerifyMetaData.task_is_not_empty()
+        self._VerifyMetaData.heartbeat_is_not_empty()
 
     @MultiCrawlerTestSuite._clean_environment
     def test_register_metadata_and_elect_with_many_crawler_instances(self):
@@ -615,10 +832,64 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             }
         )
 
+    @MultiCrawlerTestSuite._clean_environment
     def test_run_with_multiple_fail_runners(self):
-        pass
+        _Multiple_Fail_Scenarios_Runner_Crawler: int = 3
+        _Multiple_Fail_Scenarios_Backup_Crawler: int = 3
+        _Multiple_Fail_Scenarios_Fail_Crawler: int = 2
 
-    def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: bool = False, delay_assign_task: int = None):
+        # Run the target methods by multi-processes
+        _running_exception, _running_flag, _role_results = self._run_multiple_crawler_instances(
+            runner=_Multiple_Fail_Scenarios_Runner_Crawler,
+            backup=_Multiple_Fail_Scenarios_Backup_Crawler,
+            multi_fail=_Multiple_Fail_Scenarios_Fail_Crawler,
+            delay=10,
+            delay_assign_task=5
+        )
+
+        time.sleep(20)    # Wait for thread 2 dead and thread 3 activate itself to be runner.
+
+        self._Verify.exception(_running_exception)
+        self._Verify.running_status(_running_flag)
+
+        # Verify running result from meta-data
+        self._verify_results(
+            runner=_Multiple_Fail_Scenarios_Runner_Crawler,
+            backup=_Multiple_Fail_Scenarios_Backup_Crawler,
+            fail_runner=_Multiple_Fail_Scenarios_Fail_Crawler,
+            expected_role={
+                "1": CrawlerStateRole.Dead_Runner,
+                "2": CrawlerStateRole.Dead_Runner,
+                "3": CrawlerStateRole.Runner,
+                "4": CrawlerStateRole.Runner,
+                "5": CrawlerStateRole.Runner,
+                "6": CrawlerStateRole.Backup_Runner
+            },
+            expected_group={
+                "1": "sc-crawler-cluster",
+                "2": "sc-crawler-cluster",
+                "3": "sc-crawler-cluster",
+                "4": "sc-crawler-cluster",
+                "5": "sc-crawler-cluster",
+                "6": "sc-crawler-cluster"
+            },
+            expected_task_result={
+                "1": "available",
+                "2": "available",
+                "3": "available",
+                "4": "nothing",
+                "5": "available",
+                "6": "backup",
+            }
+        )
+
+    def _run_multiple_crawler_instances(self, runner: int, backup: int, delay: Union[bool, int] = False, delay_assign_task: int = None,
+                                        multi_fail: int = None) -> (dict, dict, dict):
+        fail_index_criteria = None
+        if multi_fail is not None:
+            assert runner >= 2 and backup >= 2, "Runner and backup all should be more than 2 instances."
+            fail_index_criteria = multi_fail + 1
+
         _running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         _running_flag: Dict[str, bool] = _Manager.dict()
         _role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
@@ -626,12 +897,18 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
         def _assign_task() -> None:
             _task_paths = _ZKNodePathUtils.all_task(runner)
             for _task_path in _task_paths:
-                if delay is True and "2" in _task_path:
-                    _task_running_content = _One_Running_Content
-                    _task_running_content["url"] = _One_Running_Content["url"] + "?sleep=5"
-                    _task_running_contents = [_task_running_content]
+                _task_running_content = _One_Running_Content
+                _sleep_arg = ""
+                if type(delay) is bool:
+                    if delay is True and "2" in _task_path:
+                        _sleep_arg = "?sleep=5"
+                elif type(delay) is int:
+                    _sleep_arg = f"?sleep={delay}"
                 else:
-                    _task_running_contents = _Task_Running_Content_Value
+                    raise ValueError("Argument ** only support boolean and integer type value.")
+                _One_Running_Content["url"] = _One_Running_Content["url"].split("?")[0]
+                _task_running_content["url"] = _One_Running_Content["url"] + _sleep_arg
+                _task_running_contents = [_task_running_content]
                 _task = Initial.task(running_content=_task_running_contents)
                 if self._exist_node(_task_path) is None:
                     self._create_node(path=_task_path, value=bytes(json.dumps(_task.to_readable_object()), "utf-8"), include_data=True)
@@ -642,7 +919,8 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             _zk_crawler = None
             try:
                 # Instantiate ZookeeperCrawler
-                if "2" in _name:
+                if (fail_index_criteria is None and "2" in _name) or \
+                        (fail_index_criteria is not None and int(_name.split("_")[-1]) < fail_index_criteria):
                     _zk_crawler = ZookeeperCrawler(
                         runner=runner,
                         backup=backup,
@@ -656,7 +934,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
                     _zk_crawler.stop_update_heartbeat()
                     _zk_crawler.initial()
                 else:
-                    if delay is True and "3" in _name:
+                    if delay is True and backup > 1 and str(runner + 1) in _name:
                         time.sleep(3)
                     _zk_crawler = ZookeeperCrawler(
                         runner=runner,
@@ -703,7 +981,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
     def _verify_results(self, runner: int, backup: int, fail_runner: int, expected_role: dict, expected_group: dict, expected_task_result: dict):
         # Verify the group info
-        self._VerifyMetaData.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner)
+        self._VerifyMetaData.group_state_info(runner=runner, backup=backup, fail_runner=fail_runner, standby_id=str(runner + fail_runner + 1))
         # Verify the state info
         self._VerifyMetaData.all_node_state_role(runner=runner, backup=backup, expected_role=expected_role, expected_group=expected_group)
         # Verify the task info

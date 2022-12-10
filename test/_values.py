@@ -2,7 +2,7 @@
 Here are some global variables for testing.
 """
 
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
+from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, RunningContent, HeartState, GroupState, NodeState, Task, Heartbeat
 from datetime import datetime
 from typing import List
 
@@ -42,6 +42,14 @@ _One_Running_Content: dict = {
     "header": _Empty_Dict_Value,
     "body": _Empty_Dict_Value
 }
+_One_Running_Content_As_Object = RunningContent(
+    task_id=0,
+    url=_Task_Real_URL,
+    method="GET",
+    parameters=_Empty_Dict_Value,
+    header=_Empty_Dict_Value,
+    body=_Empty_Dict_Value
+)
 _Task_Running_Content_Value: List[dict] = [_One_Running_Content]
 _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}
