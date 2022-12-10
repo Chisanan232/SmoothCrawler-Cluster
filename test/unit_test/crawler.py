@@ -109,6 +109,20 @@ class TestZookeeperCrawler:
             zk_crawler.wait_and_standby.assert_not_called()
             zk_crawler.wait_for_to_be_standby.assert_not_called()
 
+    def test_run_as_role_Backup_Runner(self, zk_crawler: ZookeeperCrawler):
+        zk_crawler.wait_for_task = MagicMock(return_value=None)
+        zk_crawler.wait_and_standby = MagicMock(return_value=None)
+        zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
+
+        _group_state = GroupState()
+        _group_state.standby_id = "1"
+        with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=_group_state) as metadata_util:
+            zk_crawler.running_as_role(role=CrawlerStateRole.Backup_Runner)
+            metadata_util.assert_called_once()
+            zk_crawler.wait_for_task.assert_not_called()
+            zk_crawler.wait_and_standby.assert_called_with()
+            zk_crawler.wait_for_to_be_standby.assert_not_called()
+
     def test_before_dead(self, zk_crawler: ZookeeperCrawler):
         try:
             zk_crawler.before_dead(Exception("Test exception"))
