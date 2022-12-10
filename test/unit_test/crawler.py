@@ -100,8 +100,10 @@ class TestZookeeperCrawler:
     def test_run_as_role(self, zk_crawler: ZookeeperCrawler):
         pass
 
-    def test_pre_running(self, zk_crawler: ZookeeperCrawler):
-        pass
-
     def test_before_dead(self, zk_crawler: ZookeeperCrawler):
-        pass
+        try:
+            zk_crawler.before_dead(Exception("Test exception"))
+        except Exception as e:
+            assert "Test exception" in str(e), "Its error message should be same as 'Test exception'."
+        else:
+            assert False, "It should raise the exception."
