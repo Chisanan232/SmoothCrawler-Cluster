@@ -1,8 +1,8 @@
-import re
-
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
+from smoothcrawler_cluster._utils import MetaDataUtil
 from kazoo.client import KazooClient
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 import pytest
 
 from .._assertion import ValueFormatAssertion
@@ -97,8 +97,17 @@ class TestZookeeperCrawler:
         _ensure_register = zk_crawler.ensure_wait
         assert _ensure_register == 2, "Property 'ensure_wait' should be True as it assigning."
 
-    def test_run_as_role(self, zk_crawler: ZookeeperCrawler):
-        pass
+    def test_run_as_role_Runner(self, zk_crawler: ZookeeperCrawler):
+        zk_crawler.wait_for_task = MagicMock(return_value=None)
+        zk_crawler.wait_and_standby = MagicMock(return_value=None)
+        zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
+
+        with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=GroupState()) as metadata_util:
+            zk_crawler.running_as_role(role=CrawlerStateRole.Runner)
+            metadata_util.assert_not_called()
+            zk_crawler.wait_for_task.assert_called_with()
+            zk_crawler.wait_and_standby.assert_not_called()
+            zk_crawler.wait_for_to_be_standby.assert_not_called()
 
     def test_before_dead(self, zk_crawler: ZookeeperCrawler):
         try:
