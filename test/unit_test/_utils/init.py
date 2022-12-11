@@ -14,7 +14,7 @@ class TestInitModule:
 
         try:
             _timer = parse_timer(timer=timer)
-        except:
+        except Exception:
             assert False, f"It should parse the timer value correctly. \n {traceback.format_exc()}"
         else:
             if _is_float is True:
