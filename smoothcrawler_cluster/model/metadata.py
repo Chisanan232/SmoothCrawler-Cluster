@@ -788,6 +788,7 @@ class Heartbeat(_BaseMetaData):
         task_state = task_state.value if type(task_state) is TaskResult else task_state
         self._task_state = task_state
 
-    def _is_valid_times_value(self, times: str) -> bool:
-        _number_and_timeunit = re.search(r"[0-9]{1,16}[smh]", times)
-        return True if _number_and_timeunit.group() else False
+    @classmethod
+    def _is_valid_times_value(cls, times: str) -> bool:
+        _number_and_timeunit = re.search(r"[0-9]{1,16}(s|m|h)", times)
+        return True if _number_and_timeunit is not None else False
