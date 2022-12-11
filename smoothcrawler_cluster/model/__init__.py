@@ -102,7 +102,7 @@ class Initial(_BaseDataObjectUtils):
         _state.current_backup = current_backup
         _state.standby_id = standby_id
         _state.fail_crawler = fail_crawler
-        _state.fail_runner = fail_crawler
+        _state.fail_runner = fail_runner
         _state.fail_backup = fail_backup
         return _state
 
@@ -159,9 +159,9 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def group_state(state: GroupState, total_crawler: int = None, total_runner: int = None, total_backup: int = None,
-                    role: CrawlerStateRole = None, standby_id: str = None, append_current_crawler: List[str] = [],
-                    append_current_runner: List[str] = [], append_current_backup: List[str] = [], append_fail_crawler: List[str] = [],
-                    append_fail_runner: List[str] = [], append_fail_backup: List[str] = []) -> GroupState:
+                    standby_id: str = None, append_current_crawler: List[str] = [], append_current_runner: List[str] = [],
+                    append_current_backup: List[str] = [], append_fail_crawler: List[str] = [], append_fail_runner: List[str] = [],
+                    append_fail_backup: List[str] = []) -> GroupState:
 
         Update._update_ele_if_not_none(data_obj=state, prop="total_crawler", new_val=total_crawler)
         Update._update_ele_if_not_none(data_obj=state, prop="total_runner", new_val=total_runner)
@@ -174,7 +174,7 @@ class Update(_BaseDataObjectUtils):
         Update._update_ele_if_not_none(data_obj=state, prop="standby_id", new_val=standby_id)
 
         Update._append_ele_if_not_none(data_obj=state, prop="fail_crawler", new_val=append_fail_crawler)
-        Update._append_ele_if_not_none(data_obj=state, prop="fail_runner", new_val=append_fail_crawler)
+        Update._append_ele_if_not_none(data_obj=state, prop="fail_runner", new_val=append_fail_runner)
         Update._append_ele_if_not_none(data_obj=state, prop="fail_backup", new_val=append_fail_backup)
 
         return state
