@@ -11,10 +11,14 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
 def parse_timer(timer: str) -> Union[int, float]:
     _timer_val = timer[:-1]
-    if "." in _timer_val:
-        _time = float(_timer_val)
-    else:
-        _time = int(_timer_val)
+    try:
+        if "." in _timer_val:
+            _time = float(_timer_val)
+        else:
+            _time = int(_timer_val)
+    except ValueError:
+        raise ValueError(f"Invalid value {_timer_val}. It should be an integer format value.")
+
     _time_unit = timer[-1]
     if _time_unit == "s":
         _sleep_time = _time
