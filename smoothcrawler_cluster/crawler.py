@@ -508,23 +508,39 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return self._election_strategy.elect(candidate=self._crawler_name, member=_state.current_crawler,
                                              index_sep=self._index_sep, spot=self._runner)
 
-    def run(self) -> None:
+    def run(self, interval: float = 0.5, timeout: int = -1, wait_task_time: float = 2, standby_wait_time: float = 0.5,
+            wait_to_be_standby_time: float = 2, reset_timeout_threshold: int = 10) -> None:
         """
         The major function of the cluster. It has a simple workflow cycle:
 
         <has an image of the workflow>
 
+        :param interval: How long it should wait between every check. Default value is 0.5 (unit is seconds).
+        :param timeout: Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
+        :param wait_task_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is
+               seconds and default value is 2.
+        :param standby_wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat.
+               The unit is seconds and default value is 0.5.
+        :param wait_to_be_standby_time: For a Backup but isn't the primary one, how long does the crawler instance wait
+               a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
+        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
+               the timeout record.
         :return: None
         """
 
-        if self.is_ready_for_run(interval=0.5, timeout=-1) is True:
+        if self.is_ready_for_run(interval=interval, timeout=timeout) is True:
             while True:
                 self.pre_running()
                 try:
-                    self.running_as_role(self._crawler_role)
+                    self.running_as_role(
+                        role=self._crawler_role,
+                        wait_task_time=wait_task_time,
+                        standby_wait_time=standby_wait_time,
+                        wait_to_be_standby_time=wait_to_be_standby_time,
+                        reset_timeout_threshold=reset_timeout_threshold
+                    )
                 except Exception as e:
                     self.before_dead(e)
-                time.sleep(1)
         else:
             raise TimeoutError("Timeout to wait for crawler be ready for running crawler cluster.")
 
@@ -537,7 +553,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         pass
 
-    def running_as_role(self, role: CrawlerStateRole, wait_task_time: float = 2, standby_wait_time: float = 0.5, wait_to_be_standby_time: float = 2) -> None:
+    def running_as_role(self, role: CrawlerStateRole, wait_task_time: float = 2, standby_wait_time: float = 0.5,
+                        wait_to_be_standby_time: float = 2, reset_timeout_threshold: int = 10) -> None:
         """
         Running the crawler instance's own job by what role it is.
 
@@ -555,6 +572,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                The unit is seconds and default value is 0.5.
         :param wait_to_be_standby_time: For a Backup but isn't the primary one, how long does the crawler instance wait
                a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
+        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
+               the timeout record.
         :return: None
         """
 
@@ -563,7 +582,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         elif role is CrawlerStateRole.Backup_Runner:
             _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
             if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
-                self.wait_and_standby(wait_time=standby_wait_time)
+                self.wait_and_standby(wait_time=standby_wait_time, reset_timeout_threshold=reset_timeout_threshold)
             else:
                 self.wait_for_to_be_standby(wait_time=wait_to_be_standby_time)
 
