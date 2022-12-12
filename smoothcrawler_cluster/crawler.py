@@ -537,7 +537,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         pass
 
-    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2) -> None:
+    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2, standby_wait_time: float = 0.5) -> None:
         """
         Running the crawler instance's own job by what role it is.
 
@@ -549,7 +549,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             keep checking the standby ID, and to be primary backup if the standby ID is equal to its index.
 
         :param role: The role of crawler instance.
-        :param wait_task_time: How long does the crawler instance wait a second for next task. The unit is seconds and default value is 2.
+        :param wait_task_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is
+                               seconds and default value is 2.
+        :param standby_wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat.
+                                  The unit is seconds and default value is 0.5.
         :return: None
         """
 
@@ -558,7 +561,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         elif role is CrawlerStateRole.Backup_Runner:
             _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
             if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
-                self.wait_and_standby()
+                self.wait_and_standby(wait_time=standby_wait_time)
             else:
                 self.wait_for_to_be_standby()
 
@@ -594,7 +597,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 # Keep waiting
                 time.sleep(wait_time)
 
-    def wait_and_standby(self) -> None:
+    def wait_and_standby(self, wait_time: float = 0.5) -> None:
         """
         Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers anyone
         is dead.
@@ -662,8 +665,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 self.hand_over_task(task=_task_of_dead_crawler)
                 break
 
-            # TODO: Parameterize this value for sleep a little bit while.
-            time.sleep(0.5)
+            time.sleep(wait_time)
 
     def wait_for_to_be_standby(self) -> bool:
         """
