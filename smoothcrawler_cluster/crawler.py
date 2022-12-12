@@ -537,7 +537,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         pass
 
-    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2, standby_wait_time: float = 0.5, wait_to_be_standby_time: float = 2) -> None:
+    def running_as_role(self, role: CrawlerStateRole, wait_task_time: float = 2, standby_wait_time: float = 0.5, wait_to_be_standby_time: float = 2) -> None:
         """
         Running the crawler instance's own job by what role it is.
 
@@ -577,10 +577,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         raise exception
 
-    def wait_for_task(self, wait_time: int = 2) -> None:
+    def wait_for_task(self, wait_time: float = 2) -> None:
         """
         Keep waiting for tasks coming and run it.
 
+        :param wait_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is seconds
+               and default value is 2.
         :return: None
         """
 
@@ -616,6 +618,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         it won't count the times by accumulation, it would reset the timeout value if the record be counted long time ago.
         Currently, it would reset the timeout value if it was counted 10 times ago.
 
+        :param wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat. The
+               unit is seconds and default value is 0.5.
         :return: None
         """
 
@@ -673,6 +677,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
         Keep waiting to be the primary backup crawler instance.
 
+        :param wait_time: For a Backup but isn't the primary one, how long does the crawler instance wait a second for
+               next checking GroupState.standby_id. The unit is seconds and default value is 2.
         :return: It would return True if it directs the standby ID attribute value is equal to its index of name.
         """
 
