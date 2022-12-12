@@ -537,7 +537,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         pass
 
-    def running_as_role(self, role: CrawlerStateRole) -> None:
+    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2) -> None:
         """
         Running the crawler instance's own job by what role it is.
 
@@ -549,11 +549,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             keep checking the standby ID, and to be primary backup if the standby ID is equal to its index.
 
         :param role: The role of crawler instance.
+        :param wait_task_time: How long does the crawler instance wait a second for next task. The unit is seconds and default value is 2.
         :return: None
         """
 
         if role is CrawlerStateRole.Runner:
-            self.wait_for_task()
+            self.wait_for_task(wait_time=wait_task_time)
         elif role is CrawlerStateRole.Backup_Runner:
             _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path, as_obj=GroupState)
             if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
@@ -571,7 +572,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         raise exception
 
-    def wait_for_task(self) -> None:
+    def wait_for_task(self, wait_time: int = 2) -> None:
         """
         Keep waiting for tasks coming and run it.
 
@@ -591,8 +592,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 self.run_task(task=_task)
             else:
                 # Keep waiting
-                # TODO: Parameterize this value for sleep a little bit while.
-                time.sleep(2)
+                time.sleep(wait_time)
 
     def wait_and_standby(self) -> None:
         """
