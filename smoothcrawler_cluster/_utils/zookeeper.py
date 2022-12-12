@@ -106,10 +106,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
-        pass
-
-    @abstractmethod
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
         """
         Get one specific node by path in Zookeeper.
@@ -118,10 +114,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         :return: It would return a _BaseZookeeperPathType type object.
         """
 
-        pass
-
-    @abstractmethod
-    def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
         pass
 
     @abstractmethod
@@ -136,16 +128,8 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
         pass
 
-    # @abstractmethod
-    # def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
-    #     pass
-
     @abstractmethod
     def delete_node(self, path: str) -> bool:
-        pass
-
-    @abstractmethod
-    def restrict_delete_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> bool:
         pass
 
     @abstractmethod
@@ -160,10 +144,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def restrict_get_value_from_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> str:
-        pass
-
-    @abstractmethod
     def set_value_to_node(self, path: str, value: str) -> bool:
         """
         Set a value to the one specific Zookeeper path.
@@ -173,10 +153,6 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
         :return: Boolean type value, it would return True if it does finely without any issue, nor it returns False.
         """
 
-        pass
-
-    @abstractmethod
-    def restrict_set_value_to_node(self, path: str, value: Union[str, bytes], identifier: str) -> None:
         pass
 
 
@@ -197,10 +173,6 @@ class ZookeeperClient(_BaseZookeeperClient):
     def exist_node(self, path: str) -> Optional[Any]:
         return self.__zk_client.exists(path=path)
 
-    def restrict_exist_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Optional[Any]:
-        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
-            return self.exist_node(path)
-
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
         _data, _state = self.__zk_client.get(path=path)
 
@@ -209,10 +181,6 @@ class ZookeeperClient(_BaseZookeeperClient):
         _zk_path.value = _data.decode("utf-8")
 
         return _zk_path
-
-    def restrict_get_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Generic[_BaseZookeeperNodeType]:
-        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
-            return self.get_node(path)
 
     def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
         if self.exist_node(path=path) is None:
@@ -228,26 +196,11 @@ class ZookeeperClient(_BaseZookeeperClient):
         else:
             raise NodeExistsError
 
-    # def restrict_create_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, value: Union[str, bytes] = None) -> str:
-    #     if restrict is not ZookeeperRecipe.WriteLock:
-    #         raise RuntimeError("It should NOT use except WriteLock for writing feature.")
-    #     _restrict = self._generate_restrict(path=path, restrict=restrict, identifier=identifier)
-    #     with _restrict:
-    #         return self.create_node(path, value)
-
     def delete_node(self, path: str) -> bool:
         return self.__zk_client.delete(path=path)
 
-    def restrict_delete_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> bool:
-        with self.restrict(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases):
-            return self.delete_node(path)
-
     def get_value_from_node(self, path: str) -> str:
         _zk_path = self.get_node(path=path)
-        return _zk_path.value
-
-    def restrict_get_value_from_node(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> str:
-        _zk_path = self.restrict_get_node(path=path, restrict=restrict, identifier=identifier, max_leases=max_leases)
         return _zk_path.value
 
     def set_value_to_node(self, path: str, value: Union[str, bytes]) -> None:
@@ -257,10 +210,6 @@ class ZookeeperClient(_BaseZookeeperClient):
             self.__zk_client.set(path=path, value=value)
         else:
             raise TypeError("It only supports *str* or *bytes* data types.")
-
-    def restrict_set_value_to_node(self, path: str, value: Union[str, bytes], identifier: str) -> None:
-        with self.restrict(path=path, restrict=ZookeeperRecipe.WriteLock, identifier=identifier):
-            self.set_value_to_node(path, value)
 
     def close(self) -> None:
         self.__zk_client.close()
