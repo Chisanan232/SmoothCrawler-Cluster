@@ -601,7 +601,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 # Keep waiting
                 time.sleep(wait_time)
 
-    def wait_and_standby(self, wait_time: float = 0.5) -> None:
+    def wait_and_standby(self, wait_time: float = 0.5, reset_timeout_threshold: int = 10) -> None:
         """
         Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers anyone
         is dead.
@@ -620,6 +620,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         :param wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat. The
                unit is seconds and default value is 0.5.
+        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
+               the timeout record.
         :return: None
         """
 
@@ -649,8 +651,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                     return runner_name
             else:
                 _no_timeout_records[runner_name] = _no_timeout_records.get(runner_name, 0) + 1
-                # TODO: Maybe we could parameterize this option
-                if _no_timeout_records[runner_name] >= 10:
+                if _no_timeout_records[runner_name] >= reset_timeout_threshold:
                     _timeout_records[runner_name] = 0
             return None
 
