@@ -537,7 +537,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         pass
 
-    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2, standby_wait_time: float = 0.5) -> None:
+    def running_as_role(self, role: CrawlerStateRole, wait_task_time: int = 2, standby_wait_time: float = 0.5, wait_to_be_standby_time: float = 2) -> None:
         """
         Running the crawler instance's own job by what role it is.
 
@@ -550,9 +550,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         :param role: The role of crawler instance.
         :param wait_task_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is
-                               seconds and default value is 2.
+               seconds and default value is 2.
         :param standby_wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat.
-                                  The unit is seconds and default value is 0.5.
+               The unit is seconds and default value is 0.5.
+        :param wait_to_be_standby_time: For a Backup but isn't the primary one, how long does the crawler instance wait
+               a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
         :return: None
         """
 
@@ -563,7 +565,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
                 self.wait_and_standby(wait_time=standby_wait_time)
             else:
-                self.wait_for_to_be_standby()
+                self.wait_for_to_be_standby(wait_time=wait_to_be_standby_time)
 
     def before_dead(self, exception: Exception) -> None:
         """
@@ -667,7 +669,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
             time.sleep(wait_time)
 
-    def wait_for_to_be_standby(self) -> bool:
+    def wait_for_to_be_standby(self, wait_time: float = 2) -> bool:
         """
         Keep waiting to be the primary backup crawler instance.
 
@@ -679,8 +681,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
-            # TODO: Parameterize this value for sleep a little bit while.
-            time.sleep(2)
+            time.sleep(wait_time)
 
     def run_task(self, task: Task) -> None:
         """
