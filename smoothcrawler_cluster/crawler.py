@@ -53,8 +53,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     def __init__(self, runner: int, backup: int, name: str = "", group: str = "", index_sep: List[str] = ["-", "_"],
                  initial: bool = True, ensure_initial: bool = False, ensure_timeout: int = 3, ensure_wait: float = 0.5,
-                 zk_hosts: str = None, zk_converter: Type[BaseConverter] = None,
-                 election_strategy: Generic[BaseElectionType] = None,
+                 heartbeat_update: float = 0.5, heartbeat_update_timeout: float = 2, heartbeat_dead_threshold: int = 3,
+                 zk_hosts: str = None, zk_converter: Type[BaseConverter] = None, election_strategy: Generic[BaseElectionType] = None,
                  factory: BaseFactory = None):
         """
         This is one of **_decentralized_** crawler cluster implementation with **Zookeeper**.
@@ -74,6 +74,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                this crawler name must be in it.
         :param ensure_timeout: The times of timeout to guarantee the register meta-data processing finish. Default value is 3.
         :param ensure_wait: How long to wait between every checking. Default value is 0.5 (unit is second).
+        :param heartbeat_update: The time frequency to update heartbeat info, i.g., if value is '2', it would update heartbeat
+               info every 2 seconds. The unit is seconds.
+        :param heartbeat_update_timeout: The timeout value of updating, i.g., if value is '3', it is time out if it doesn't
+               to update heartbeat info exceeds 3 seconds. The unit is seconds.
+        :param heartbeat_dead_threshold: The threshold of timeout times to judge it is dead, i.g., if value is '3' and the
+               updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or 'Dead_Backup').
         :param zk_hosts: The Zookeeper hosts. Use comma to separate each hosts if it has multiple values. Default value is _localhost:2181_.
         :param zk_converter: The converter to parse data content to be an object. It must be a type of **_BaseConverter_**.
                              Default value is **_JsonStrConverter_**.
@@ -135,6 +141,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             _crawler_name_list = self._crawler_name.split(sep=self._index_sep)
             self._crawler_index = _crawler_name_list[-1]
             self._election_strategy.identity = self._crawler_index
+
+        self._heartbeat_update = heartbeat_update
+        self._heartbeat_update_timeout = heartbeat_update_timeout
+        self._heartbeat_dead_threshold = heartbeat_dead_threshold
 
         if initial is True:
             self.initial()
@@ -325,7 +335,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self.register_group_state()
         self.register_node_state()
         self.register_task()
-        self.register_heartbeat(update_time=0.5, update_timeout=2, heart_rhythm_timeout=3)
+        self.register_heartbeat(update_time=self._heartbeat_update, update_timeout=self._heartbeat_update_timeout, heart_rhythm_timeout=self._heartbeat_dead_threshold)
 
     def register_group_state(self) -> None:
         """
