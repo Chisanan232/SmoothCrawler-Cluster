@@ -134,14 +134,21 @@ class Initial(_BaseDataObjectUtils):
         return _task
 
     @staticmethod
-    def heartbeat(heart_rhythm_time: datetime = None, time_format: str = "%Y-%m-%d %H:%M:%S", update_time: str = "2s",
-                  update_timeout: str = "4s", heart_rhythm_timeout: str = "3", healthy_state: HeartState = None,
-                  task_state: TaskResult = None) -> Heartbeat:
+    def heartbeat(heart_rhythm_time: datetime = None, time_format: str = None, update_time: str = None, update_timeout: str = None,
+                  heart_rhythm_timeout: str = None, healthy_state: HeartState = None, task_state: TaskResult = None) -> Heartbeat:
         _heartbeat = Heartbeat()
-        _heartbeat.heart_rhythm_time = datetime.now().strftime(time_format)
+        if time_format is None:
+            time_format = "%Y-%m-%d %H:%M:%S"
         _heartbeat.time_format = time_format
+        _heartbeat.heart_rhythm_time = datetime.now().strftime(time_format)
+        if update_time is None:
+            update_time = "1s"
         _heartbeat.update_time = update_time
+        if update_timeout is None:
+            update_timeout = "2s"
         _heartbeat.update_timeout = update_timeout
+        if heart_rhythm_timeout is None:
+            heart_rhythm_timeout = "3"
         _heartbeat.heart_rhythm_timeout = heart_rhythm_timeout
         if healthy_state is None:
             healthy_state = HeartState.Newborn
