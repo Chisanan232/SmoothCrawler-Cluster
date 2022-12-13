@@ -325,7 +325,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self.register_group_state()
         self.register_node_state()
         self.register_task()
-        self.register_heartbeat()
+        self.register_heartbeat(update_time=0.5, update_timeout=2, heart_rhythm_timeout=3)
 
     def register_group_state(self) -> None:
         """
@@ -408,15 +408,26 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             _create_node = False
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_task, create_node=_create_node)
 
-    def register_heartbeat(self) -> None:
+    def register_heartbeat(self, update_time: float = None, update_timeout: float = None, heart_rhythm_timeout: int = None,
+                           time_format: str = None) -> None:
         """
         Register meta-data _Heartbeat_ to Zookeeper.
 
+        :param update_time: The time frequency to update heartbeat info, i.g., if value is '2', it would update heartbeat
+               info every 2 seconds. The unit is seconds.
+        :param update_timeout: The timeout value of updating, i.g., if value is '3', it is time out if it doesn't to update
+               heartbeat info exceeds 3 seconds. The unit is seconds.
+        :param heart_rhythm_timeout: The threshold of timeout times to judge it is dead, i.g., if value is '3' and the updating
+               timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or 'Dead_Backup').
+        :param time_format: The time format. This format rule is same as 'datetime'.
         :return: None
         """
 
-        # TODO: It needs to parameterize these settings
-        _heartbeat = Initial.heartbeat(update_time="0.5s", update_timeout="2s", heart_rhythm_timeout="3")
+        _update_time = f"{update_time}s" if update_time is not None else None
+        _update_timeout = f"{update_timeout}s" if update_timeout is not None else None
+        _heart_rhythm_timeout = f"{heart_rhythm_timeout}" if heart_rhythm_timeout is not None else None
+        _heartbeat = Initial.heartbeat(update_time=_update_time, update_timeout=_update_timeout,
+                                       heart_rhythm_timeout=_heart_rhythm_timeout, time_format=time_format)
         if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
             _create_node = True
         else:
