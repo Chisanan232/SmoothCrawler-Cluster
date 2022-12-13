@@ -761,6 +761,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 _updated_running_result = RunningResult(success_count=_running_result.success_count, fail_count=_running_result.fail_count + 1)
 
                 _result_detail = _original_task.result_detail
+                # TODO: If it gets fail, how to record the result?
                 _result_detail.append(
                     ResultDetail(task_id=_content.task_id, state=TaskResult.Error.value, status_code=500, response=None, error_msg=f"{e}"))
             else:
@@ -769,6 +770,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 _updated_running_result = RunningResult(success_count=_running_result.success_count + 1, fail_count=_running_result.fail_count)
 
                 _result_detail = _original_task.result_detail
+                # TODO: Some information like HTTP status code of response should be get from response object.
                 _result_detail.append(
                     ResultDetail(task_id=_content.task_id, state=TaskResult.Done.value, status_code=200, response=_data, error_msg=None))
 
