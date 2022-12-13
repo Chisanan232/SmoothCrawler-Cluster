@@ -105,7 +105,7 @@ class TestZookeeperCrawler:
         with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=GroupState()) as metadata_util:
             zk_crawler.running_as_role(role=CrawlerStateRole.Runner)
             metadata_util.assert_not_called()
-            zk_crawler.wait_for_task.assert_called_with()
+            zk_crawler.wait_for_task.assert_called_with(wait_time=2)
             zk_crawler.wait_and_standby.assert_not_called()
             zk_crawler.wait_for_to_be_standby.assert_not_called()
 
@@ -120,7 +120,7 @@ class TestZookeeperCrawler:
             zk_crawler.running_as_role(role=CrawlerStateRole.Backup_Runner)
             metadata_util.assert_called_once()
             zk_crawler.wait_for_task.assert_not_called()
-            zk_crawler.wait_and_standby.assert_called_with()
+            zk_crawler.wait_and_standby.assert_called_with(wait_time=0.5, reset_timeout_threshold=10)
             zk_crawler.wait_for_to_be_standby.assert_not_called()
 
     def test_run_as_role_not_primary_Backup_Runner(self, zk_crawler: ZookeeperCrawler):
@@ -135,7 +135,7 @@ class TestZookeeperCrawler:
             metadata_util.assert_called_once()
             zk_crawler.wait_for_task.assert_not_called()
             zk_crawler.wait_and_standby.assert_not_called()
-            zk_crawler.wait_for_to_be_standby.assert_called_with()
+            zk_crawler.wait_for_to_be_standby.assert_called_with(wait_time=2)
 
     def test_before_dead(self, zk_crawler: ZookeeperCrawler):
         try:
