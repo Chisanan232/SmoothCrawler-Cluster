@@ -1,9 +1,9 @@
-from abc import ABCMeta, abstractmethod
-from enum import Enum
-from typing import Any, Union, Optional, TypeVar, Generic
-from kazoo.client import KazooClient
 from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
 from kazoo.exceptions import NodeExistsError
+from kazoo.client import KazooClient
+from typing import Any, Union, Optional, TypeVar, Generic
+from enum import Enum
+from abc import ABCMeta, abstractmethod
 
 from .converter import BaseConverter
 
@@ -92,7 +92,7 @@ class ZookeeperRecipe(Enum):
 class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
-    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Union[ReadLock, WriteLock, Semaphore]:
+    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: Optional[int] = None) -> Union[ReadLock, WriteLock, Semaphore]:
         pass
 
     @abstractmethod
