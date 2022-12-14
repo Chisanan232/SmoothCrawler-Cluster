@@ -1,3 +1,7 @@
+"""Module docstring
+# TODO: Need to add document here
+"""
+
 from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
 from kazoo.exceptions import NodeExistsError
 from kazoo.client import KazooClient
@@ -58,6 +62,9 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
 
 
 class ZookeeperNode(_BaseZookeeperNode):
+    """Class Docstring
+    # TODO: Need to add docstring here.
+    """
 
     __path: str = None
     __value: str = None
@@ -83,6 +90,9 @@ _BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperN
 
 
 class ZookeeperRecipe(Enum):
+    """Class Docstring
+    # TODO: Need to add docstring here.
+    """
 
     ReadLock = "ReadLock"
     WriteLock = "WriteLock"
@@ -90,9 +100,18 @@ class ZookeeperRecipe(Enum):
 
 
 class _BaseZookeeperClient(metaclass=ABCMeta):
+    """Class Docstring
+    # TODO: Need to add docstring here.
+    """
 
     @abstractmethod
-    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: Optional[int] = None) -> Union[ReadLock, WriteLock, Semaphore]:
+    def restrict(
+            self,
+            path: str,
+            restrict: ZookeeperRecipe,
+            identifier: str,
+            max_leases: Optional[int] = None,
+    ) -> Union[ReadLock, WriteLock, Semaphore]:
         pass
 
     @abstractmethod
@@ -157,36 +176,45 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
 
 class ZookeeperClient(_BaseZookeeperClient):
+    """Class Docstring
+    # TODO: Need to add docstring here.
+    """
 
     def __init__(self, hosts: str):
         self.__zk_client = KazooClient(hosts=hosts)
         self.__zk_client.start()
 
-    def restrict(self, path: str, restrict: ZookeeperRecipe, identifier: str, max_leases: int = None) -> Union[ReadLock, WriteLock, Semaphore]:
-        _restrict_obj = getattr(self.__zk_client, str(restrict.value))
+    def restrict(
+            self,
+            path: str,
+            restrict: ZookeeperRecipe,
+            identifier: str,
+            max_leases: int = None,
+    ) -> Union[ReadLock, WriteLock, Semaphore]:
+        restrict_obj = getattr(self.__zk_client, str(restrict.value))
         if max_leases:
-            _restrict = _restrict_obj(path, identifier, max_leases)
+            restrict = restrict_obj(path, identifier, max_leases)
         else:
-            _restrict = _restrict_obj(path, identifier)
-        return _restrict
+            restrict = restrict_obj(path, identifier)
+        return restrict
 
     def exist_node(self, path: str) -> Optional[Any]:
         return self.__zk_client.exists(path=path)
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        _data, _state = self.__zk_client.get(path=path)
+        data, state = self.__zk_client.get(path=path)
 
-        _zk_path = ZookeeperNode()
-        _zk_path.path = path
-        _zk_path.value = _data.decode("utf-8")
+        zk_path = ZookeeperNode()
+        zk_path.path = path
+        zk_path.value = data.decode("utf-8")
 
-        return _zk_path
+        return zk_path
 
     def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
         if self.exist_node(path=path) is None:
             if value is None:
                 return self.__zk_client.create(path=path, makepath=True, include_data=False)
-    
+
             if type(value) is str:
                 return self.__zk_client.create(path=path, value=bytes(value, "utf-8"), makepath=True, include_data=True)
             elif type(value) is bytes:
@@ -200,8 +228,8 @@ class ZookeeperClient(_BaseZookeeperClient):
         return self.__zk_client.delete(path=path)
 
     def get_value_from_node(self, path: str) -> str:
-        _zk_path = self.get_node(path=path)
-        return _zk_path.value
+        zk_path = self.get_node(path=path)
+        return zk_path.value
 
     def set_value_to_node(self, path: str, value: Union[str, bytes]) -> None:
         if type(value) is str:
