@@ -215,9 +215,9 @@ class ZookeeperClient(_BaseZookeeperClient):
             if value is None:
                 return self.__zk_client.create(path=path, makepath=True, include_data=False)
 
-            if type(value) is str:
+            if isinstance(value, str):
                 return self.__zk_client.create(path=path, value=bytes(value, "utf-8"), makepath=True, include_data=True)
-            elif type(value) is bytes:
+            elif isinstance(value, bytes):
                 return self.__zk_client.create(path=path, value=value, makepath=True, include_data=True)
             else:
                 raise TypeError("It only supports *str* or *bytes* data types.")
@@ -232,9 +232,9 @@ class ZookeeperClient(_BaseZookeeperClient):
         return zk_path.value
 
     def set_value_to_node(self, path: str, value: Union[str, bytes]) -> None:
-        if type(value) is str:
+        if isinstance(value, str):
             self.__zk_client.set(path=path, value=value.encode("utf-8"))
-        elif type(value) is bytes:
+        elif isinstance(value, bytes):
             self.__zk_client.set(path=path, value=value)
         else:
             raise TypeError("It only supports *str* or *bytes* data types.")
