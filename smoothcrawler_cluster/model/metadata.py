@@ -1,7 +1,7 @@
+from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import datetime as dt
 from typing import List, Union, Optional, TypeVar
-from abc import ABCMeta, abstractmethod
 import re
 
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
@@ -80,7 +80,7 @@ class GroupState(_BaseMetaData):
             "current_backup": self.current_backup,
             "fail_crawler": self.fail_crawler,
             "fail_runner": self.fail_runner,
-            "fail_backup": self.fail_backup
+            "fail_backup": self.fail_backup,
         }
         return _dict_format_data
 

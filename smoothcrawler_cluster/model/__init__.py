@@ -1,6 +1,6 @@
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import List, Union
-from abc import ABCMeta, abstractmethod
 
 from .metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
 from .metadata_enum import CrawlerStateRole, TaskResult, HeartState

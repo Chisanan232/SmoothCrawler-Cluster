@@ -1,12 +1,16 @@
+from abc import ABCMeta
+from datetime import datetime
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
-from datetime import datetime
 from typing import List, Dict, Callable, Any, Type, TypeVar, Optional, Generic
-from abc import ABCMeta
 import threading
 import time
 import re
 
+from ._utils import parse_timer, MetaDataUtil
+from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
+from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
+from .election import BaseElection, IndexElection, ElectionResult
 from .model import (
     # Zookeeper operating common functions
     Initial, Update,
@@ -18,10 +22,6 @@ from .model import (
     GroupState, NodeState, Task, Heartbeat
 )
 from .model.metadata import _BaseMetaData
-from .election import BaseElection, IndexElection, ElectionResult
-from ._utils import parse_timer, MetaDataUtil
-from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
-from ._utils.zookeeper import ZookeeperClient, ZookeeperRecipe
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)

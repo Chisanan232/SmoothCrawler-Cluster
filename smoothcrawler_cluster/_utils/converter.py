@@ -1,8 +1,8 @@
 """Module document
 """
 
-from typing import Dict, Any, Type, TypeVar, Generic
 from abc import ABCMeta, abstractmethod
+from typing import Dict, Any, Type, TypeVar, Generic
 import json
 
 from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat

@@ -1,6 +1,6 @@
-from typing import List
-from enum import Enum
 from abc import ABCMeta, abstractmethod
+from enum import Enum
+from typing import List
 
 
 class ElectionResult(Enum):
