@@ -1,3 +1,7 @@
+"""Module
+TODO: Add docstring
+"""
+
 from abc import ABCMeta
 from datetime import datetime
 from smoothcrawler.crawler import BaseCrawler
@@ -29,14 +33,23 @@ BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 
 
 class BaseDistributedCrawler(metaclass=ABCMeta):
+    """Class
+    TODO: Add docstring
+    """
     pass
 
 
 class BaseDecentralizedCrawler(BaseDistributedCrawler):
+    """Class
+    TODO: Add docstring
+    """
     pass
 
 
 class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
+    """Class
+    TODO: Add docstring
+    """
 
     _Zookeeper_Client: ZookeeperClient = None
     __Default_Zookeeper_Hosts: str = "localhost:2181"
@@ -107,7 +120,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :param factory: The factory which saves SmoothCrawler components.
         """
 
-        super(ZookeeperCrawler, self).__init__(factory=factory)
+        super().__init__(factory=factory)
 
         self._total_crawler = runner + backup
         self._runner = runner
@@ -144,22 +157,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             election_strategy = IndexElection()
         self._election_strategy = election_strategy
         if not self._index_sep:
-            for _sep in index_sep:
-                _crawler_name_list = self._crawler_name.split(sep=_sep)
-                if _crawler_name_list:
+            for sep in index_sep:
+                crawler_name_list = self._crawler_name.split(sep=sep)
+                if crawler_name_list:
                     # Checking the separating char is valid
                     try:
-                        int(_crawler_name_list[-1])
+                        int(crawler_name_list[-1])
                     except ValueError:
                         continue
                     else:
-                        self._index_sep = _sep
-                        self._crawler_index = _crawler_name_list[-1]
+                        self._index_sep = sep
+                        self._crawler_index = crawler_name_list[-1]
                         self._election_strategy.identity = self._crawler_index
                         break
         else:
-            _crawler_name_list = self._crawler_name.split(sep=self._index_sep)
-            self._crawler_index = _crawler_name_list[-1]
+            crawler_name_list = self._crawler_name.split(sep=self._index_sep)
+            self._crawler_index = crawler_name_list[-1]
             self._election_strategy.identity = self._crawler_index
 
         self._heartbeat_update = heartbeat_update
@@ -173,8 +186,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     def name(self) -> str:
         """
         This crawler instance name. It MUST be unique naming in cluster (the same group) for let entire crawler cluster
-        to distinguish every one, for example, the properties _current_crawler_, _current_runner_ and _current_backup_ in
-        meta-data **GroupState** would record by crawler names.
+        to distinguish every one, for example, the properties _current_crawler_, _current_runner_ and _current_backup_
+        in meta-data **GroupState** would record by crawler names.
         This option value could be modified by Zookeeper object option _name_.
 
         :return: A string type value.
@@ -185,8 +198,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     @property
     def group(self) -> str:
         """
-        The group name of this crawler instance. This also means the cluster naming to let system distinguishes which crawler
-        instance belong to which cluster.
+        The group name of this crawler instance. This also means the cluster naming to let system distinguishes which
+        crawler instance belong to which cluster.
         This option value could be modified by Zookeeper object option _group_.
 
         :return: A string type value.
@@ -304,13 +317,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         <Has an image of workflow>
 
         * Register
-        Initial each needed meta-data (_GroupState_, _NodeState_, _Task_ and _Heartbeat_) and set them to Zookeeper, it
-        also creates their node if it doesn't exist in Zookeeper. This processing about setting meta-data to Zookeeper be
-        called _register_.
+        Initial each needed meta-data (_GroupState_, _NodeState_, _Task_ and _Heartbeat_) and set them to Zookeeper,
+        it also creates their node if it doesn't exist in Zookeeper. This processing about setting meta-data to
+        Zookeeper be called _register_.
 
         * Activate and run new thread to keep updating heartbeat info
-        If the signal _\_\_Updating_Stop_Signal_ is False, it would create a new thread here and it only keeps doing one
-        thing again and again --- updating it owns heartbeat info by itself.
+        If the signal _\_\_Updating_Stop_Signal_ is False, it would create a new thread here and it only keeps doing
+        one thing again and again --- updating it owns heartbeat info by itself.
 
         * Check it's ready for running election
         There are 2 conditions to check whether it is ready or not:
@@ -382,33 +395,33 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                                  restrict=ZookeeperRecipe.WriteLock,
                                                  identifier=self._state_identifier):
                 if not self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path):
-                    _state = Initial.group_state(crawler_name=self._crawler_name,
-                                                 total_crawler=self._runner + self._backup,
-                                                 total_runner=self._runner,
-                                                 total_backup=self._backup)
+                    state = Initial.group_state(crawler_name=self._crawler_name,
+                                                total_crawler=self._runner + self._backup,
+                                                total_runner=self._runner,
+                                                total_backup=self._backup)
                     self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path,
-                                                                  metadata=_state,
+                                                                  metadata=state,
                                                                   create_node=True)
                 else:
-                    _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                             as_obj=GroupState)
-                    if not _state.current_crawler or self._crawler_name not in _state.current_crawler:
-                        _state = Update.group_state(_state,
-                                                    total_crawler=self._runner + self._backup,
-                                                    total_runner=self._runner,
-                                                    total_backup=self._backup,
-                                                    append_current_crawler=[self._crawler_name],
-                                                    standby_id=self.__Initial_Standby_ID)
+                    state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                            as_obj=GroupState)
+                    if not state.current_crawler or self._crawler_name not in state.current_crawler:
+                        state = Update.group_state(state,
+                                                   total_crawler=self._runner + self._backup,
+                                                   total_runner=self._runner,
+                                                   total_backup=self._backup,
+                                                   append_current_crawler=[self._crawler_name],
+                                                   standby_id=self.__Initial_Standby_ID)
                         self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path,
-                                                                      metadata=_state)
+                                                                      metadata=state)
 
             if not self._ensure_register:
                 break
 
-            _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                     as_obj=GroupState)
-            assert _state, "The meta data *State* should NOT be None."
-            if len(set(_state.current_crawler)) == self._total_crawler and self._crawler_name in _state.current_crawler:
+            state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                    as_obj=GroupState)
+            assert state, "The meta data *State* should NOT be None."
+            if len(set(state.current_crawler)) == self._total_crawler and self._crawler_name in state.current_crawler:
                 break
             if self._ensure_wait:
                 time.sleep(self._ensure_wait)
@@ -423,14 +436,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _state = Initial.node_state(group=self._crawler_group)
-        if not self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path):
-            _create_node = True
-        else:
-            _create_node = False
+        state = Initial.node_state(group=self._crawler_group)
+        create_node = not self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path)
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path,
-                                                      metadata=_state,
-                                                      create_node=_create_node)
+                                                      metadata=state,
+                                                      create_node=create_node)
 
     def register_task(self) -> None:
         """
@@ -439,14 +449,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _task = Initial.task()
-        if not self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path):
-            _create_node = True
-        else:
-            _create_node = False
+        task = Initial.task()
+        create_node = not self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path)
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path,
-                                                      metadata=_task,
-                                                      create_node=_create_node)
+                                                      metadata=task,
+                                                      create_node=create_node)
 
     def register_heartbeat(
             self,
@@ -469,22 +476,17 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _update_time = f"{update_time}s" if update_time else None
-        _update_timeout = f"{update_timeout}s" if update_timeout else None
-        _heart_rhythm_timeout = f"{heart_rhythm_timeout}" if heart_rhythm_timeout else None
-        _heartbeat = Initial.heartbeat(update_time=_update_time,
-                                       update_timeout=_update_timeout,
-                                       heart_rhythm_timeout=_heart_rhythm_timeout,
-                                       time_format=time_format)
-        if not self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path):
-            _create_node = True
-        else:
-            _current_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
-                                                                                 as_obj=Heartbeat)
-            _create_node = False
+        update_time = f"{update_time}s" if update_time else None
+        update_timeout = f"{update_timeout}s" if update_timeout else None
+        heart_rhythm_timeout = f"{heart_rhythm_timeout}" if heart_rhythm_timeout else None
+        heartbeat = Initial.heartbeat(update_time=update_time,
+                                      update_timeout=update_timeout,
+                                      heart_rhythm_timeout=heart_rhythm_timeout,
+                                      time_format=time_format)
+        create_node = not self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path)
         self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path,
-                                                      metadata=_heartbeat,
-                                                      create_node=_create_node)
+                                                      metadata=heartbeat,
+                                                      create_node=create_node)
 
     def stop_update_heartbeat(self) -> None:
         """
@@ -504,8 +506,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: A boolean type value. if it's True, means that it's ready to run next processing.
         """
 
-        def _chk_by_condition(_state: GroupState) -> bool:
-            return len(_state.current_crawler) == self._total_crawler and self._crawler_name in _state.current_crawler
+        def _chk_by_condition(state: GroupState) -> bool:
+            return len(state.current_crawler) == self._total_crawler and self._crawler_name in state.current_crawler
 
         return self._is_ready_by_groupstate(condition_callback=_chk_by_condition,
                                             interval=interval,
@@ -520,11 +522,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: A boolean type value. if it's True, means that it's ready to run next processing.
         """
 
-        def _chk_by_condition(_state: GroupState) -> bool:
-            return len(_state.current_crawler) == self._total_crawler and \
-                   self._crawler_name in _state.current_crawler and \
-                   len(_state.current_runner) == self._runner and \
-                   len(_state.current_backup) == self._backup
+        def _chk_by_condition(state: GroupState) -> bool:
+            return len(state.current_crawler) == self._total_crawler and \
+                   self._crawler_name in state.current_crawler and \
+                   len(state.current_runner) == self._runner and \
+                   len(state.current_backup) == self._backup
 
         return self._is_ready_by_groupstate(condition_callback=_chk_by_condition,
                                             interval=interval,
@@ -548,14 +550,14 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             raise ValueError("The option *timeout* value is incorrect. Please configure more than -1, and -1 means it "
                              "never timeout.")
 
-        _start = time.time()
+        start = time.time()
         while True:
-            _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                     as_obj=GroupState)
-            if condition_callback(_state):
+            state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                    as_obj=GroupState)
+            if condition_callback(state):
                 return True
             if timeout != -1:
-                if (time.time() - _start) >= timeout:
+                if (time.time() - start) >= timeout:
                     return False
             time.sleep(interval)
 
@@ -566,10 +568,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: A **ElectionResult** type value.
         """
 
-        _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                 as_obj=GroupState)
+        state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                as_obj=GroupState)
         return self._election_strategy.elect(candidate=self._crawler_name,
-                                             member=_state.current_crawler,
+                                             member=state.current_crawler,
                                              index_sep=self._index_sep,
                                              spot=self._runner)
 
@@ -620,7 +622,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         :return: None
         """
-
         pass
 
     def running_as_role(
@@ -657,9 +658,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if role is CrawlerStateRole.Runner:
             self.wait_for_task(wait_time=wait_task_time)
         elif role is CrawlerStateRole.Backup_Runner:
-            _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                           as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
+            group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                          as_obj=GroupState)
+            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
                 self.wait_and_standby(wait_time=standby_wait_time, reset_timeout_threshold=reset_timeout_threshold)
             else:
                 self.wait_for_to_be_standby(wait_time=wait_to_be_standby_time)
@@ -690,12 +691,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         #        Keep wait for tasks
         #    }
         while True:
-            _task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path,
-                                                                    as_obj=Task,
-                                                                    must_has_data=False)
-            if _task.running_content:
+            task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path,
+                                                                   as_obj=Task,
+                                                                   must_has_data=False)
+            if task.running_content:
                 # Start to run tasks ...
-                self.run_task(task=_task)
+                self.run_task(task=task)
             else:
                 # Keep waiting
                 time.sleep(wait_time)
@@ -724,54 +725,50 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                 as_obj=GroupState)
-
-        _timeout_records: Dict[str, int] = {}
-        _no_timeout_records: Dict[str, int] = {}
-        _detect_heart_rhythm_timeout: bool = False
+        timeout_records: Dict[str, int] = {}
+        no_timeout_records: Dict[str, int] = {}
 
         def _one_current_runner_is_dead(runner_name: str) -> Optional[str]:
-            _current_runner_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
+            current_runner_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
                 path=f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
                 as_obj=Heartbeat
             )
 
-            _heart_rhythm_time = _current_runner_heartbeat.heart_rhythm_time
-            _time_format = _current_runner_heartbeat.time_format
-            _update_timeout = _current_runner_heartbeat.update_timeout
-            _heart_rhythm_timeout = _current_runner_heartbeat.heart_rhythm_timeout
+            heart_rhythm_time = current_runner_heartbeat.heart_rhythm_time
+            time_format = current_runner_heartbeat.time_format
+            update_timeout = current_runner_heartbeat.update_timeout
+            heart_rhythm_timeout = current_runner_heartbeat.heart_rhythm_timeout
 
-            _diff_datetime = datetime.now() - datetime.strptime(_heart_rhythm_time, _time_format)
-            if _diff_datetime.total_seconds() >= parse_timer(_update_timeout):
+            diff_datetime = datetime.now() - datetime.strptime(heart_rhythm_time, time_format)
+            if diff_datetime.total_seconds() >= parse_timer(update_timeout):
                 # It should start to pay attention on it
-                _timeout_records[runner_name] = _timeout_records.get(runner_name, 0) + 1
-                _no_timeout_records[runner_name] = 0
-                if _timeout_records[runner_name] >= int(_heart_rhythm_timeout):
+                timeout_records[runner_name] = timeout_records.get(runner_name, 0) + 1
+                no_timeout_records[runner_name] = 0
+                if timeout_records[runner_name] >= int(heart_rhythm_timeout):
                     return runner_name
             else:
-                _no_timeout_records[runner_name] = _no_timeout_records.get(runner_name, 0) + 1
-                if _no_timeout_records[runner_name] >= reset_timeout_threshold:
-                    _timeout_records[runner_name] = 0
+                no_timeout_records[runner_name] = no_timeout_records.get(runner_name, 0) + 1
+                if no_timeout_records[runner_name] >= reset_timeout_threshold:
+                    timeout_records[runner_name] = 0
             return None
 
         while True:
-            _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                           as_obj=GroupState)
-            _chk_current_runners_is_dead = map(_one_current_runner_is_dead, _group_state.current_runner)
-            _dead_current_runner_iter = filter(lambda _dead_runner: _dead_runner is not None,
-                                               list(_chk_current_runners_is_dead))
-            _dead_current_runner = list(_dead_current_runner_iter)
-            if _dead_current_runner:
+            group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                          as_obj=GroupState)
+            chk_current_runners_is_dead = map(_one_current_runner_is_dead, group_state.current_runner)
+            dead_current_runner_iter = filter(lambda _dead_runner: _dead_runner is not None,
+                                              list(chk_current_runners_is_dead))
+            dead_current_runner = list(dead_current_runner_iter)
+            if dead_current_runner:
                 # Only handle the first one of dead crawlers (if it has multiple dead crawlers
-                _runner_name = _dead_current_runner[0]
-                _heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
-                    path=f"{self._generate_path(_runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
+                runner_name = dead_current_runner[0]
+                heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(
+                    path=f"{self._generate_path(runner_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
                     as_obj=Heartbeat
                 )
-                _task_of_dead_crawler = self.discover(dead_crawler_name=_runner_name, heartbeat=_heartbeat)
-                self.activate(dead_crawler_name=_runner_name)
-                self.hand_over_task(task=_task_of_dead_crawler)
+                task_of_dead_crawler = self.discover(dead_crawler_name=runner_name, heartbeat=heartbeat)
+                self.activate(dead_crawler_name=runner_name)
+                self.hand_over_task(task=task_of_dead_crawler)
                 break
 
             time.sleep(wait_time)
@@ -786,9 +783,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         while True:
-            _group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                           as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == _group_state.standby_id:
+            group_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                          as_obj=GroupState)
+            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
             time.sleep(wait_time)
@@ -805,73 +802,72 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _running_content = task.running_content
-        _current_task: Task = task
-        _start_task_id = task.in_progressing_id
+        running_content = task.running_content
+        current_task: Task = task
+        start_task_id = task.in_progressing_id
 
-        assert re.search(r"[0-9]{1,32}]", _start_task_id) is None, "The task index must be integer format value."
+        assert re.search(r"[0-9]{1,32}]", start_task_id) is None, "The task index must be integer format value."
 
-        for _index, _content in enumerate(_running_content[int(_start_task_id):]):
-            _content = TaskContentDataUtils.convert_to_running_content(_content)
+        for index, content in enumerate(running_content[int(start_task_id):]):
+            content = TaskContentDataUtils.convert_to_running_content(content)
 
             # Update the ongoing task ID
-            _original_task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
-            if _index == 0:
-                _current_task = Update.task(task=_original_task,
-                                            in_progressing_id=_content.task_id,
-                                            running_status=TaskResult.Processing)
+            original_task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
+            if index == 0:
+                current_task = Update.task(task=original_task,
+                                           in_progressing_id=content.task_id,
+                                           running_status=TaskResult.Processing)
             else:
-                _current_task = Update.task(task=_original_task, in_progressing_id=_content.task_id)
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+                current_task = Update.task(task=original_task, in_progressing_id=content.task_id)
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=current_task)
 
             # Run the task and update the meta data Task
-            _data = None
+            data = None
             try:
                 # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage
                 #  in cient site
-                _data = self._run_crawling_processing(_content)
+                data = self._run_crawling_processing(content)
             except NotImplementedError as e:
                 raise e
             except Exception as e:
                 # Update attributes with fail result
-                _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
-                _updated_running_result = RunningResult(success_count=_running_result.success_count,
-                                                        fail_count=_running_result.fail_count + 1)
+                running_result = TaskContentDataUtils.convert_to_running_result(original_task.running_result)
+                updated_running_result = RunningResult(success_count=running_result.success_count,
+                                                       fail_count=running_result.fail_count + 1)
 
-                _result_detail = _original_task.result_detail
+                result_detail = original_task.result_detail
                 # TODO: If it gets fail, how to record the result?
-                _result_detail.append(
-                    ResultDetail(task_id=_content.task_id,
-                                 state=TaskResult.Error.value,
-                                 status_code=500,
-                                 response=None,
-                                 error_msg=f"{e}"))
+                result_detail.append(ResultDetail(task_id=content.task_id,
+                                                  state=TaskResult.Error.value,
+                                                  status_code=500,
+                                                  response=None,
+                                                  error_msg=f"{e}"))
             else:
                 # Update attributes with successful result
-                _running_result = TaskContentDataUtils.convert_to_running_result(_original_task.running_result)
-                _updated_running_result = RunningResult(success_count=_running_result.success_count + 1,
-                                                        fail_count=_running_result.fail_count)
+                running_result = TaskContentDataUtils.convert_to_running_result(original_task.running_result)
+                updated_running_result = RunningResult(success_count=running_result.success_count + 1,
+                                                       fail_count=running_result.fail_count)
 
-                _result_detail = _original_task.result_detail
+                result_detail = original_task.result_detail
                 # TODO: Some information like HTTP status code of response should be get from response object.
-                _result_detail.append(ResultDetail(task_id=_content.task_id,
-                                                   state=TaskResult.Done.value,
-                                                   status_code=200,
-                                                   response=_data,
-                                                   error_msg=None))
+                result_detail.append(ResultDetail(task_id=content.task_id,
+                                                  state=TaskResult.Done.value,
+                                                  status_code=200,
+                                                  response=data,
+                                                  error_msg=None))
 
-            _current_task = Update.task(task=_original_task,
-                                        in_progressing_id=_content.task_id,
-                                        running_result=_updated_running_result,
-                                        result_detail=_result_detail)
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+            current_task = Update.task(task=original_task,
+                                       in_progressing_id=content.task_id,
+                                       running_result=updated_running_result,
+                                       result_detail=result_detail)
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=current_task)
 
         # Finish all tasks, record the running result and reset the content ...
-        _current_task = Update.task(task=_current_task,
-                                    running_content=[],
-                                    in_progressing_id="-1",
-                                    running_status=TaskResult.Done)
-        self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=_current_task)
+        current_task = Update.task(task=current_task,
+                                   running_content=[],
+                                   in_progressing_id="-1",
+                                   running_status=TaskResult.Done)
+        self._MetaData_Util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=current_task)
 
     def processing_crawling_task(self, content: RunningContent) -> Any:
         """
@@ -883,10 +879,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         # TODO: Consider about how to let crawler core implementation to be more scalable and flexible.
-        _parsed_response = self.crawl(method=content.method, url=content.url)
-        _data = self.data_process(_parsed_response)
+        parsed_response = self.crawl(method=content.method, url=content.url)
+        data = self.data_process(parsed_response)
         # self.persist(data=_data)
-        return _data
+        return data
 
     def discover(self, dead_crawler_name: str, heartbeat: Heartbeat) -> Task:
         """
@@ -899,21 +895,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: Meta-data _Task_ from dead crawler instance.
         """
 
-        _node_state_path = f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
-        _node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=_node_state_path, as_obj=NodeState)
-        _node_state.role = CrawlerStateRole.Dead_Runner
-        self._MetaData_Util.set_metadata_to_zookeeper(path=_node_state_path, metadata=_node_state)
+        node_state_path = f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_NodeState_Node_Path}"
+        node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=node_state_path, as_obj=NodeState)
+        node_state.role = CrawlerStateRole.Dead_Runner
+        self._MetaData_Util.set_metadata_to_zookeeper(path=node_state_path, metadata=node_state)
 
-        _task = self._MetaData_Util.get_metadata_from_zookeeper(
+        task = self._MetaData_Util.get_metadata_from_zookeeper(
             path=f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_Task_Node_Path}",
             as_obj=Task)
         heartbeat.healthy_state = HeartState.Asystole
-        heartbeat.task_state = _task.running_status
+        heartbeat.task_state = task.running_status
         self._MetaData_Util.set_metadata_to_zookeeper(
             path=f"{self._generate_path(dead_crawler_name)}/{self._Zookeeper_Heartbeat_Node_Path}",
             metadata=heartbeat)
 
-        return _task
+        return task
 
     def activate(self, dead_crawler_name: str) -> None:
         """
@@ -924,28 +920,28 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
-                                                                      as_obj=NodeState)
+        node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
+                                                                     as_obj=NodeState)
         self._crawler_role = CrawlerStateRole.Runner
-        _node_state.role = self._crawler_role
-        self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_node_state)
+        node_state.role = self._crawler_role
+        self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=node_state)
 
         with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path,
                                              restrict=ZookeeperRecipe.WriteLock,
                                              identifier=self._state_identifier):
-            _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                     as_obj=GroupState)
+            state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                    as_obj=GroupState)
 
-            _state.total_backup = _state.total_backup - 1
-            _state.current_crawler.remove(dead_crawler_name)
-            _state.current_runner.remove(dead_crawler_name)
-            _state.current_runner.append(self._crawler_name)
-            _state.current_backup.remove(self._crawler_name)
-            _state.fail_crawler.append(dead_crawler_name)
-            _state.fail_runner.append(dead_crawler_name)
-            _state.standby_id = str(int(_state.standby_id) + 1)
+            state.total_backup = state.total_backup - 1
+            state.current_crawler.remove(dead_crawler_name)
+            state.current_runner.remove(dead_crawler_name)
+            state.current_runner.append(self._crawler_name)
+            state.current_backup.remove(self._crawler_name)
+            state.fail_crawler.append(dead_crawler_name)
+            state.fail_runner.append(dead_crawler_name)
+            state.standby_id = str(int(state.standby_id) + 1)
 
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_state)
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=state)
 
     def hand_over_task(self, task: Task) -> None:
         """
@@ -983,31 +979,31 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
-                                                                      as_obj=NodeState)
-        _updated_node_state = Update.node_state(node_state=_node_state, role=role)
-        self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=_updated_node_state)
+        node_state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
+                                                                     as_obj=NodeState)
+        updated_node_state = Update.node_state(node_state=node_state, role=role)
+        self._MetaData_Util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=updated_node_state)
 
         with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path,
                                              restrict=ZookeeperRecipe.WriteLock,
                                              identifier=self._state_identifier):
-            _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
-                                                                     as_obj=GroupState)
+            state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
+                                                                    as_obj=GroupState)
             if role is CrawlerStateRole.Runner:
-                _updated_state = Update.group_state(_state, append_current_runner=[self._crawler_name])
+                updated_state = Update.group_state(state, append_current_runner=[self._crawler_name])
             elif role is CrawlerStateRole.Backup_Runner:
-                _crawler_index = self._crawler_name.split(self._index_sep)[-1]
-                _current_standby_id = _state.standby_id
-                if int(_crawler_index) > int(_current_standby_id) and _current_standby_id != self.__Initial_Standby_ID:
-                    _updated_state = Update.group_state(_state, append_current_backup=[self._crawler_name])
+                crawler_index = self._crawler_name.split(self._index_sep)[-1]
+                current_standby_id = state.standby_id
+                if int(crawler_index) > int(current_standby_id) and current_standby_id != self.__Initial_Standby_ID:
+                    updated_state = Update.group_state(state, append_current_backup=[self._crawler_name])
                 else:
-                    _updated_state = Update.group_state(_state,
-                                                        append_current_backup=[self._crawler_name],
-                                                        standby_id=self._crawler_name.split(self._index_sep)[-1])
+                    updated_state = Update.group_state(state,
+                                                       append_current_backup=[self._crawler_name],
+                                                       standby_id=self._crawler_name.split(self._index_sep)[-1])
             else:
                 raise ValueError(f"It doesn't support {role} recently.")
 
-            self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=_updated_state)
+            self._MetaData_Util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=updated_state)
 
     def _run_updating_heartbeat_thread(self) -> None:
         """
@@ -1016,9 +1012,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: None
         """
 
-        _updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
-        _updating_heartbeat_thread.daemon = True
-        _updating_heartbeat_thread.start()
+        updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
+        updating_heartbeat_thread.daemon = True
+        updating_heartbeat_thread.start()
 
     def _update_heartbeat(self) -> None:
         """
@@ -1032,32 +1028,32 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             if not self.__Updating_Stop_Signal:
                 try:
                     # Get *Task* and *Heartbeat* info
-                    _task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
-                    _heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
-                                                                                 as_obj=Heartbeat)
+                    task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
+                    heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
+                                                                                as_obj=Heartbeat)
 
                     # Update the values
-                    _heartbeat = Update.heartbeat(_heartbeat,
-                                                  heart_rhythm_time=datetime.now(),
-                                                  healthy_state=HeartState.Healthy,
-                                                  task_state=_task.running_status)
+                    heartbeat = Update.heartbeat(heartbeat,
+                                                 heart_rhythm_time=datetime.now(),
+                                                 healthy_state=HeartState.Healthy,
+                                                 task_state=task.running_status)
                     self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path,
-                                                                  metadata=_heartbeat)
+                                                                  metadata=heartbeat)
 
                     # Sleep ...
-                    time.sleep(parse_timer(_heartbeat.update_time))
+                    time.sleep(parse_timer(heartbeat.update_time))
                 except Exception as e:
                     self.__Updating_Exception = e
                     break
             else:
-                _task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
-                _heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
-                                                                             as_obj=Heartbeat)
-                _heartbeat = Update.heartbeat(_heartbeat,
-                                              heart_rhythm_time=datetime.now(),
-                                              healthy_state=HeartState.ApparentDeath,
-                                              task_state=_task.running_status)
-                self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
+                task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
+                heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
+                                                                            as_obj=Heartbeat)
+                heartbeat = Update.heartbeat(heartbeat,
+                                             heart_rhythm_time=datetime.now(),
+                                             healthy_state=HeartState.ApparentDeath,
+                                             task_state=task.running_status)
+                self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=heartbeat)
                 break
         if self.__Updating_Exception:
             raise self.__Updating_Exception
@@ -1072,8 +1068,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         if self._chk_register(persist=False):
-            _data = self.processing_crawling_task(content)
-            return _data
+            data = self.processing_crawling_task(content)
+            return data
         else:
             raise NotImplementedError("You should implement the SmoothCrawler components and register them.")
 
@@ -1094,13 +1090,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: A boolean type value. If it's True, means SmoothCrawler have been registered.
         """
 
-        def _is_not_none(_chk: bool, _val) -> bool:
-            if _chk:
-                return _val is not None
+        def _is_not_none(chk: bool, val) -> bool:
+            if chk:
+                return val is not None
             return True
 
-        _factory = self._factory
-        return _is_not_none(http_sender, _factory.http_factory) and \
-               _is_not_none(http_resp_parser, _factory.parser_factory) and \
-               _is_not_none(data_hdler, _factory.data_handling_factory) and \
-               _is_not_none(persist, _factory.data_handling_factory)
+        factory = self._factory
+        return _is_not_none(http_sender, factory.http_factory) and \
+               _is_not_none(http_resp_parser, factory.parser_factory) and \
+               _is_not_none(data_hdler, factory.data_handling_factory) and \
+               _is_not_none(persist, factory.data_handling_factory)
