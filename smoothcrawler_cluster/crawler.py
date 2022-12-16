@@ -129,21 +129,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         self._state_identifier = "sc-crawler-cluster_state"
 
-        if zk_hosts is None:
+        if not zk_hosts:
             zk_hosts = self.__Default_Zookeeper_Hosts
         self._zk_hosts = zk_hosts
         self._Zookeeper_Client = ZookeeperClient(hosts=self._zk_hosts)
 
-        if zk_converter is None:
+        if not zk_converter:
             zk_converter = JsonStrConverter()
         self._zk_converter = zk_converter
 
         self._MetaData_Util = MetaDataUtil(client=self._Zookeeper_Client, converter=self._zk_converter)
 
-        if election_strategy is None:
+        if not election_strategy:
             election_strategy = IndexElection()
         self._election_strategy = election_strategy
-        if self._index_sep == "":
+        if not self._index_sep:
             for _sep in index_sep:
                 _crawler_name_list = self._crawler_name.split(sep=_sep)
                 if _crawler_name_list:
@@ -381,7 +381,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             with self._Zookeeper_Client.restrict(path=self.group_state_zookeeper_path,
                                                  restrict=ZookeeperRecipe.WriteLock,
                                                  identifier=self._state_identifier):
-                if self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path) is None:
+                if not self._Zookeeper_Client.exist_node(path=self.group_state_zookeeper_path):
                     _state = Initial.group_state(crawler_name=self._crawler_name,
                                                  total_crawler=self._runner + self._backup,
                                                  total_runner=self._runner,
@@ -392,7 +392,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 else:
                     _state = self._MetaData_Util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
                                                                              as_obj=GroupState)
-                    if _state.current_crawler is None or self._crawler_name not in _state.current_crawler:
+                    if not _state.current_crawler or self._crawler_name not in _state.current_crawler:
                         _state = Update.group_state(_state,
                                                     total_crawler=self._runner + self._backup,
                                                     total_runner=self._runner,
@@ -424,7 +424,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         _state = Initial.node_state(group=self._crawler_group)
-        if self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path) is None:
+        if not self._Zookeeper_Client.exist_node(path=self.node_state_zookeeper_path):
             _create_node = True
         else:
             _create_node = False
@@ -440,7 +440,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         _task = Initial.task()
-        if self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path) is None:
+        if not self._Zookeeper_Client.exist_node(path=self.task_zookeeper_path):
             _create_node = True
         else:
             _create_node = False
@@ -476,7 +476,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                        update_timeout=_update_timeout,
                                        heart_rhythm_timeout=_heart_rhythm_timeout,
                                        time_format=time_format)
-        if self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path) is None:
+        if not self._Zookeeper_Client.exist_node(path=self.heartbeat_zookeeper_path):
             _create_node = True
         else:
             _current_heartbeat = self._MetaData_Util.get_metadata_from_zookeeper(path=self.heartbeat_zookeeper_path,
@@ -1029,7 +1029,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         while True:
-            if self.__Updating_Stop_Signal is False:
+            if not self.__Updating_Stop_Signal:
                 try:
                     # Get *Task* and *Heartbeat* info
                     _task = self._MetaData_Util.get_metadata_from_zookeeper(path=self.task_zookeeper_path, as_obj=Task)
@@ -1059,7 +1059,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                               task_state=_task.running_status)
                 self._MetaData_Util.set_metadata_to_zookeeper(path=self.heartbeat_zookeeper_path, metadata=_heartbeat)
                 break
-        if self.__Updating_Exception is not None:
+        if self.__Updating_Exception:
             raise self.__Updating_Exception
 
     def _run_crawling_processing(self, content: RunningContent) -> Any:
@@ -1071,7 +1071,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         :return: Any type object (The running result of crawling).
         """
 
-        if self._chk_register(persist=False) is True:
+        if self._chk_register(persist=False):
             _data = self.processing_crawling_task(content)
             return _data
         else:
