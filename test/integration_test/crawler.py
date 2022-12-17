@@ -48,12 +48,12 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState])
     def test__update_crawler_role(self, uit_object: ZookeeperCrawler):
         # Checking initial state
-        _group_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
+        _group_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_group_state.current_crawler) == 0, "At initial process, the length of current crawler list should be 0."
         assert len(_group_state.current_runner) == 0, "At initial process, the length of current runner list should be 0."
         assert len(_group_state.current_backup) == 0, "At initial process, the length of current backup list should be 0."
 
-        _node_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
+        _node_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
         assert _node_state.role == CrawlerStateRole.Initial.value, \
             "At initial process, the role of crawler instance should be *initial* (or value of *CrawlerStateRole.Initial*)."
 
@@ -61,13 +61,13 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         uit_object._update_crawler_role(CrawlerStateRole.Runner)
 
         # Verify the updated state
-        _updated_group_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
+        _updated_group_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_updated_group_state.current_runner) == 1, \
             "After update the *state* meta data, the length of current crawler list should be 1 because it's *runner*."
         assert len(_updated_group_state.current_backup) == 0, \
             "After update the *state* meta data, the length of current crawler list should be 0 because it's *runner*."
 
-        _updated_node_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
+        _updated_node_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
         assert _updated_node_state.role == CrawlerStateRole.Runner.value, \
             "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
@@ -692,7 +692,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             try:
                 time.sleep(5)
                 _state.standby_id = "2"
-                _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+                _zk_crawler._metadata_util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
             except Exception as e:
                 _running_flag["_update_state_standby_id"] = False
                 _running_exception["_update_state_standby_id"] = e
