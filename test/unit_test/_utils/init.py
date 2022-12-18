@@ -47,13 +47,3 @@ class TestInitModule:
                 assert type(e) is ValueError, "It should raise a 'ValueError' exception."
                 assert f"Invalid value {timer[:-1]}. It should be an integer format value." in str(e), "The error message is not correct."
 
-    def test__value_is_not_empty(self):
-        _is_not_none = MetaDataUtil._value_is_not_empty(_value=None)
-        assert _is_not_none is False, "It should be 'False' because it is None value."
-
-        _is_not_none = MetaDataUtil._value_is_not_empty(_value="")
-        assert _is_not_none is False, "It should be 'False' because it is empty string value."
-
-        _is_not_none = MetaDataUtil._value_is_not_empty(_value="t")
-        assert _is_not_none is True, "It should be 'True' because it is not empty string value."
-

@@ -48,16 +48,16 @@ class MetaDataUtil:
     TODO: Need to add document
     """
 
-    _Zookeeper_Client: ZookeeperClient = None
-    _Zookeeper_Data_Converter: _BaseConverter = None
+    _zookeeper_client: ZookeeperClient = None
+    _zookeeper_data_converter: _BaseConverter = None
 
-    __Default_Zookeeper_Hosts: str = "localhost:2181"
+    _default_zookeeper_hosts: str = "localhost:2181"
 
     def __init__(self, converter: _BaseConverter, client: ZookeeperClient = None):
         if client is None:
-            client = ZookeeperClient(hosts=self.__Default_Zookeeper_Hosts)
-        self._Zookeeper_Client = client
-        self._Zookeeper_Data_Converter = converter
+            client = ZookeeperClient(hosts=self._default_zookeeper_hosts)
+        self._zookeeper_client = client
+        self._zookeeper_data_converter = converter
 
     def get_metadata_from_zookeeper(
             self,
@@ -75,9 +75,9 @@ class MetaDataUtil:
         Returns:
 
         """
-        value = self._Zookeeper_Client.get_value_from_node(path=path)
-        if MetaDataUtil._value_is_not_empty(value):
-            state = self._Zookeeper_Data_Converter.deserialize_meta_data(data=value, as_obj=as_obj)
+        value = self._zookeeper_client.get_value_from_node(path=path)
+        if value:
+            state = self._zookeeper_data_converter.deserialize_meta_data(data=value, as_obj=as_obj)
             return state
         else:
             if must_has_data is True:
@@ -110,22 +110,8 @@ class MetaDataUtil:
         Returns:
 
         """
-        metadata_str = self._Zookeeper_Data_Converter.serialize_meta_data(obj=metadata)
+        metadata_str = self._zookeeper_data_converter.serialize_meta_data(obj=metadata)
         if create_node is True:
-            self._Zookeeper_Client.create_node(path=path, value=metadata_str)
+            self._zookeeper_client.create_node(path=path, value=metadata_str)
         else:
-            self._Zookeeper_Client.set_value_to_node(path=path, value=metadata_str)
-
-    @staticmethod
-    def _value_is_not_empty(_value) -> bool:
-        """
-        TODO: Add Function docstring
-        Args:
-            path:
-            as_obj:
-            must_has_data:
-
-        Returns:
-
-        """
-        return _value is not None and _value != ""
+            self._zookeeper_client.set_value_to_node(path=path, value=metadata_str)
