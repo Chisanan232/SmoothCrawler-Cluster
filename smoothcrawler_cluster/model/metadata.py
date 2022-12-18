@@ -73,7 +73,7 @@ class GroupState(_BaseMetaData):
     _fail_backup: List[str] = None
 
     def to_readable_object(self) -> dict:
-        _dict_format_data = {
+        return {
             "total_crawler": self.total_crawler,
             "total_runner": self.total_runner,
             "total_backup": self.total_backup,
@@ -85,7 +85,6 @@ class GroupState(_BaseMetaData):
             "fail_runner": self.fail_runner,
             "fail_backup": self.fail_backup,
         }
-        return _dict_format_data
 
     @property
     def total_crawler(self) -> int:
@@ -398,7 +397,7 @@ class Task(_BaseMetaData):
     _result_detail: List[dict] = None
 
     def to_readable_object(self) -> dict:
-        _dict_format_data = {
+        return {
             "running_content": self._running_content,
             "cookie": self._cookie,
             "authorization": self._authorization,
@@ -407,7 +406,6 @@ class Task(_BaseMetaData):
             "running_status": self._running_status,
             "result_detail": self._result_detail,
         }
-        return _dict_format_data
 
     @property
     def running_content(self) -> List[dict]:
@@ -550,10 +548,10 @@ class Task(_BaseMetaData):
 
     @classmethod
     def __to_dict(cls, obj, attrs: List[str]) -> dict:
-        _value = {}
+        value = {}
         for attr in attrs:
-            _value[attr] = getattr(obj, attr)
-        return _value
+            value[attr] = getattr(obj, attr)
+        return value
 
 
 class Heartbeat(_BaseMetaData):
@@ -594,13 +592,13 @@ class Heartbeat(_BaseMetaData):
     _healthy_state: str = None
     _task_state: str = None
 
-    _Default_Time_Format: str = "%Y-%m-%d %H:%M:%S"
+    _default_time_format: str = "%Y-%m-%d %H:%M:%S"
 
     _Time_Setting_Value_Format_Error = ValueError(
         "The value format of property *update_time* should be like '<number><timeunit>', i.e., '3s' or '2m', etc.")
 
     def to_readable_object(self) -> dict:
-        _dict_format_data = {
+        return {
             "heart_rhythm_time": self.heart_rhythm_time,
             "time_format": self.time_format,
             "update_time": self.update_time,
@@ -609,7 +607,6 @@ class Heartbeat(_BaseMetaData):
             "healthy_state": self.healthy_state,
             "task_state": self.task_state,
         }
-        return _dict_format_data
 
     @property
     def heart_rhythm_time(self) -> Optional[str]:
@@ -626,7 +623,7 @@ class Heartbeat(_BaseMetaData):
                 return self._heart_rhythm_time
             if self.time_format:
                 return self._heart_rhythm_time.strftime(self.time_format)
-            return self._heart_rhythm_time.strftime(self._Default_Time_Format)
+            return self._heart_rhythm_time.strftime(self._default_time_format)
 
     @heart_rhythm_time.setter
     def heart_rhythm_time(self, heart_rhythm_time: Union[str, dt]) -> None:
@@ -800,5 +797,5 @@ class Heartbeat(_BaseMetaData):
 
     @classmethod
     def _is_valid_times_value(cls, times: str) -> bool:
-        _number_and_timeunit = re.search(r"[0-9]{1,16}(s|m|h)", times)
-        return _number_and_timeunit is not None
+        number_and_timeunit = re.search(r"[0-9]{1,16}(s|m|h)", times)
+        return number_and_timeunit is not None
