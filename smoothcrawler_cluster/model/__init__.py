@@ -72,7 +72,7 @@ class Empty(_BaseDataObjectUtils):
     def node_state() -> NodeState:
         node_state = NodeState()
         node_state.group = ""
-        node_state.role = CrawlerStateRole.Initial
+        node_state.role = CrawlerStateRole.INITIAL
         return node_state
 
     @staticmethod
@@ -83,7 +83,7 @@ class Empty(_BaseDataObjectUtils):
         task.authorization = {}
         task.in_progressing_id = "-1"
         task.running_result = RunningResult(success_count=0, fail_count=0)
-        task.running_status = TaskResult.Nothing
+        task.running_status = TaskResult.NOTHING
         task.result_detail = []
         return task
 
@@ -95,8 +95,8 @@ class Empty(_BaseDataObjectUtils):
         heartbeat.update_time = "2s"
         heartbeat.update_timeout = "4s"
         heartbeat.heart_rhythm_timeout = "3"
-        heartbeat.healthy_state = HeartState.Newborn
-        heartbeat.task_state = TaskResult.Nothing
+        heartbeat.healthy_state = HeartState.NEWBORN
+        heartbeat.task_state = TaskResult.NOTHING
         return heartbeat
 
 
@@ -141,7 +141,7 @@ class Initial(_BaseDataObjectUtils):
         if group is not None:
             node_state.group = group
         if role is None:
-            role = CrawlerStateRole.Initial
+            role = CrawlerStateRole.INITIAL
         node_state.role = role
         return node_state
 
@@ -164,7 +164,7 @@ class Initial(_BaseDataObjectUtils):
             running_result = RunningResult(success_count=0, fail_count=0)
         task.running_result = running_result
         if running_state is None:
-            running_state = TaskResult.Nothing
+            running_state = TaskResult.NOTHING
         task.running_status = running_state
         task.result_detail = result_detail
         return task
@@ -194,10 +194,10 @@ class Initial(_BaseDataObjectUtils):
             heart_rhythm_timeout = "3"
         heartbeat.heart_rhythm_timeout = heart_rhythm_timeout
         if healthy_state is None:
-            healthy_state = HeartState.Newborn
+            healthy_state = HeartState.NEWBORN
         heartbeat.healthy_state = healthy_state
         if task_state is None:
-            task_state = TaskResult.Nothing
+            task_state = TaskResult.NOTHING
         heartbeat.task_state = task_state
         return heartbeat
 

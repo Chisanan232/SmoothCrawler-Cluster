@@ -22,7 +22,7 @@ Test_Zookeeper_Bytes_Value = b"This is test value in zookeeper"
 # # Related state settings
 _Crawler_Group_Name_Value: str = "sc-crawler-cluster"
 _Crawler_Name_Value: str = "sc-crawler_1"
-_Crawler_Role_Value: str = CrawlerStateRole.Initial.value
+_Crawler_Role_Value: str = CrawlerStateRole.INITIAL.value
 _Runner_Crawler_Value: int = 2
 _Backup_Crawler_Value: int = 1
 _Fail_Runner_Crawler_Value: int = 1
@@ -58,7 +58,7 @@ _Task_Running_Result: dict = {
     "success_count": 0,
     "fail_count": 0
 }
-_Task_Running_State: str = str(TaskResult.Nothing.value)
+_Task_Running_State: str = str(TaskResult.NOTHING.value)
 _Task_Result_Detail_Value: List[dict] = [{
     "task_id": 0,
     "state": "done",
@@ -73,8 +73,8 @@ _Time_Format_Value: str = "%Y-%m-%d %H:%M:%S"
 _Update_Value: str = "2s"
 _Update_Timeout_Value: str = "4s"
 _Heartbeat_Timeout_Value: str = "2"
-_Heartbeat_State_Value: str = HeartState.Healthy.value
-_Task_State_Value: str = TaskResult.Processing.value
+_Heartbeat_State_Value: str = HeartState.HEALTHY.value
+_Task_State_Value: str = TaskResult.PROCESSING.value
 
 _Waiting_Time: int = 5
 

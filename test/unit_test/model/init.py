@@ -47,7 +47,7 @@ class TestEmpty:
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value="")
-        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -59,7 +59,7 @@ class TestEmpty:
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={'success_count': 0, 'fail_count': 0})
-        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.NOTHING.value)
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
 
     def test_heartbeat(self):
@@ -103,7 +103,7 @@ class TestInitial:
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value="test-group")
-        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Initial.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -115,7 +115,7 @@ class TestInitial:
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value={})
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="-1")
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={'success_count': 0, 'fail_count': 0})
-        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Nothing.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.NOTHING.value)
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=[])
 
     def test_heartbeat(self):
@@ -173,13 +173,13 @@ class TestUpdate:
     def test_node_state(self):
         # Operate target method for testing
         _init_state = Initial.node_state()
-        _state = Update.node_state(_init_state, group=_Crawler_Group_Name_Value, role=CrawlerStateRole.Runner)
+        _state = Update.node_state(_init_state, group=_Crawler_Group_Name_Value, role=CrawlerStateRole.RUNNER)
 
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AtInitial, _state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="group", expected_value=_Crawler_Group_Name_Value)
-        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.Runner.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _state, metadata="role", expected_value=CrawlerStateRole.RUNNER.value)
 
     def test_task(self):
         _test_cookie = {"test_cookie": "test_cookie"}
@@ -194,7 +194,7 @@ class TestUpdate:
             authorization=_test_auth,
             in_progressing_id="1",
             running_result=RunningResult(success_count=1, fail_count=0),
-            running_status=TaskResult.Processing,
+            running_status=TaskResult.PROCESSING,
             result_detail=_Task_Result_Detail_Value
         )
 
@@ -204,7 +204,7 @@ class TestUpdate:
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="authorization", expected_value=_test_auth)
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="in_progressing_id", expected_value="1")
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_result", expected_value={'success_count': 1, 'fail_count': 0})
-        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.Processing.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="running_status", expected_value=TaskResult.PROCESSING.value)
         MetaDataValueAssertion(WorkingTime.AtInitial, _task, metadata="result_detail", expected_value=_Task_Result_Detail_Value)
 
     def test_heartbeat(self):
@@ -223,8 +223,8 @@ class TestUpdate:
             update_time=_test_update_time,
             update_timeout=_test_update_timeout,
             heart_rhythm_timeout=_test_heart_rhythm_timeout,
-            healthy_state=HeartState.Healthy,
-            task_state=TaskResult.Processing
+            healthy_state=HeartState.HEALTHY,
+            task_state=TaskResult.PROCESSING
         )
 
         # Verify value
@@ -235,6 +235,6 @@ class TestUpdate:
         MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="update_time", expected_value=_test_update_time)
         MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="update_timeout", expected_value=_test_update_timeout)
         MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="heart_rhythm_timeout", expected_value=_test_heart_rhythm_timeout)
-        MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="healthy_state", expected_value=HeartState.Healthy.value)
-        MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="task_state", expected_value=TaskResult.Processing.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="healthy_state", expected_value=HeartState.HEALTHY.value)
+        MetaDataValueAssertion(WorkingTime.AtInitial, _heartbeat, metadata="task_state", expected_value=TaskResult.PROCESSING.value)
 

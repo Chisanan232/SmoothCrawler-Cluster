@@ -353,7 +353,7 @@ class TestNodeState(_MetaDataTest):
         """
 
         # Test for setting the property normally. It would choice one value randomly.
-        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.Runner, CrawlerStateRole.Backup_Runner, CrawlerStateRole.Dead_Runner, CrawlerStateRole.Dead_Backup_Runner])
+        _under_test_value: CrawlerStateRole = random.choice([CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER, CrawlerStateRole.DEAD_RUNNER, CrawlerStateRole.DEAD_BACKUP_RUNNER])
         try:
             state.role = _under_test_value
         except Exception:
@@ -522,7 +522,7 @@ class TestTask(_MetaDataTest):
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
-            valid_value=TaskResult.Processing,
+            valid_value=TaskResult.PROCESSING,
             invalid_1_value=5,
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
@@ -551,7 +551,7 @@ class TestTask(_MetaDataTest):
         def _set_func(value) -> None:
             task.result_detail = value
 
-        _detail = ResultDetail(task_id="0", state=TaskResult.Done.value, status_code=200, response="OK", error_msg=None)
+        _detail = ResultDetail(task_id="0", state=TaskResult.DONE.value, status_code=200, response="OK", error_msg=None)
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
@@ -675,7 +675,7 @@ class TestHeartbeat(_MetaDataTest):
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
-            valid_value=HeartState.Healthy,
+            valid_value=HeartState.HEALTHY,
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
@@ -691,7 +691,7 @@ class TestHeartbeat(_MetaDataTest):
         self._run_property_test(
             getting_func=_get_func,
             setting_func=_set_func,
-            valid_value=TaskResult.Processing,
+            valid_value=TaskResult.PROCESSING,
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"}
         )
