@@ -392,7 +392,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         for _ in range(self._ensure_timeout):
             with self._zookeeper_client.restrict(path=self.group_state_zookeeper_path,
-                                                 restrict=ZookeeperRecipe.WriteLock,
+                                                 restrict=ZookeeperRecipe.WRITE_LOCK,
                                                  identifier=self._state_identifier):
                 if not self._zookeeper_client.exist_node(path=self.group_state_zookeeper_path):
                     state = Initial.group_state(crawler_name=self._crawler_name,
@@ -927,7 +927,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._metadata_util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=node_state)
 
         with self._zookeeper_client.restrict(path=self.group_state_zookeeper_path,
-                                             restrict=ZookeeperRecipe.WriteLock,
+                                             restrict=ZookeeperRecipe.WRITE_LOCK,
                                              identifier=self._state_identifier):
             state = self._metadata_util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
                                                                     as_obj=GroupState)
@@ -985,7 +985,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._metadata_util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path, metadata=updated_node_state)
 
         with self._zookeeper_client.restrict(path=self.group_state_zookeeper_path,
-                                             restrict=ZookeeperRecipe.WriteLock,
+                                             restrict=ZookeeperRecipe.WRITE_LOCK,
                                              identifier=self._state_identifier):
             state = self._metadata_util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
                                                                     as_obj=GroupState)

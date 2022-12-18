@@ -66,24 +66,24 @@ class ZookeeperNode(_BaseZookeeperNode):
     # TODO: Need to add docstring here.
     """
 
-    __path: str = None
-    __value: str = None
+    _path: str = None
+    _value: str = None
 
     @property
     def path(self) -> Optional[str]:
-        return self.__path
+        return self._path
 
     @path.setter
     def path(self, val: str) -> None:
-        self.__path = val
+        self._path = val
 
     @property
     def value(self) -> Optional[str]:
-        return self.__value
+        return self._value
 
     @value.setter
     def value(self, val: str) -> None:
-        self.__value = val
+        self._value = val
 
 
 _BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
@@ -94,9 +94,9 @@ class ZookeeperRecipe(Enum):
     # TODO: Need to add docstring here.
     """
 
-    ReadLock = "ReadLock"
-    WriteLock = "WriteLock"
-    Semaphore = "Semaphore"
+    READ_LOCK = "ReadLock"
+    WRITE_LOCK = "WriteLock"
+    SEMAPHORE = "Semaphore"
 
 
 class _BaseZookeeperClient(metaclass=ABCMeta):
