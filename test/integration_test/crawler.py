@@ -275,7 +275,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         _election_result = uit_object.elect()
 
         # Verify the values
-        assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
+        assert _election_result is ElectionResult.WINNER, "It should be *ElectionResult.Winner* after the election with only one member."
 
     def test__run_crawling_processing(self, uit_object: ZookeeperCrawler):
         try:
@@ -737,9 +737,9 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         for _crawler_name, _election_result in election_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
             if _crawler_index <= _Runner_Crawler_Value:
-                assert _election_result is ElectionResult.Winner, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
+                assert _election_result is ElectionResult.WINNER, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
             else:
-                assert _election_result is ElectionResult.Loser, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
+                assert _election_result is ElectionResult.LOSER, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
 
     def _check_role(self, role_results: Dict[str, CrawlerStateRole], index_sep_char: str) -> None:
         assert len(role_results.keys()) == _Total_Crawler_Value, f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."

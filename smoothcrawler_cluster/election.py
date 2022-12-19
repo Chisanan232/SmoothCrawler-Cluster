@@ -12,8 +12,8 @@ class ElectionResult(Enum):
     TODO: Add docstring
     """
 
-    Winner = "Winner"
-    Loser = "Loser"
+    WINNER = "Winner"
+    LOSER = "Loser"
 
 
 class BaseElection(metaclass=ABCMeta):
@@ -21,7 +21,7 @@ class BaseElection(metaclass=ABCMeta):
     TODO: Add docstring
     """
 
-    _Identity: str = ""
+    _identity: str = ""
 
     @property
     def identity(self) -> str:
@@ -31,7 +31,7 @@ class BaseElection(metaclass=ABCMeta):
         Returns:
 
         """
-        return self._Identity
+        return self._identity
 
     @identity.setter
     def identity(self, ident: str) -> None:
@@ -41,7 +41,7 @@ class BaseElection(metaclass=ABCMeta):
         Returns:
 
         """
-        self._Identity = ident
+        self._identity = ident
 
     @abstractmethod
     def elect(self, **kwargs) -> bool:
@@ -70,4 +70,4 @@ class IndexElection(BaseElection):
         sorted_list = sorted(list(member_indexs))
         winner = sorted_list[0:spot]
         is_winner = list(map(lambda winner_index: str(winner_index) in candidate, winner))
-        return ElectionResult.Winner if True in is_winner else ElectionResult.Loser
+        return ElectionResult.WINNER if True in is_winner else ElectionResult.LOSER

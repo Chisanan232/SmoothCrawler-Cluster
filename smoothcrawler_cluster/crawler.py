@@ -346,7 +346,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if self._updating_stop_signal is False:
             self._run_updating_heartbeat_thread()
         if self.is_ready_for_election(interval=0.5, timeout=-1):
-            if self.elect() is ElectionResult.Winner:
+            if self.elect() is ElectionResult.WINNER:
                 self._crawler_role = CrawlerStateRole.RUNNER
             else:
                 self._crawler_role = CrawlerStateRole.BACKUP_RUNNER

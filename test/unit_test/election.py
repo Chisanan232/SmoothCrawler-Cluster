@@ -35,10 +35,10 @@ class TestIndexElection:
         election.identity = _Test_Crawler_Name
         _election_result = election.elect(candidate=_Test_Crawler_Name, member=_Test_Crawlers, index_sep=_Test_Index_Sep, spot=_Test_Spot)
         assert type(_election_result) is ElectionResult, "The data type of election result should be *.election.ElectionResult*."
-        assert _election_result is ElectionResult.Winner, "It should be winner of election because of the smallest index."
+        assert _election_result is ElectionResult.WINNER, "It should be winner of election because of the smallest index."
 
     def test_elect_if_candidate_is_loser(self, election: Generic[BaseElectionType]):
         election.identity = _Test_Loser_Crawler_Name
         _election_result = election.elect(candidate=_Test_Loser_Crawler_Name, member=_Test_Crawlers, index_sep=_Test_Index_Sep, spot=_Test_Spot)
         assert type(_election_result) is ElectionResult, "The data type of election result should be *.election.ElectionResult*."
-        assert _election_result is ElectionResult.Loser, "It should be loser of election because of the largest index."
+        assert _election_result is ElectionResult.LOSER, "It should be loser of election because of the largest index."
