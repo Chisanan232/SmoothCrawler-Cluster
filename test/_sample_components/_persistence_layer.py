@@ -62,26 +62,24 @@ Note:
 from multirunnable.persistence.database.layer import BaseDao
 from multirunnable.persistence.file.mediator import SavingMediator
 from multirunnable.persistence.file.layer import BaseFao, SavingStrategy
-
-from ._db_mysql import MySQLSingleConnection, MySQLDriverConnectionPool, MySQLOperator
-
-from mysql.connector.errors import DatabaseError
 from mysql.connector import errorcode
+from mysql.connector.errors import DatabaseError
 from typing import List, Tuple, Dict, Union
 import re
 
+from ._db_mysql import MySQLSingleConnection, MySQLDriverConnectionPool, MySQLOperator
 
 
 class StockDao(BaseDao):
 
-    __Stock_Table_Name: str = "stock_data_"
-    __Database_Config: Dict[str, str] = {}
+    _stock_table_name: str = "stock_data_"
+    _database_config: Dict[str, str] = {}
 
     def __init__(self, use_pool: bool = False):
         super().__init__()
         self._use_pool = use_pool
         # self.__database_connection = None
-        self.__database_opt = None
+        self._database_opt = None
 
         # self._database_opts = None
         self._database_config = {
@@ -93,22 +91,18 @@ class StockDao(BaseDao):
             "database": "tw_stock"
         }
 
-
     def _instantiate_strategy(self) -> MySQLSingleConnection:
         if self._use_pool is True:
-            __database_connection = MySQLDriverConnectionPool(**self._database_config)
+            database_connection = MySQLDriverConnectionPool(**self._database_config)
         else:
-            __database_connection = MySQLSingleConnection(**self._database_config)
-        return __database_connection
-
+            database_connection = MySQLSingleConnection(**self._database_config)
+        return database_connection
 
     def _instantiate_database_opts(self, strategy: MySQLSingleConnection) -> MySQLOperator:
         return MySQLOperator(conn_strategy=strategy, db_config=self._database_config)
 
-
     def set_config(self, **kwargs) -> None:
-        self.__Database_Config.update(**kwargs)
-
+        self._database_config.update(**kwargs)
 
     def get_tables(self, database: str) -> List[str]:
         # super(MySQLDB, self).checker(session=self.__session)
@@ -119,10 +113,9 @@ class StockDao(BaseDao):
         tables = list(self.fetch_all())
         return [t[0] for t in tables]
 
-
     def create_stock_data_table(self, stock_symbol: str) -> bool:
         # super(MySQLDB, self).checker(session=self.__session)
-        sql = f"CREATE TABLE IF NOT EXISTS {self.__Stock_Table_Name}{stock_symbol} ( \
+        sql = f"CREATE TABLE IF NOT EXISTS {self._stock_table_name}{stock_symbol} ( \
                   stock_date DATETIME NOT NULL, \
                   trade_volume NUMERIC(12) NOT NULL, \
                   turnover_price NUMERIC(16) NOT NULL, \
@@ -149,9 +142,9 @@ class StockDao(BaseDao):
         else:
             return True
 
-
     def get(self, stock_symbol: str):
-        sql = f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume " \
+        sql = f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, " \
+              f"closing_price, gross_spread, turnover_volume " \
               f"FROM tw_stock.stock_data_{stock_symbol}"
 
         ## Method 1
@@ -162,7 +155,6 @@ class StockDao(BaseDao):
         # return self.__Database_Cursor.fetchall()
         ## Method 3
         # return self.__Database_Cursor.fetchmany(3000)
-
 
     def insert(self, data: Union[str, List, Tuple, Dict], stock_symbol: str) -> None:
         if type(data) is dict:
@@ -179,16 +171,15 @@ class StockDao(BaseDao):
         self.execute(sql)
         self.database_opts.commit()
 
-
     def batch_insert(self, stock_symbol: str, data: Tuple[tuple]) -> None:
         sql = f"INSERT INTO tw_stock.stock_data_{stock_symbol} (" \
-              f"stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, gross_spread, turnover_volume" \
+              f"stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, " \
+              f"gross_spread, turnover_volume" \
               f") " \
               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
         self.execute_many(sql, data)
         self.database_opts.commit()
-
 
 
 class StockFao(BaseFao):
@@ -197,7 +188,6 @@ class StockFao(BaseFao):
         super().__init__(strategy=strategy, **kwargs)
         self.__mediator = SavingMediator()
         self.__strategy = strategy
-
 
     def save(self, formatter: str, file: str, mode: str, data):
         if re.search(r"csv", formatter, re.IGNORECASE) is not None:
