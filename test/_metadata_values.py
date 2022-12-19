@@ -1,6 +1,6 @@
+from abc import ABCMeta, abstractmethod
 from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
 from typing import List, Union
-from abc import ABCMeta, abstractmethod
 import json
 
 
@@ -107,19 +107,19 @@ class _GetDataFromJsonData(metaclass=ABCMeta):
 
     def __init__(self, data: Union[str, bytes]):
         if type(data) is bytes:
-            _json_format_data = data.decode("utf-8")
+            json_format_data = data.decode("utf-8")
         elif type(data) is str:
-            _json_format_data = data
+            json_format_data = data
         else:
             raise TypeError(f"Doesn't support type {type(data)} processing.")
 
-        self._data = json.loads(_json_format_data)
+        self._data = json.loads(json_format_data)
 
 
 class GroupStateByJsonData(_GetDataFromJsonData, GroupStateData):
 
     def __init__(self, data: Union[str, bytes]):
-        super(GroupStateByJsonData, self).__init__(data=data)
+        super().__init__(data=data)
 
     @property
     def total_crawler(self) -> int:
