@@ -124,7 +124,7 @@ class Initial(_BaseDataObjectUtils):
         group_state.total_runner = total_runner
         group_state.total_backup = total_backup
         current_crawler = list(set(current_crawler))
-        if len(current_crawler) == 0 or crawler_name not in set(current_crawler):
+        if not current_crawler or crawler_name not in set(current_crawler):
             current_crawler.append(crawler_name)
         group_state.current_crawler = current_crawler
         group_state.current_runner = current_runner
@@ -138,9 +138,9 @@ class Initial(_BaseDataObjectUtils):
     @staticmethod
     def node_state(group: str = None, role: CrawlerStateRole = None) -> NodeState:
         node_state = NodeState()
-        if group is not None:
+        if group:
             node_state.group = group
-        if role is None:
+        if not role:
             role = CrawlerStateRole.INITIAL
         node_state.role = role
         return node_state
@@ -160,10 +160,10 @@ class Initial(_BaseDataObjectUtils):
         task.cookie = cookie
         task.authorization = authorization
         task.in_progressing_id = in_progressing_id
-        if running_result is None:
+        if not running_result:
             running_result = RunningResult(success_count=0, fail_count=0)
         task.running_result = running_result
-        if running_state is None:
+        if not running_state:
             running_state = TaskResult.NOTHING
         task.running_status = running_state
         task.result_detail = result_detail
@@ -171,7 +171,6 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def heartbeat(
-            heart_rhythm_time: datetime = None,
             time_format: str = None,
             update_time: str = None,
             update_timeout: str = None,
@@ -180,23 +179,23 @@ class Initial(_BaseDataObjectUtils):
             task_state: TaskResult = None,
     ) -> Heartbeat:
         heartbeat = Heartbeat()
-        if time_format is None:
+        if not time_format:
             time_format = "%Y-%m-%d %H:%M:%S"
         heartbeat.time_format = time_format
         heartbeat.heart_rhythm_time = datetime.now().strftime(time_format)
-        if update_time is None:
+        if not update_time:
             update_time = "1s"
         heartbeat.update_time = update_time
-        if update_timeout is None:
+        if not update_timeout:
             update_timeout = "2s"
         heartbeat.update_timeout = update_timeout
-        if heart_rhythm_timeout is None:
+        if not heart_rhythm_timeout:
             heart_rhythm_timeout = "3"
         heartbeat.heart_rhythm_timeout = heart_rhythm_timeout
-        if healthy_state is None:
+        if not healthy_state:
             healthy_state = HeartState.NEWBORN
         heartbeat.healthy_state = healthy_state
-        if task_state is None:
+        if not task_state:
             task_state = TaskResult.NOTHING
         heartbeat.task_state = task_state
         return heartbeat
