@@ -962,9 +962,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         elif task.running_status in [TaskResult.NOTHING.value, TaskResult.ERROR.value]:
             # Reset some specific attributes
             updated_task = Update.task(task,
-                                        in_progressing_id="0",
-                                        running_result=RunningResult(success_count=0, fail_count=0),
-                                        result_detail=[])
+                                       in_progressing_id="0",
+                                       running_result=RunningResult(success_count=0, fail_count=0),
+                                       result_detail=[])
             # Reruns all tasks
             self._metadata_util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=updated_task)
         else:
