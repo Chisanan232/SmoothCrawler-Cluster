@@ -202,7 +202,7 @@ class ZookeeperClient(_BaseZookeeperClient):
         return self.__zk_client.exists(path=path)
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        data, state = self.__zk_client.get(path=path)
+        data, state = self.__zk_client.get(path=path)    # pylint: disable=unused-variable
 
         zk_path = ZookeeperNode()
         zk_path.path = path
