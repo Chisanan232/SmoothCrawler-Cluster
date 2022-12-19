@@ -211,8 +211,8 @@ class ZookeeperClient(_BaseZookeeperClient):
         return zk_path
 
     def create_node(self, path: str, value: Union[str, bytes] = None) -> str:
-        if self.exist_node(path=path) is None:
-            if value is None:
+        if not self.exist_node(path=path):
+            if not value:
                 return self.__zk_client.create(path=path, makepath=True, include_data=False)
 
             if isinstance(value, str):
