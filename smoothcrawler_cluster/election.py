@@ -1,39 +1,73 @@
-from typing import List
-from enum import Enum
+"""Module
+TODO: Add docstring
+"""
+
 from abc import ABCMeta, abstractmethod
+from enum import Enum
+from typing import List
 
 
 class ElectionResult(Enum):
+    """Class
+    TODO: Add docstring
+    """
 
-    Winner = "Winner"
-    Loser = "Loser"
+    WINNER = "Winner"
+    LOSER = "Loser"
 
 
 class BaseElection(metaclass=ABCMeta):
+    """Class
+    TODO: Add docstring
+    """
 
-    _Identity: str = ""
+    _identity: str = ""
 
     @property
     def identity(self) -> str:
-        return self._Identity
+        """Function
+        TODO: Add docstring
+
+        Returns:
+
+        """
+        return self._identity
 
     @identity.setter
     def identity(self, ident: str) -> None:
-        self._Identity = ident
+        """Function
+        TODO: Add docstring
+
+        Returns:
+
+        """
+        self._identity = ident
 
     @abstractmethod
     def elect(self, **kwargs) -> bool:
+        """Function
+        TODO: Add docstring
+
+        Returns:
+
+        """
         pass
 
 
 class IndexElection(BaseElection):
+    """Class
+    TODO: Add docstring
+    """
 
     def elect(self, candidate: str, member: List[str], index_sep: str, spot: int) -> ElectionResult:
-        _member_indexs = map(lambda one_member: int(one_member.split(sep=index_sep)[-1]), member)
-        _sorted_list = sorted(list(_member_indexs))
-        _winner = _sorted_list[0:spot]
-        _is_winner = list(map(lambda winner_index: str(winner_index) in candidate, _winner))
-        if True in _is_winner:
-            return ElectionResult.Winner
-        else:
-            return ElectionResult.Loser
+        """Function
+        TODO: Add docstring
+
+        Returns:
+
+        """
+        member_indexs = map(lambda one_member: int(one_member.split(sep=index_sep)[-1]), member)
+        sorted_list = sorted(list(member_indexs))
+        winner = sorted_list[0:spot]
+        is_winner = list(map(lambda winner_index: str(winner_index) in candidate, winner))
+        return ElectionResult.WINNER if True in is_winner else ElectionResult.LOSER

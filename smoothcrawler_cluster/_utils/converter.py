@@ -1,5 +1,8 @@
-from typing import Dict, Any, Type, TypeVar, Generic
+"""Module document
+"""
+
 from abc import ABCMeta, abstractmethod
+from typing import Dict, Any, Type, TypeVar, Generic
 import json
 
 from ..model.metadata import _BaseMetaData, GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
@@ -9,63 +12,139 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
 
 class BaseConverter(metaclass=ABCMeta):
+    """Class document
+    """
 
     def serialize_meta_data(self, obj: Generic[_BaseMetaDataType]) -> str:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         return self._convert_to_str(data=self._convert_to_readable_object(obj))
 
     def deserialize_meta_data(self, data: str, as_obj: Type[_BaseMetaDataType]) -> Generic[_BaseMetaDataType]:
-        _parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
+        parsed_data: Dict[str, Any] = self._convert_from_str(data=data)
         if issubclass(as_obj, GroupState):
-            _meta_data_obj = self._convert_to_group_state(state=as_obj(), data=_parsed_data)
+            meta_data_obj = self._convert_to_group_state(state=as_obj(), data=parsed_data)
         elif issubclass(as_obj, NodeState):
-            _meta_data_obj = self._convert_to_node_state(state=as_obj(), data=_parsed_data)
+            meta_data_obj = self._convert_to_node_state(state=as_obj(), data=parsed_data)
         elif issubclass(as_obj, Task):
-            _meta_data_obj = self._convert_to_task(task=as_obj(), data=_parsed_data)
+            meta_data_obj = self._convert_to_task(task=as_obj(), data=parsed_data)
         elif issubclass(as_obj, Heartbeat):
-            _meta_data_obj = self._convert_to_heartbeat(heartbeat=as_obj(), data=_parsed_data)
+            meta_data_obj = self._convert_to_heartbeat(heartbeat=as_obj(), data=parsed_data)
         else:
             raise TypeError(f"It doesn't support deserialize data as type '{as_obj}' renctly.")
-        return _meta_data_obj
+        return meta_data_obj
 
     @abstractmethod
     def _convert_to_str(self, data: Any) -> str:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_from_str(self, data: str) -> Any:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_to_readable_object(self, obj: Generic[_BaseMetaDataType]) -> Any:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_to_group_state(self, state: GroupState, data: Any) -> GroupState:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_to_node_state(self, state: NodeState, data: Any) -> NodeState:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_to_task(self, task: Task, data: Any) -> Task:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
     @abstractmethod
     def _convert_to_heartbeat(self, heartbeat: Heartbeat, data: Any) -> Heartbeat:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         pass
 
 
 class JsonStrConverter(BaseConverter):
+    """Class document
+    """
 
     def _convert_to_str(self, data: Any) -> str:
         # data maybe a str type value or a dict type value
-        _data = json.dumps(data)
-        return _data
+        data = json.dumps(data)
+        return data
 
     def _convert_from_str(self, data: str) -> Any:
-        _parsed_data: Dict[str, Any] = json.loads(data)
-        return _parsed_data
+        parsed_data: Dict[str, Any] = json.loads(data)
+        return parsed_data
 
     def _convert_to_readable_object(self, obj: Generic[_BaseMetaDataType]) -> Any:
         # TODO:
@@ -119,9 +198,19 @@ class JsonStrConverter(BaseConverter):
 
 
 class TaskContentDataUtils:
+    """Class document
+    """
 
     @staticmethod
     def convert_to_running_content(data: dict) -> RunningContent:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         return RunningContent(
             task_id=data["task_id"],
             url=data["url"],
@@ -133,10 +222,26 @@ class TaskContentDataUtils:
 
     @staticmethod
     def convert_to_running_result(data: dict) -> RunningResult:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         return RunningResult(success_count=data["success_count"], fail_count=data["fail_count"])
 
     @staticmethod
     def convert_to_result_detail(data: dict) -> ResultDetail:
+        """Function Doc
+
+        Args:
+            obj:
+
+        Returns:
+
+        """
         return ResultDetail(
             task_id=data["task_id"],
             state=data["state"],

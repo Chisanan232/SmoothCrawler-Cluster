@@ -48,27 +48,27 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState])
     def test__update_crawler_role(self, uit_object: ZookeeperCrawler):
         # Checking initial state
-        _group_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
+        _group_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_group_state.current_crawler) == 0, "At initial process, the length of current crawler list should be 0."
         assert len(_group_state.current_runner) == 0, "At initial process, the length of current runner list should be 0."
         assert len(_group_state.current_backup) == 0, "At initial process, the length of current backup list should be 0."
 
-        _node_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
-        assert _node_state.role == CrawlerStateRole.Initial.value, \
+        _node_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
+        assert _node_state.role == CrawlerStateRole.INITIAL.value, \
             "At initial process, the role of crawler instance should be *initial* (or value of *CrawlerStateRole.Initial*)."
 
         # Checking initial state
-        uit_object._update_crawler_role(CrawlerStateRole.Runner)
+        uit_object._update_crawler_role(CrawlerStateRole.RUNNER)
 
         # Verify the updated state
-        _updated_group_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
+        _updated_group_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.group_state_zookeeper_path, as_obj=GroupState)
         assert len(_updated_group_state.current_runner) == 1, \
             "After update the *state* meta data, the length of current crawler list should be 1 because it's *runner*."
         assert len(_updated_group_state.current_backup) == 0, \
             "After update the *state* meta data, the length of current crawler list should be 0 because it's *runner*."
 
-        _updated_node_state = uit_object._MetaData_Util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
-        assert _updated_node_state.role == CrawlerStateRole.Runner.value, \
+        _updated_node_state = uit_object._metadata_util.get_metadata_from_zookeeper(path=uit_object.node_state_zookeeper_path, as_obj=NodeState)
+        assert _updated_node_state.role == CrawlerStateRole.RUNNER.value, \
             "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
     @ZK.reset_testing_env(path=[ZKNode.GroupState])
@@ -117,7 +117,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
         _exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
         assert _exist_node is not None, ""
-        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.INITIAL.value, group=zk_crawler.group)
 
     @ZK.reset_testing_env(path=[ZKNode.Task])
     @ZK.remove_node_finally(path=[ZKNode.Task])
@@ -210,7 +210,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         _verify_exist(should_be_none=False)
 
         self._Verify_MetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
-        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.Initial.value, group=zk_crawler.group)
+        self._Verify_MetaData.node_state_is_not_empty(role=CrawlerStateRole.INITIAL.value, group=zk_crawler.group)
         self._Verify_MetaData.task_is_not_empty()
         self._Verify_MetaData.heartbeat_is_not_empty()
 
@@ -275,7 +275,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         _election_result = uit_object.elect()
 
         # Verify the values
-        assert _election_result is ElectionResult.Winner, "It should be *ElectionResult.Winner* after the election with only one member."
+        assert _election_result is ElectionResult.WINNER, "It should be *ElectionResult.Winner* after the election with only one member."
 
     def test__run_crawling_processing(self, uit_object: ZookeeperCrawler):
         try:
@@ -398,7 +398,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Verify
         self._VerifyMetaData.group_state_is_not_empty(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0")
-        self._VerifyMetaData.node_state_is_not_empty(role=CrawlerStateRole.Runner.value, group=_Testing_Value.group)
+        self._VerifyMetaData.node_state_is_not_empty(role=CrawlerStateRole.RUNNER.value, group=_Testing_Value.group)
         self._VerifyMetaData.task_is_not_empty()
         self._VerifyMetaData.heartbeat_is_not_empty()
 
@@ -568,7 +568,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             _task_data,
             in_progressing_id="-1",
             running_result={"success_count": 1, "fail_count": 0},
-            running_status=TaskResult.Done.value,
+            running_status=TaskResult.DONE.value,
             result_detail_len=1
         )
         self._VerifyMetaData.one_task_result_detail(
@@ -603,13 +603,13 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 self._create_node(path=_Testing_Value.group_state_zookeeper_path, value=bytes(_state_data_str, "utf-8"), include_data=True)
 
         def _initial_node_state(_node_path: str) -> None:
-            _node_state = Initial.node_state(group=_zk_crawler.group, role=CrawlerStateRole.Runner)
+            _node_state = Initial.node_state(group=_zk_crawler.group, role=CrawlerStateRole.RUNNER)
             if self._exist_node(path=_node_path) is None:
                 _node_state_data_str = json.dumps(_node_state.to_readable_object())
                 self._create_node(path=_node_path, value=bytes(_node_state_data_str, "utf-8"), include_data=True)
 
         def _initial_task(_task_path: str) -> None:
-            _task = Initial.task(running_state=TaskResult.Processing)
+            _task = Initial.task(running_state=TaskResult.PROCESSING)
             if self._exist_node(path=_task_path) is None:
                 _task_data_str = json.dumps(_task.to_readable_object())
                 self._create_node(path=_task_path, value=bytes(_task_data_str, "utf-8"), include_data=True)
@@ -649,7 +649,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         # Verify the *NodeState* info
         self._VerifyMetaData.all_node_state_role(
             runner=1, backup=1,
-            expected_role={"0": CrawlerStateRole.Dead_Runner, "1": CrawlerStateRole.Runner},
+            expected_role={"0": CrawlerStateRole.DEAD_RUNNER, "1": CrawlerStateRole.RUNNER},
             expected_group={"0": _zk_crawler._crawler_group, "1": _zk_crawler._crawler_group},
             start_index=0
         )
@@ -692,7 +692,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             try:
                 time.sleep(5)
                 _state.standby_id = "2"
-                _zk_crawler._MetaData_Util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
+                _zk_crawler._metadata_util.set_metadata_to_zookeeper(path=_zk_crawler.group_state_zookeeper_path, metadata=_state)
             except Exception as e:
                 _running_flag["_update_state_standby_id"] = False
                 _running_exception["_update_state_standby_id"] = e
@@ -737,18 +737,18 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         for _crawler_name, _election_result in election_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
             if _crawler_index <= _Runner_Crawler_Value:
-                assert _election_result is ElectionResult.Winner, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
+                assert _election_result is ElectionResult.WINNER, f"The election result of '{_crawler_name}' should be *ElectionResult.Winner*."
             else:
-                assert _election_result is ElectionResult.Loser, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
+                assert _election_result is ElectionResult.LOSER, f"The election result of '{_crawler_name}' should be *ElectionResult.Loser*."
 
     def _check_role(self, role_results: Dict[str, CrawlerStateRole], index_sep_char: str) -> None:
         assert len(role_results.keys()) == _Total_Crawler_Value, f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."
         for _crawler_name, _role in role_results.items():
             _crawler_index = int(_crawler_name.split(index_sep_char)[-1])
             if _crawler_index <= _Runner_Crawler_Value:
-                assert _role is CrawlerStateRole.Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Runner}'."
+                assert _role is CrawlerStateRole.RUNNER, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.RUNNER}'."
             else:
-                assert _role is CrawlerStateRole.Backup_Runner, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.Backup_Runner}'."
+                assert _role is CrawlerStateRole.BACKUP_RUNNER, f"The role of this crawler instance '{_crawler_name}' should be '{CrawlerStateRole.BACKUP_RUNNER}'."
 
 
 class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
@@ -773,9 +773,9 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Backup_Crawler_Value,
             fail_runner=_Fail_Runner_Crawler_Value,
             expected_role={
-                "1": CrawlerStateRole.Runner,
-                "2": CrawlerStateRole.Dead_Runner,
-                "3": CrawlerStateRole.Runner
+                "1": CrawlerStateRole.RUNNER,
+                "2": CrawlerStateRole.DEAD_RUNNER,
+                "3": CrawlerStateRole.RUNNER
             },
             expected_group={
                 "1": "sc-crawler-cluster",
@@ -813,10 +813,10 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Multiple_Backup_Scenarios_Backup_Crawler,
             fail_runner=_Fail_Runner_Crawler_Value,
             expected_role={
-                "1": CrawlerStateRole.Runner,
-                "2": CrawlerStateRole.Dead_Runner,
-                "3": CrawlerStateRole.Runner,
-                "4": CrawlerStateRole.Backup_Runner
+                "1": CrawlerStateRole.RUNNER,
+                "2": CrawlerStateRole.DEAD_RUNNER,
+                "3": CrawlerStateRole.RUNNER,
+                "4": CrawlerStateRole.BACKUP_RUNNER
             },
             expected_group={
                 "1": "sc-crawler-cluster",
@@ -858,12 +858,12 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Multiple_Fail_Scenarios_Backup_Crawler,
             fail_runner=_Multiple_Fail_Scenarios_Fail_Crawler,
             expected_role={
-                "1": CrawlerStateRole.Dead_Runner,
-                "2": CrawlerStateRole.Dead_Runner,
-                "3": CrawlerStateRole.Runner,
-                "4": CrawlerStateRole.Runner,
-                "5": CrawlerStateRole.Runner,
-                "6": CrawlerStateRole.Backup_Runner
+                "1": CrawlerStateRole.DEAD_RUNNER,
+                "2": CrawlerStateRole.DEAD_RUNNER,
+                "3": CrawlerStateRole.RUNNER,
+                "4": CrawlerStateRole.RUNNER,
+                "5": CrawlerStateRole.RUNNER,
+                "6": CrawlerStateRole.BACKUP_RUNNER
             },
             expected_group={
                 "1": "sc-crawler-cluster",

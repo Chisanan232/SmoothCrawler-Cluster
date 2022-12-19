@@ -103,7 +103,7 @@ class TestZookeeperCrawler:
         zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
 
         with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=GroupState()) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.Runner)
+            zk_crawler.running_as_role(role=CrawlerStateRole.RUNNER)
             metadata_util.assert_not_called()
             zk_crawler.wait_for_task.assert_called_with(wait_time=2)
             zk_crawler.wait_and_standby.assert_not_called()
@@ -117,7 +117,7 @@ class TestZookeeperCrawler:
         _group_state = GroupState()
         _group_state.standby_id = "1"
         with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=_group_state) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.Backup_Runner)
+            zk_crawler.running_as_role(role=CrawlerStateRole.BACKUP_RUNNER)
             metadata_util.assert_called_once()
             zk_crawler.wait_for_task.assert_not_called()
             zk_crawler.wait_and_standby.assert_called_with(wait_time=0.5, reset_timeout_threshold=10)
@@ -131,7 +131,7 @@ class TestZookeeperCrawler:
         _group_state = GroupState()
         _group_state.standby_id = "0"
         with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=_group_state) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.Backup_Runner)
+            zk_crawler.running_as_role(role=CrawlerStateRole.BACKUP_RUNNER)
             metadata_util.assert_called_once()
             zk_crawler.wait_for_task.assert_not_called()
             zk_crawler.wait_and_standby.assert_not_called()

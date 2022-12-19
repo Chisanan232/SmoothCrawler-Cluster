@@ -191,7 +191,7 @@ class VerifyMetaData:
         _equal_assertion(_task.cookies, cookies)
         _equal_assertion(_task.authorization, authorization)
         if running_status is None:
-            running_status = TaskResult.Nothing.value
+            running_status = TaskResult.NOTHING.value
         _equal_assertion(_task.running_status, running_status)
         if running_result is None:
             running_result = {"success_count": 0, "fail_count": 0}
@@ -296,8 +296,8 @@ class VerifyMetaData:
         _now_datetime = datetime.now()
         _diff_datetime = _now_datetime - _heart_rhythm_datetime
         assert _diff_datetime.total_seconds() < float(_heartbeat.update_time[:-1]) + float(_heartbeat.update_timeout[:-1]), ""
-        assert _heartbeat.healthy_state == HeartState.Healthy.value, ""
-        assert _heartbeat.task_state == TaskResult.Nothing.value, ""
+        assert _heartbeat.healthy_state == HeartState.HEALTHY.value, ""
+        assert _heartbeat.task_state == TaskResult.NOTHING.value, ""
 
     def _generate_heartbeat_data_opt(self, heartbeat: Union[str, bytes, Heartbeat] = None) -> HeartbeatData:
         return self.__get_metadata_opts(
@@ -320,10 +320,10 @@ class VerifyMetaData:
         assert len(_one_detail.running_content) == 0, ""
         assert _one_detail.in_progressing_id == "-1", ""
         assert _one_detail.running_result == {"success_count": 1, "fail_count": 0}, ""
-        assert _one_detail.running_status == TaskResult.Done.value, ""
+        assert _one_detail.running_status == TaskResult.DONE.value, ""
         assert _one_detail.result_detail[0] == {
             "task_id": _Task_Running_Content_Value[0]["task_id"],
-            "state": TaskResult.Done.value,
+            "state": TaskResult.DONE.value,
             "status_code": 200,
             "response": "Example Domain",
             "error_msg": None
@@ -334,7 +334,7 @@ class VerifyMetaData:
         assert len(_one_detail.running_content) == 0, ""
         assert _one_detail.in_progressing_id == "0", ""
         assert _one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail.running_status == TaskResult.Nothing.value, ""
+        assert _one_detail.running_status == TaskResult.NOTHING.value, ""
         assert len(_one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     @classmethod
@@ -342,7 +342,7 @@ class VerifyMetaData:
         assert len(_one_detail.running_content) == 1, ""
         assert _one_detail.in_progressing_id == "0", ""
         assert _one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail.running_status == TaskResult.Processing.value, ""
+        assert _one_detail.running_status == TaskResult.PROCESSING.value, ""
         assert len(_one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     @classmethod
@@ -350,7 +350,7 @@ class VerifyMetaData:
         assert len(_one_detail.running_content) == 0, ""
         assert _one_detail.in_progressing_id == "-1", ""
         assert _one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert _one_detail.running_status == TaskResult.Nothing.value, ""
+        assert _one_detail.running_status == TaskResult.NOTHING.value, ""
         assert len(_one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     def __get_metadata_opts(self, review_data: Union[str, bytes, GroupState, NodeState, Task, Heartbeat],
