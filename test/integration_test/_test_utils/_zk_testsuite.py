@@ -21,16 +21,16 @@ class ZKNode(Enum):
 
 class ZK:
 
-    _PyTest_ZK_Client: KazooClient = None
+    _pytest_zk_client: KazooClient = None
 
     @staticmethod
     def reset_testing_env(path: Union[ZKNode, List[ZKNode]]):
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Delete target node in Zookeeper to guarantee that the runtime environment is clean.
-                def _operate_zk(_path):
-                    if self._exist_node(path=_path) is not None:
-                        self._delete_node(path=_path)
+                def _operate_zk(p):
+                    if self._exist_node(path=p) is not None:
+                        self._delete_node(path=p)
 
                 self._operate_zk_before_run_testing(zk_crawler=uit_object,
                                                     path=path,
@@ -44,8 +44,8 @@ class ZK:
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Create new node in Zookeeper
-                def _operate_zk(_path):
-                    self._create_node(path=_path, include_data=False)
+                def _operate_zk(p):
+                    self._create_node(path=p, include_data=False)
 
                 self._operate_zk_before_run_testing(zk_crawler=uit_object,
                                                     path=path,
@@ -59,30 +59,30 @@ class ZK:
         def _(test_item):
             def _(self, uit_object: Generic[_ZookeeperCrawlerType]):
                 # Add new node with value in Zookeeper
-                def _get_enum_key_from_value(_path):
-                    for _zk_node in ZKNode:
-                        _inst = self._initial_zk_opt_inst(uit_object)
-                        if getattr(_inst, str(_zk_node.value)) == _path:
-                            return _zk_node
+                def _get_enum_key_from_value(p):
+                    for zk_node in ZKNode:
+                        inst = self._initial_zk_opt_inst(uit_object)
+                        if getattr(inst, str(zk_node.value)) == p:
+                            return zk_node
                     else:
-                        raise ValueError(f"Cannot find the mapping enum key from the value '{_path}'.")
+                        raise ValueError(f"Cannot find the mapping enum key from the value '{p}'.")
 
-                def _operate_zk(_path):
-                    _key = _get_enum_key_from_value(_path)
-                    value = path_and_value[_key]
+                def _operate_zk(p):
+                    key = _get_enum_key_from_value(p)
+                    value = path_and_value[key]
 
-                    if self._exist_node(path=_path):
+                    if self._exist_node(path=p):
                         if isinstance(value, str):
-                            self._set_value_to_node(path=_path, value=bytes(value, "utf-8"))
+                            self._set_value_to_node(path=p, value=bytes(value, "utf-8"))
                         elif isinstance(value, bytes):
-                            self._set_value_to_node(path=_path, value=value)
+                            self._set_value_to_node(path=p, value=value)
                         else:
                             raise TypeError("It only support type *str* and *bytes*.")
                     else:
                         if isinstance(value, str):
-                            self._create_node(path=_path, value=bytes(value, "utf-8"), include_data=True)
+                            self._create_node(path=p, value=bytes(value, "utf-8"), include_data=True)
                         elif isinstance(value, bytes):
-                            self._create_node(path=_path, value=value, include_data=True)
+                            self._create_node(path=p, value=value, include_data=True)
                         else:
                             raise TypeError("It only support type *str* and *bytes*.")
 
@@ -100,11 +100,11 @@ class ZK:
             zk_function,
             test_item,
     ) -> None:
-        _paths = self._paths_to_list(path)
-        for _path in _paths:
-            _inst = self._initial_zk_opt_inst(zk_crawler)
-            _path_str = getattr(_inst, str(_path.value))
-            zk_function(_path_str)
+        paths = self._paths_to_list(path)
+        for p in paths:
+            inst = self._initial_zk_opt_inst(zk_crawler)
+            path_str = getattr(inst, str(p.value))
+            zk_function(path_str)
         test_item(self, zk_crawler)
 
     @staticmethod
@@ -114,21 +114,21 @@ class ZK:
                 try:
                     test_item(self, uit_object)
                 finally:
-                    _paths = self._paths_to_list(path)
-                    for _path in _paths:
-                        if self._exist_node(path=_path.value) is not None:
+                    paths = self._paths_to_list(path)
+                    for p in paths:
+                        if self._exist_node(path=p.value) is not None:
                             # Remove the metadata of target path in Zookeeper
-                            self._delete_node(path=_path.value)
+                            self._delete_node(path=p.value)
             return _
         return _
 
     @classmethod
     def _initial_zk_opt_inst(cls, uit_object):
         if not isinstance(uit_object, ZookeeperCrawler):
-            _inst = _TestValue()
+            inst = _TestValue()
         else:
-            _inst = uit_object
-        return _inst
+            inst = uit_object
+        return inst
 
     @classmethod
     def _paths_to_list(cls, path: Union[ZKNode, List[ZKNode]]) -> List[ZKNode]:
@@ -140,25 +140,25 @@ class ZK:
             raise TypeError("The option *path* only accept 2 data type: *ZKNode* or *List[ZKNode]*.")
 
     def _exist_node(self, path: str):
-        return self._PyTest_ZK_Client.exists(path=path)
+        return self._pytest_zk_client.exists(path=path)
 
     def _create_node(self, path: str, value: bytes = None, include_data: bool = False) -> None:
-        self._PyTest_ZK_Client.create(path=path, value=value, makepath=True, include_data=include_data)
+        self._pytest_zk_client.create(path=path, value=value, makepath=True, include_data=include_data)
 
     def _set_value_to_node(self, path: str, value: bytes) -> None:
-        self._PyTest_ZK_Client.set(path=path, value=value)
+        self._pytest_zk_client.set(path=path, value=value)
 
     def _get_value_from_node(self, path: str) -> tuple:
-        return self._PyTest_ZK_Client.get(path=path)
+        return self._pytest_zk_client.get(path=path)
 
     def _delete_node(self, path: str) -> None:
-        self._PyTest_ZK_Client.delete(path=path)
+        self._pytest_zk_client.delete(path=path)
 
     def _delete_zk_nodes(self, all_paths: List[str]) -> None:
-        _sorted_all_paths = list(set(all_paths))
-        for _path in _sorted_all_paths:
-            if self._PyTest_ZK_Client.exists(path=_path) is not None:
-                self._PyTest_ZK_Client.delete(path=_path, recursive=True)
+        sorted_all_paths = list(set(all_paths))
+        for path in sorted_all_paths:
+            if self._pytest_zk_client.exists(path=path) is not None:
+                self._pytest_zk_client.delete(path=path, recursive=True)
 
 
 class ZKTestSpec(ZK, ABC):

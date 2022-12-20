@@ -36,10 +36,10 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
     @pytest.fixture(scope="function")
     def uit_object(self) -> ZookeeperCrawler:
-        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-        self._PyTest_ZK_Client.start()
+        self._pytest_zk_client = KazooClient(hosts=Zookeeper_Hosts)
+        self._pytest_zk_client.start()
 
-        self._Verify_MetaData.initial_zk_session(client=self._PyTest_ZK_Client)
+        self._Verify_MetaData.initial_zk_session(client=self._pytest_zk_client)
 
         return ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts=Zookeeper_Hosts)
 
@@ -310,10 +310,10 @@ class MultiCrawlerTestSuite(ZK):
     def _clean_environment(function):
         def _(self):
             # Initial Zookeeper session
-            self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-            self._PyTest_ZK_Client.start()
+            self._pytest_zk_client = KazooClient(hosts=Zookeeper_Hosts)
+            self._pytest_zk_client.start()
 
-            self._VerifyMetaData.initial_zk_session(self._PyTest_ZK_Client)
+            self._VerifyMetaData.initial_zk_session(self._pytest_zk_client)
 
             # Reset Zookeeper nodes first
             self._reset_all_metadata(size=_Total_Crawler_Value)
@@ -450,9 +450,6 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._Verify.running_status(_running_flag)
 
         # Verify the running result by the value from Zookeeper
-        _data, _state = self._PyTest_ZK_Client.get(path=_Testing_Value.group_state_zookeeper_path)
-        _json_data = json.loads(_data.decode("utf-8"))
-        print(f"[DEBUG] _state_path: {_Testing_Value.group_state_zookeeper_path}, _json_data: {_json_data}")
         self._VerifyMetaData.group_state_current_section(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, verify_runner=False, verify_backup=False)
         self._check_is_ready_flags(_is_ready_flag)
         self._check_election_results(_election_results, _index_sep_char)
