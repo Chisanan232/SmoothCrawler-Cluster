@@ -34,8 +34,8 @@ class TestInitModule(ZKTestSpec):
 
     @pytest.fixture(scope="function")
     def uit_object(self) -> MetaDataUtil:
-        self._PyTest_ZK_Client = KazooClient(hosts=Zookeeper_Hosts)
-        self._PyTest_ZK_Client.start()
+        self._pytest_zk_client = KazooClient(hosts=Zookeeper_Hosts)
+        self._pytest_zk_client.start()
 
         return MetaDataUtil(
             client=ZookeeperClient(hosts=Zookeeper_Hosts),
