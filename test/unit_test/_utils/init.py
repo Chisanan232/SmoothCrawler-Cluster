@@ -13,21 +13,21 @@ class TestInitModule:
             is_float = True
 
         try:
-            timer = parse_timer(timer=timer)
+            parsed_timer = parse_timer(timer=timer)
         except Exception:
             assert False, f"It should parse the timer value correctly. \n {traceback.format_exc()}"
         else:
             if is_float is True:
-                assert isinstance(timer, float), "Its data type should be 'float'."
+                assert isinstance(parsed_timer, float), "Its data type should be 'float'."
             else:
-                assert isinstance(timer, int), "Its data type should be 'int'."
+                assert isinstance(parsed_timer, int), "Its data type should be 'int'."
             timer_unit = timer[-1]
             if timer_unit == "s":
-                original_timer_val = timer
+                original_timer_val = parsed_timer
             elif timer_unit == "m":
-                original_timer_val = float(timer / 60)
+                original_timer_val = float(parsed_timer / 60)
             elif timer_unit == "h":
-                original_timer_val = float(timer / 60 / 60)
+                original_timer_val = float(parsed_timer / 60 / 60)
             else:
                 assert False, "It has issue in testing implement, please let developer to check it."
             if ".0" in str(original_timer_val):
