@@ -13,30 +13,32 @@ from ..._values import (
 
 class _TestValue:
 
-    __Test_Value_Instance = None
+    _test_value_instance = None
 
-    __Group_State_ZK_Path: str = ""
-    __Node_State_ZK_Path: str = ""
-    __Task_ZK_Path: str = ""
-    __Heartbeat_ZK_Path: str = ""
+    _group_state_zk_path: str = ""
+    _node_state_zk_path: str = ""
+    _task_zk_path: str = ""
+    _heartbeat_zk_path: str = ""
 
-    __Testing_Group_State_Data_Str: str = ""
-    __Testing_Node_State_Data_Str: str = ""
-    __Testing_Task_Data_Str: str = ""
-    __Testing_Heartbeat_Data_Str: str = ""
+    _testing_group_state_data_str: str = ""
+    _testing_node_state_data_str: str = ""
+    _testing_task_data_str: str = ""
+    _testing_heartbeat_data_str: str = ""
 
-    __Testing_Group_State: GroupState = None
-    __Testing_Node_State: NodeState = None
-    __Testing_Task: Task = None
-    __Testing_Heartbeat: Heartbeat = None
+    _testing_group_state: GroupState = None
+    _testing_node_state: NodeState = None
+    _testing_task: Task = None
+    _testing_heartbeat: Heartbeat = None
 
     def __new__(cls, *args, **kwargs):
-        if cls.__Test_Value_Instance is None:
-            cls.__Test_Value_Instance = super(_TestValue, cls).__new__(cls, *args, **kwargs)
-        return cls.__Test_Value_Instance
+        if cls._test_value_instance is None:
+            cls._test_value_instance = super(_TestValue, cls).__new__(cls, *args, **kwargs)
+        return cls._test_value_instance
 
     def __init__(self):
-        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False)
+        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Crawler_Value,
+                                                backup=_Backup_Crawler_Value,
+                                                initial=False)
 
     @property
     def name(self):
@@ -48,101 +50,100 @@ class _TestValue:
 
     @property
     def group_state_zookeeper_path(self) -> str:
-        if self.__Group_State_ZK_Path == "":
-            self.__Group_State_ZK_Path = self._zk_client_inst.group_state_zookeeper_path
-        return self.__Group_State_ZK_Path
+        if self._group_state_zk_path == "":
+            self._group_state_zk_path = self._zk_client_inst.group_state_zookeeper_path
+        return self._group_state_zk_path
 
     @property
     def node_state_zookeeper_path(self) -> str:
-        if self.__Node_State_ZK_Path == "":
-            self.__Node_State_ZK_Path = self._zk_client_inst.node_state_zookeeper_path
-        return self.__Node_State_ZK_Path
+        if self._node_state_zk_path == "":
+            self._node_state_zk_path = self._zk_client_inst.node_state_zookeeper_path
+        return self._node_state_zk_path
 
     @property
     def task_zookeeper_path(self) -> str:
-        if self.__Task_ZK_Path == "":
-            self.__Task_ZK_Path = self._zk_client_inst.task_zookeeper_path
-        return self.__Task_ZK_Path
+        if self._task_zk_path == "":
+            self._task_zk_path = self._zk_client_inst.task_zookeeper_path
+        return self._task_zk_path
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
-        if self.__Heartbeat_ZK_Path == "":
-            self.__Heartbeat_ZK_Path = self._zk_client_inst.heartbeat_zookeeper_path
-        return self.__Heartbeat_ZK_Path
+        if self._heartbeat_zk_path == "":
+            self._heartbeat_zk_path = self._zk_client_inst.heartbeat_zookeeper_path
+        return self._heartbeat_zk_path
 
     @property
     def group_state(self) -> GroupState:
-        if self.__Testing_Group_State is None:
-            self.__Testing_Group_State = setup_group_state(reset=True)
-        return self.__Testing_Group_State
+        if self._testing_group_state is None:
+            self._testing_group_state = setup_group_state(reset=True)
+        return self._testing_group_state
 
     @property
     def node_state(self) -> NodeState:
-        if self.__Testing_Node_State is None:
-            self.__Testing_Node_State = setup_node_state()
-        return self.__Testing_Node_State
+        if self._testing_node_state is None:
+            self._testing_node_state = setup_node_state()
+        return self._testing_node_state
 
     @property
     def task(self) -> Task:
-        if self.__Testing_Task is None:
-            self.__Testing_Task = setup_task(reset=True)
-        return self.__Testing_Task
+        if self._testing_task is None:
+            self._testing_task = setup_task(reset=True)
+        return self._testing_task
 
     @property
     def heartbeat(self) -> Heartbeat:
-        if self.__Testing_Heartbeat is None:
-            self.__Testing_Heartbeat = setup_heartbeat()
-        return self.__Testing_Heartbeat
+        if self._testing_heartbeat is None:
+            self._testing_heartbeat = setup_heartbeat()
+        return self._testing_heartbeat
 
     @property
     def group_state_data_str(self) -> str:
-        if self.__Testing_Group_State_Data_Str == "":
-            self.__Testing_Group_State_Data_Str = json.dumps(self.group_state.to_readable_object())
-        return self.__Testing_Group_State_Data_Str
+        if self._testing_group_state_data_str == "":
+            self._testing_group_state_data_str = json.dumps(self.group_state.to_readable_object())
+        return self._testing_group_state_data_str
 
     @property
     def node_state_data_str(self) -> str:
-        if self.__Testing_Node_State_Data_Str == "":
-            self.__Testing_Node_State_Data_Str = json.dumps(self.node_state.to_readable_object())
-        return self.__Testing_Node_State_Data_Str
+        if self._testing_node_state_data_str == "":
+            self._testing_node_state_data_str = json.dumps(self.node_state.to_readable_object())
+        return self._testing_node_state_data_str
 
     @property
     def task_data_str(self) -> str:
-        if self.__Testing_Task_Data_Str == "":
-            self.__Testing_Task_Data_Str = json.dumps(self.task.to_readable_object())
-        return self.__Testing_Task_Data_Str
+        if self._testing_task_data_str == "":
+            self._testing_task_data_str = json.dumps(self.task.to_readable_object())
+        return self._testing_task_data_str
 
     @property
     def heartbeat_data_str(self) -> str:
-        if self.__Testing_Heartbeat_Data_Str == "":
-            self.__Testing_Heartbeat_Data_Str = json.dumps(self.heartbeat.to_readable_object())
-        return self.__Testing_Heartbeat_Data_Str
+        if self._testing_heartbeat_data_str == "":
+            self._testing_heartbeat_data_str = json.dumps(self.heartbeat.to_readable_object())
+        return self._testing_heartbeat_data_str
 
 
 class _ZKNodePathUtils:
 
-    __Testing_Value: _TestValue = _TestValue()
+    _testing_value: _TestValue = _TestValue()
 
     @classmethod
     def all(cls, size: int, start_index: int = 1) -> List[str]:
-        _all_paths = []
-        _all_paths.append(cls.__Testing_Value.group_state_zookeeper_path)
-        _all_paths.extend(cls.all_node_state(size, start_index))
-        _all_paths.extend(cls.all_task(size, start_index))
-        _all_paths.extend(cls.all_heartbeat(size, start_index))
-        return _all_paths
+        all_paths = [cls._testing_value.group_state_zookeeper_path]
+        all_paths.extend(cls.all_node_state(size, start_index))
+        all_paths.extend(cls.all_task(size, start_index))
+        all_paths.extend(cls.all_heartbeat(size, start_index))
+        return all_paths
 
     @classmethod
     def all_node_state(cls, size: int, start_index: int = 1) -> List[str]:
-        return cls._opt_paths_list(size, cls.__Testing_Value.node_state_zookeeper_path, start_index)
+        return cls._opt_paths_list(size, cls._testing_value.node_state_zookeeper_path, start_index)
 
     @classmethod
     def all_task(cls, size: int, start_index: int = 1) -> List[str]:
-        return cls._opt_paths_list(size, cls.__Testing_Value.task_zookeeper_path, start_index)
+        return cls._opt_paths_list(size, cls._testing_value.task_zookeeper_path, start_index)
 
     @classmethod
     def all_heartbeat(cls, size: int, start_index: int = 1) -> List[str]:
-        return cls._opt_paths_list(size, cls.__Testing_Value.heartbeat_zookeeper_path, start_index)
+        return cls._opt_paths_list(size, cls._testing_value.heartbeat_zookeeper_path, start_index)
 
     @classmethod
     def _opt_paths_list(cls, size: int, metadata_path: str, start_index: int = 1) -> List[str]:

@@ -2,8 +2,9 @@
 Here are some global variables for testing.
 """
 
-from smoothcrawler_cluster.model import CrawlerStateRole, TaskResult, RunningContent, HeartState, GroupState, NodeState, Task, Heartbeat
 from datetime import datetime
+from smoothcrawler_cluster.model import (
+    CrawlerStateRole, TaskResult, RunningContent, HeartState, GroupState, NodeState, Task, Heartbeat)
 from typing import List
 
 from ._config import Test_Task_HTTP_Host, Test_Task_API_Path
@@ -128,59 +129,59 @@ _Test_Heartbeat_Data = {
 
 
 def setup_group_state(reset: bool = False) -> GroupState:
-    _state = GroupState()
-    # _state.role = _Test_Group_State_Data["role"]
-    _state.total_crawler = _Test_Group_State_Data["total_crawler"]
-    _state.total_runner = _Test_Group_State_Data["total_runner"]
-    _state.total_backup = _Test_Group_State_Data["total_backup"]
+    state = GroupState()
+    # state.role = _Test_Group_State_Data["role"]
+    state.total_crawler = _Test_Group_State_Data["total_crawler"]
+    state.total_runner = _Test_Group_State_Data["total_runner"]
+    state.total_backup = _Test_Group_State_Data["total_backup"]
     if reset is True:
-        _state.current_crawler = _Empty_List_Value
-        _state.current_runner = _Empty_List_Value
-        _state.current_backup = _Empty_List_Value
+        state.current_crawler = _Empty_List_Value
+        state.current_runner = _Empty_List_Value
+        state.current_backup = _Empty_List_Value
     else:
-        _state.current_crawler = _Test_Group_State_Data["current_crawler"]
-        _state.current_runner = _Test_Group_State_Data["current_runner"]
-        _state.current_backup = _Test_Group_State_Data["current_backup"]
-    _state.fail_crawler = _Test_Group_State_Data["fail_crawler"]
-    _state.fail_runner = _Test_Group_State_Data["fail_runner"]
-    _state.fail_backup = _Test_Group_State_Data["fail_backup"]
-    _state.standby_id = _Test_Group_State_Data["standby_id"]
-    return _state
+        state.current_crawler = _Test_Group_State_Data["current_crawler"]
+        state.current_runner = _Test_Group_State_Data["current_runner"]
+        state.current_backup = _Test_Group_State_Data["current_backup"]
+    state.fail_crawler = _Test_Group_State_Data["fail_crawler"]
+    state.fail_runner = _Test_Group_State_Data["fail_runner"]
+    state.fail_backup = _Test_Group_State_Data["fail_backup"]
+    state.standby_id = _Test_Group_State_Data["standby_id"]
+    return state
 
 
 def setup_node_state() -> NodeState:
-    _state = NodeState()
-    _state.group = _Test_Node_State_Data["group"]
-    _state.role = _Test_Node_State_Data["role"]
-    return _state
+    state = NodeState()
+    state.group = _Test_Node_State_Data["group"]
+    state.role = _Test_Node_State_Data["role"]
+    return state
 
 
 def setup_task(reset: bool = False) -> Task:
-    _task = Task()
+    task = Task()
     if reset is True:
-        _task.running_content = _Empty_List_Value
+        task.running_content = _Empty_List_Value
     else:
-        _task.running_content = _Test_Task_Data["running_content"]
-    _task.cookie = _Test_Task_Data["cookie"]
-    _task.authorization = _Test_Task_Data["authorization"]
-    _task.in_progressing_id = _Test_Task_Data["in_progressing_id"]
-    _task.running_result = _Test_Task_Data["running_result"]
-    _task.running_status = _Test_Task_Data["running_status"]
+        task.running_content = _Test_Task_Data["running_content"]
+    task.cookie = _Test_Task_Data["cookie"]
+    task.authorization = _Test_Task_Data["authorization"]
+    task.in_progressing_id = _Test_Task_Data["in_progressing_id"]
+    task.running_result = _Test_Task_Data["running_result"]
+    task.running_status = _Test_Task_Data["running_status"]
     if reset is True:
-        _task.result_detail = _Empty_List_Value
+        task.result_detail = _Empty_List_Value
     else:
-        _task.result_detail = _Test_Task_Data["result_detail"]
-    print(f"[DEBUG - setup_task] _task: {_task.to_readable_object()}")
-    return _task
+        task.result_detail = _Test_Task_Data["result_detail"]
+    print(f"[DEBUG - setup_task] _task: {task.to_readable_object()}")
+    return task
 
 
 def setup_heartbeat() -> Heartbeat:
-    _heartbeat = Heartbeat()
-    _heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["heart_rhythm_time"]
-    _heartbeat.time_format = _Test_Heartbeat_Data["time_format"]
-    _heartbeat.update_time = _Test_Heartbeat_Data["update_time"]
-    _heartbeat.update_timeout = _Test_Heartbeat_Data["update_timeout"]
-    _heartbeat.heart_rhythm_timeout = _Test_Heartbeat_Data["heart_rhythm_timeout"]
-    _heartbeat.healthy_state = _Test_Heartbeat_Data["healthy_state"]
-    _heartbeat.task_state = _Test_Heartbeat_Data["task_state"]
-    return _heartbeat
+    heartbeat = Heartbeat()
+    heartbeat.heart_rhythm_time = _Test_Heartbeat_Data["heart_rhythm_time"]
+    heartbeat.time_format = _Test_Heartbeat_Data["time_format"]
+    heartbeat.update_time = _Test_Heartbeat_Data["update_time"]
+    heartbeat.update_timeout = _Test_Heartbeat_Data["update_timeout"]
+    heartbeat.heart_rhythm_timeout = _Test_Heartbeat_Data["heart_rhythm_timeout"]
+    heartbeat.healthy_state = _Test_Heartbeat_Data["healthy_state"]
+    heartbeat.task_state = _Test_Heartbeat_Data["task_state"]
+    return heartbeat
