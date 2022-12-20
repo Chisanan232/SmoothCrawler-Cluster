@@ -42,15 +42,15 @@ class TestInitModule(ZKTestSpec):
             converter=JsonStrConverter()
         )
 
-    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     @ZK.add_node_with_value_first(
         path_and_value={
-            ZKNode.GroupState: _Testing_Value.group_state_data_str,
-            ZKNode.NodeState: _Testing_Value.node_state_data_str,
-            ZKNode.Task: _Testing_Value.task_data_str,
-            ZKNode.Heartbeat: _Testing_Value.heartbeat_data_str
+            ZKNode.GROUP_STATE: _Testing_Value.group_state_data_str,
+            ZKNode.NODE_STATE: _Testing_Value.node_state_data_str,
+            ZKNode.TASK: _Testing_Value.task_data_str,
+            ZKNode.HEARTBEAT: _Testing_Value.heartbeat_data_str
         })
-    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     def test__get_metadata_from_zookeeper(self, uit_object: MetaDataUtil):
         # # GroupState
         _state = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.group_state_zookeeper_path, as_obj=GroupState)
@@ -87,9 +87,9 @@ class TestInitModule(ZKTestSpec):
             _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Time_Value)
 
 
-    @ZK.reset_testing_env(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    @ZK.create_node_first(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
-    @ZK.remove_node_finally(path=[ZKNode.GroupState, ZKNode.NodeState, ZKNode.Task, ZKNode.Heartbeat])
+    @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
+    @ZK.create_node_first(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
+    @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     def test__set_group_state_to_zookeeper(self, uit_object: MetaDataUtil):
         # # GroupState
         uit_object.set_metadata_to_zookeeper(path=_Testing_Value.group_state_zookeeper_path, metadata=_Testing_Value.group_state)

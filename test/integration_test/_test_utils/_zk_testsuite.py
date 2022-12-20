@@ -13,10 +13,10 @@ _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
 
 class ZKNode(Enum):
 
-    GroupState = "group_state_zookeeper_path"
-    NodeState = "node_state_zookeeper_path"
-    Task = "task_zookeeper_path"
-    Heartbeat = "heartbeat_zookeeper_path"
+    GROUP_STATE = "group_state_zookeeper_path"
+    NODE_STATE = "node_state_zookeeper_path"
+    TASK = "task_zookeeper_path"
+    HEARTBEAT = "heartbeat_zookeeper_path"
 
 
 class ZK:
@@ -32,7 +32,10 @@ class ZK:
                     if self._exist_node(path=_path) is not None:
                         self._delete_node(path=_path)
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object, path=path, zk_function=_operate_zk, test_item=test_item)
+                self._operate_zk_before_run_testing(zk_crawler=uit_object,
+                                                    path=path,
+                                                    zk_function=_operate_zk,
+                                                    test_item=test_item)
             return _
         return _
 
@@ -44,7 +47,10 @@ class ZK:
                 def _operate_zk(_path):
                     self._create_node(path=_path, include_data=False)
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object, path=path, zk_function=_operate_zk, test_item=test_item)
+                self._operate_zk_before_run_testing(zk_crawler=uit_object,
+                                                    path=path,
+                                                    zk_function=_operate_zk,
+                                                    test_item=test_item)
             return _
         return _
 
@@ -66,25 +72,34 @@ class ZK:
                     value = path_and_value[_key]
 
                     if self._exist_node(path=_path):
-                        if type(value) is str:
+                        if isinstance(value, str):
                             self._set_value_to_node(path=_path, value=bytes(value, "utf-8"))
-                        elif type(value) is bytes:
+                        elif isinstance(value, bytes):
                             self._set_value_to_node(path=_path, value=value)
                         else:
                             raise TypeError("It only support type *str* and *bytes*.")
                     else:
-                        if type(value) is str:
+                        if isinstance(value, str):
                             self._create_node(path=_path, value=bytes(value, "utf-8"), include_data=True)
-                        elif type(value) is bytes:
+                        elif isinstance(value, bytes):
                             self._create_node(path=_path, value=value, include_data=True)
                         else:
                             raise TypeError("It only support type *str* and *bytes*.")
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object, path=list(path_and_value.keys()), zk_function=_operate_zk, test_item=test_item)
+                self._operate_zk_before_run_testing(zk_crawler=uit_object,
+                                                    path=list(path_and_value.keys()),
+                                                    zk_function=_operate_zk,
+                                                    test_item=test_item)
             return _
         return _
 
-    def _operate_zk_before_run_testing(self, zk_crawler: Generic[_ZookeeperCrawlerType], path: Union[ZKNode, List[ZKNode]], zk_function, test_item):
+    def _operate_zk_before_run_testing(
+            self,
+            zk_crawler: Generic[_ZookeeperCrawlerType],
+            path: Union[ZKNode, List[ZKNode]],
+            zk_function,
+            test_item,
+    ) -> None:
         _paths = self._paths_to_list(path)
         for _path in _paths:
             _inst = self._initial_zk_opt_inst(zk_crawler)
@@ -109,7 +124,7 @@ class ZK:
 
     @classmethod
     def _initial_zk_opt_inst(cls, uit_object):
-        if type(uit_object) is not ZookeeperCrawler:
+        if not isinstance(uit_object, ZookeeperCrawler):
             _inst = _TestValue()
         else:
             _inst = uit_object
@@ -117,9 +132,9 @@ class ZK:
 
     @classmethod
     def _paths_to_list(cls, path: Union[ZKNode, List[ZKNode]]) -> List[ZKNode]:
-        if type(path) is list:
+        if isinstance(path, list):
             return path
-        elif type(path) is ZKNode:
+        elif isinstance(path, ZKNode):
             return [path]
         else:
             raise TypeError("The option *path* only accept 2 data type: *ZKNode* or *List[ZKNode]*.")
