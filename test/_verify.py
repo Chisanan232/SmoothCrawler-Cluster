@@ -25,11 +25,11 @@ _Testing_Value: _TestValue = _TestValue()
 
 def _equal_assertion(under_test, expect=None, none_check: bool = False) -> None:
     if none_check is True:
-        assert (under_test is not None,
-                f"The value should be the same. Under test: {under_test}, expected value: not None.")
+        assert under_test is not None,\
+            f"The value should be the same. Under test: {under_test}, expected value: not None."
     else:
-        assert (under_test == expect,
-                f"The value should be the same. Under test: {under_test}, expected value: {expect}.")
+        assert under_test == expect,\
+            f"The value should be the same. Under test: {under_test}, expected value: {expect}."
 
 
 class Verify:
@@ -100,11 +100,11 @@ class VerifyMetaData:
         group_state = self._generate_group_state_data_opt(review_data)
 
         # Verify total parts
-        assert (group_state.total_crawler == runner + backup,
-                f"The attribute 'total_crawler' should be '{runner + backup}'.")
+        assert group_state.total_crawler == runner + backup, \
+            f"The attribute 'total_crawler' should be '{runner + backup}'."
         assert group_state.total_runner == runner, f"The attribute 'total_runner' should be '{runner}'."
-        assert (group_state.total_backup == backup - fail_runner,
-                f"The attribute 'total_backup' should be '{backup - fail_runner}'.")
+        assert group_state.total_backup == backup - fail_runner,\
+            f"The attribute 'total_backup' should be '{backup - fail_runner}'."
 
         # # Verify current section
         self.group_state_current_section(review_data=review_data,
@@ -123,12 +123,12 @@ class VerifyMetaData:
                 "The standby ID (the index of crawler name) should be included in the one name of backup crawlers list."
 
         # Verify fail parts
-        assert (len(group_state.fail_crawler) == fail_runner,
-                f"The length of attribute 'fail_crawler' should be '{fail_runner}'.")
+        assert len(group_state.fail_crawler) == fail_runner,\
+            f"The length of attribute 'fail_crawler' should be '{fail_runner}'."
         if fail_runner != 0 and fail_runner_name is not None:
             assert False not in [fail_runner_name in crawler for crawler in group_state.fail_crawler], ""
-        assert (len(group_state.fail_runner) == fail_runner,
-                f"The length of attribute 'fail_runner' should be '{fail_runner}'.")
+        assert len(group_state.fail_runner) == fail_runner,\
+            f"The length of attribute 'fail_runner' should be '{fail_runner}'."
         if fail_runner != 0 and fail_runner_name is not None:
             assert False not in [fail_runner_name in crawler for crawler in group_state.fail_runner], ""
         assert len(group_state.fail_backup) == 0, f"The length of attribute 'fail_backup' should be '{0}'."
@@ -145,45 +145,45 @@ class VerifyMetaData:
             verify_runner: bool = True,
             verify_backup: bool = True,
     ) -> None:
-        if type(review_data) is GroupStateData:
+        if isinstance(review_data, GroupStateData):
             group_state = review_data
         else:
             group_state = self._generate_group_state_data_opt(review_data)
 
         # Verify current_crawler
         if verify_crawler is True:
-            assert (len(group_state.current_crawler) == runner + backup - fail_runner,
-                    f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'.")
-            assert (len(group_state.current_crawler) == len(set(group_state.current_crawler)),
-                    "Attribute *current_crawler* should NOT have any element is repeated.")
+            assert len(group_state.current_crawler) == runner + backup - fail_runner,\
+                f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'."
+            assert len(group_state.current_crawler) == len(set(group_state.current_crawler)),\
+                "Attribute *current_crawler* should NOT have any element is repeated."
             # TODO: How to let fail crawler name to be parameter?
             if fail_runner != 0 and fail_runner_name is not None:
-                assert (False not in [fail_runner_name not in crawler for crawler in group_state.current_crawler],
-                        "")
+                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_crawler],\
+                    ""
 
         # Verify current_runner
         if verify_runner is True:
-            assert (len(group_state.current_runner) == runner,
-                    f"The length of attribute 'current_runner' should be '{runner}'.")
+            assert len(group_state.current_runner) == runner,\
+                f"The length of attribute 'current_runner' should be '{runner}'."
             if fail_runner == 0:
                 runer_checksum_iter = map(
                     lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= runner,
                     group_state.current_runner)
-                assert (False not in list(runer_checksum_iter),
-                        f"The index of all crawler name should be <= {runner} (the count of runner).")
+                assert False not in list(runer_checksum_iter),\
+                    f"The index of all crawler name should be <= {runner} (the count of runner)."
             if fail_runner != 0 and fail_runner_name is not None:
-                assert (False not in [fail_runner_name not in crawler for crawler in group_state.current_runner],
-                        "")
+                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_runner],\
+                    ""
 
         # Verify current_backup
         if verify_backup is True:
-            assert (len(group_state.current_backup) == backup - fail_runner,
-                    f"The length of attribute 'current_backup' should be '{backup - fail_runner}'.")
+            assert len(group_state.current_backup) == backup - fail_runner,\
+                f"The length of attribute 'current_backup' should be '{backup - fail_runner}'."
             if fail_runner == 0:
                 backup_checksum_iter = map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup,
                                            group_state.current_backup)
-                assert (False not in list(backup_checksum_iter),
-                        f"The index of all crawler name should be > {backup} (the count of runner).")
+                assert False not in list(backup_checksum_iter),\
+                    f"The index of all crawler name should be > {backup} (the count of runner)."
 
     def _generate_group_state_data_opt(self, review_data: Union[str, bytes, GroupState] = None) -> GroupStateData:
         return self.__get_metadata_opts(review_data,
@@ -294,25 +294,25 @@ class VerifyMetaData:
     ) -> None:
         task = self._generate_task_data_opt(task)
 
-        assert type(task.running_content) is list, "The data type of attribute 'running_content' should be list."
+        assert isinstance(task.running_content, list), "The data type of attribute 'running_content' should be list."
         if running_content_len is not None:
-            assert (len(task.running_content) == running_content_len,
-                    f"The length of attribute 'running_content' should be {len(task.running_content)}.")
+            assert len(task.running_content) == running_content_len,\
+                f"The length of attribute 'running_content' should be {len(task.running_content)}."
         if cookies is not None:
             assert task.cookies == cookies, f"The attribute 'cookie' should be '{cookies}'."
         if authorization is not None:
             assert task.authorization == authorization, f"The attribute 'authorization' should be '{authorization}'."
         if in_progressing_id is not None:
-            assert (task.in_progressing_id == in_progressing_id,
-                    f"The attribute 'in_progressing_id' should be '{in_progressing_id}'.")
+            assert task.in_progressing_id == in_progressing_id,\
+                f"The attribute 'in_progressing_id' should be '{in_progressing_id}'."
         if running_status is not None:
-            assert (task.running_status == running_status,
-                    f"The attribute 'running_status' should be '{running_status}'.")
+            assert task.running_status == running_status,\
+                f"The attribute 'running_status' should be '{running_status}'."
         if running_result is not None:
-            assert (("success_count", "fail_count") == tuple(task.running_result.keys()),
-                    "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'.")
-            assert (task.running_result == running_result,
-                    f"The attribute 'running_result' should be '{running_result}'.")
+            assert ("success_count", "fail_count") == tuple(task.running_result.keys()), \
+                "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'."
+            assert task.running_result == running_result,\
+                f"The attribute 'running_result' should be '{running_result}'."
         if result_detail_len is not None:
             assert len(task.result_detail) == result_detail_len, f"The authorization should be '{authorization}'."
 
@@ -442,9 +442,9 @@ class VerifyMetaData:
             print(f"[DEBUG in testing] path: {zk_path}, _data: {data}")
             meta_data_opt = data_by_json_obj(data=data)
         else:
-            if type(review_data) is metadata_type:
+            if isinstance(review_data, metadata_type):
                 meta_data_opt = data_by_object(data=review_data)
-            elif type(review_data) in [str, bytes]:
+            elif isinstance(review_data, (str, bytes)):
                 meta_data_opt = data_by_json_obj(data=review_data)
             else:
                 raise TypeError(f"Doesn't support data type {type(review_data)} processing.")
