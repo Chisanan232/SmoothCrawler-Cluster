@@ -1,6 +1,6 @@
-from smoothcrawler_cluster._utils import MetaDataUtil, ZookeeperClient, JsonStrConverter
-from smoothcrawler_cluster.model import GroupState, NodeState, Task, Heartbeat
 from kazoo.client import KazooClient
+from smoothcrawler_cluster.model import GroupState, NodeState, Task, Heartbeat
+from smoothcrawler_cluster._utils import MetaDataUtil, ZookeeperClient, JsonStrConverter
 import pytest
 
 from ..._config import Zookeeper_Hosts
@@ -53,60 +53,68 @@ class TestInitModule(ZKTestSpec):
     @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     def test__get_metadata_from_zookeeper(self, uit_object: MetaDataUtil):
         # # GroupState
-        _state = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.group_state_zookeeper_path, as_obj=GroupState)
-        assert type(_state) is GroupState, _Type_Not_Correct_Assertion_Error_Message(GroupState)
-        assert _state.total_crawler == _Total_Crawler_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_crawler", _state.total_crawler, _Total_Crawler_Value)
-        assert _state.total_runner == _Runner_Crawler_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_runner", _state.total_runner, _Runner_Crawler_Value)
-        assert _state.total_backup == _Backup_Crawler_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("total_backup", _state.total_backup, _Backup_Crawler_Value)
-        assert _state.standby_id == _State_Standby_ID_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("standby_id", _state.standby_id, _State_Standby_ID_Value)
+        state = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.group_state_zookeeper_path,
+                                                       as_obj=GroupState)
+        assert isinstance(state, GroupState), _Type_Not_Correct_Assertion_Error_Message(GroupState)
+        assert state.total_crawler == _Total_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_crawler", state.total_crawler, _Total_Crawler_Value)
+        assert state.total_runner == _Runner_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_runner", state.total_runner, _Runner_Crawler_Value)
+        assert state.total_backup == _Backup_Crawler_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("total_backup", state.total_backup, _Backup_Crawler_Value)
+        assert state.standby_id == _State_Standby_ID_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("standby_id", state.standby_id, _State_Standby_ID_Value)
 
         # # NodeState
-        _state = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.node_state_zookeeper_path, as_obj=NodeState)
-        assert type(_state) is NodeState, _Type_Not_Correct_Assertion_Error_Message(NodeState)
-        assert _state.group == _Crawler_Group_Name_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("group", _state.group, _Crawler_Group_Name_Value)
-        assert _state.role == _Crawler_Role_Value, \
-            _Value_Not_Correct_Assertion_Error_Message("role", _state.role, _Crawler_Role_Value)
+        state = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.node_state_zookeeper_path, as_obj=NodeState)
+        assert isinstance(state, NodeState), _Type_Not_Correct_Assertion_Error_Message(NodeState)
+        assert state.group == _Crawler_Group_Name_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("group", state.group, _Crawler_Group_Name_Value)
+        assert state.role == _Crawler_Role_Value, \
+            _Value_Not_Correct_Assertion_Error_Message("role", state.role, _Crawler_Role_Value)
 
         # # Task
-        _task = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.task_zookeeper_path, as_obj=Task)
-        assert type(_task) is Task, _Type_Not_Correct_Assertion_Error_Message(Task)
-        assert _task.running_status == _Task_Running_State, \
-            _Value_Not_Correct_Assertion_Error_Message("running_status", _task.running_status, _Task_Running_State)
-        assert _task.running_content == [], \
-            _Value_Not_Correct_Assertion_Error_Message("running_content", _task.running_content, _Task_Running_Content_Value)
+        task = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.task_zookeeper_path, as_obj=Task)
+        assert isinstance(task, Task), _Type_Not_Correct_Assertion_Error_Message(Task)
+        assert task.running_status == _Task_Running_State, \
+            _Value_Not_Correct_Assertion_Error_Message("running_status", task.running_status, _Task_Running_State)
+        assert task.running_content == [], \
+            _Value_Not_Correct_Assertion_Error_Message("running_content",
+                                                       task.running_content,
+                                                       _Task_Running_Content_Value)
 
         # # Heartbeat
-        _heartbeat = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.heartbeat_zookeeper_path, as_obj=Heartbeat)
-        assert type(_heartbeat) is Heartbeat, _Type_Not_Correct_Assertion_Error_Message(Heartbeat)
-        assert _heartbeat.heart_rhythm_time == _Time_Value.strftime(_Time_Format_Value), \
-            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat", _heartbeat.heart_rhythm_time, _Time_Value)
-
+        heartbeat = uit_object.get_metadata_from_zookeeper(path=_Testing_Value.heartbeat_zookeeper_path,
+                                                           as_obj=Heartbeat)
+        assert isinstance(heartbeat, Heartbeat), _Type_Not_Correct_Assertion_Error_Message(Heartbeat)
+        assert heartbeat.heart_rhythm_time == _Time_Value.strftime(_Time_Format_Value), \
+            _Value_Not_Correct_Assertion_Error_Message("datetime of heartbeat",
+                                                       heartbeat.heart_rhythm_time,
+                                                       _Time_Value)
 
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     @ZK.create_node_first(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE, ZKNode.NODE_STATE, ZKNode.TASK, ZKNode.HEARTBEAT])
     def test__set_group_state_to_zookeeper(self, uit_object: MetaDataUtil):
         # # GroupState
-        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.group_state_zookeeper_path, metadata=_Testing_Value.group_state)
-        _state, _znode_state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
-        assert len(_state) != 0, _Not_None_Assertion_Error
+        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.group_state_zookeeper_path,
+                                             metadata=_Testing_Value.group_state)
+        state, znode_state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
+        assert len(state) != 0, _Not_None_Assertion_Error
 
         # # NodeState
-        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.node_state_zookeeper_path, metadata=_Testing_Value.node_state)
-        _state, _znode_state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
-        assert len(_state) != 0, _Not_None_Assertion_Error
+        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.node_state_zookeeper_path,
+                                             metadata=_Testing_Value.node_state)
+        state, znode_state = self._get_value_from_node(path=_Testing_Value.node_state_zookeeper_path)
+        assert len(state) != 0, _Not_None_Assertion_Error
 
         # # Task
         uit_object.set_metadata_to_zookeeper(path=_Testing_Value.task_zookeeper_path, metadata=_Testing_Value.task)
-        _task, _znode_state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
-        assert len(_task) != 0, _Not_None_Assertion_Error
+        task, znode_state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
+        assert len(task) != 0, _Not_None_Assertion_Error
 
         # # Heartbeat
-        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.heartbeat_zookeeper_path, metadata=_Testing_Value.heartbeat)
-        _heartbeat, _znode_state = self._get_value_from_node(path=_Testing_Value.heartbeat_zookeeper_path)
-        assert len(_heartbeat) != 0, _Not_None_Assertion_Error
+        uit_object.set_metadata_to_zookeeper(path=_Testing_Value.heartbeat_zookeeper_path,
+                                             metadata=_Testing_Value.heartbeat)
+        heartbeat, znode_state = self._get_value_from_node(path=_Testing_Value.heartbeat_zookeeper_path)
+        assert len(heartbeat) != 0, _Not_None_Assertion_Error
