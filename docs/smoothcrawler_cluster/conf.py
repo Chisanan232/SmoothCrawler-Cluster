@@ -162,3 +162,17 @@ man_pages = [
     (master_doc, 'smoothcrawler_cluster', 'SmoothCrawler-Cluster Documentation',
      ['Bryant, Liu and the SmoothCrawler-Cluster community'], 1)
 ]
+
+# pylint: disable-next=consider-using-namedtuple-or-dataclass
+intersphinx_mapping = {
+    "astroid": ("https://smoothcrawler-cluster.python.org/en/latest/", None),
+    "python": ("https://docs.python.org/3", None),
+}
+
+# Prevent label issues due to colliding section names
+# through including multiple documents
+autosectionlabel_prefix_document = True
+
+# Permit duplicated titles in the resulting document.
+# See https://github.com/PyCQA/pylint/issues/7362#issuecomment-1256932866
+autosectionlabel_maxdepth = 2
