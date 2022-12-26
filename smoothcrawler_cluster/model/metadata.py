@@ -43,18 +43,20 @@ class GroupState(_BaseMetaData):
 
     * Example info at node *state*:
 
-    {
-        "total_crawler": 3,
-        "total_runner": 2,
-        "total_backup": 1,
-        "current_crawler": ["spider_1", "spider_2", "spider_3"],
-        "current_runner": ["spider_1", "spider_2"],
-        "current_backup": ["spider_3"],
-        "standby_id": "3",
-        "fail_crawler": [],
-        "fail_runner": [],
-        "fail_backup": []
-    }
+    .. code-block:: python
+
+        {
+            "total_crawler": 3,
+            "total_runner": 2,
+            "total_backup": 1,
+            "current_crawler": ["spider_1", "spider_2", "spider_3"],
+            "current_runner": ["spider_1", "spider_2"],
+            "current_backup": ["spider_3"],
+            "standby_id": "3",
+            "fail_crawler": [],
+            "fail_runner": [],
+            "fail_backup": []
+        }
 
     """
 
@@ -260,10 +262,12 @@ class NodeState(_BaseMetaData):
 
     * Example info at node *state*:
 
-    {
-        "role": "runner",
-        "group": "sc-crawler-cluster"
-    }
+    .. code-block:: python
+
+        {
+            "role": "runner",
+            "group": "sc-crawler-cluster"
+        }
 
     """
 
@@ -356,35 +360,37 @@ class Task(_BaseMetaData):
 
     * Example value at node *task*:
 
-    {
-        "running_content": [
-            {
-                "task_id": 0,
-                "url": "https://www.example.com",
-                "method": "GET",
-                "parameters": None,
-                "header": None,
-                "body": None
-            }
-        ],
-        "cookies": "{}",
-        "authorization": {},
-        "in_progressing_id": "0",
-        "running_result": {
-            "success_count": 0,
-            "fail_count": 0
-        },
-        "running_status": "running",
-        "result_detail": [
-            {
-                "task_id": 0,
-                "state": "done",
-                "status_code": 200,
-                "response": "",
-                "error_msg": None
-            }
-        ],
-    }
+    .. code-block:: python
+
+        {
+            "running_content": [
+                {
+                    "task_id": 0,
+                    "url": "https://www.example.com",
+                    "method": "GET",
+                    "parameters": None,
+                    "header": None,
+                    "body": None
+                }
+            ],
+            "cookies": {},
+            "authorization": {},
+            "in_progressing_id": "0",
+            "running_result": {
+                "success_count": 0,
+                "fail_count": 0
+            },
+            "running_status": "running",
+            "result_detail": [
+                {
+                    "task_id": 0,
+                    "state": "done",
+                    "status_code": 200,
+                    "response": "",
+                    "error_msg": None
+                }
+            ]
+        }
 
     """
 
@@ -572,15 +578,17 @@ class Heartbeat(_BaseMetaData):
 
     * Example value at node *heartbeat*:
 
-    {
-        "heart_rhythm_time": "2022-07-15 08:42:59",
-        "time_format": "%Y-%m-%d %H:%M:%S",
-        "update_time": "2s",
-        "update_timeout": "4s",
-        "heart_rhythm_timeout": "3",
-        "healthy_state": "Healthy",
-        "task_state": "processing"
-    }
+    .. code-block:: python
+
+        {
+            "heart_rhythm_time": "2022-07-15 08:42:59",
+            "time_format": "%Y-%m-%d %H:%M:%S",
+            "update_time": "2s",
+            "update_timeout": "4s",
+            "heart_rhythm_timeout": "3",
+            "healthy_state": "Healthy",
+            "task_state": "processing"
+        }
 
     """
 
