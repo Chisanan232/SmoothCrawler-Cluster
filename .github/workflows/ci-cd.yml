@@ -180,9 +180,9 @@ jobs:
     uses: Chisanan232/GitHub-Action_Reusable_Workflows-Python/.github/workflows/pre-building_test.yaml@v4
     with:
       python_package_name: SmoothCrawler-Cluster
-      test_import_package_code_1: from smoothcrawler_cluster
+      test_import_package_code_1: import smoothcrawler_cluster
       test_import_package_code_2: from smoothcrawler_cluster.crawler import ZookeeperCrawler
-      test_python_script: ./scripts/test_crawler.py
+      test_python_script: ./scripts/pycode/crawler_main.py
 
 
   build_git-tag_and_create_github-release:
