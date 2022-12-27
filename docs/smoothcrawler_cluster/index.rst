@@ -77,19 +77,31 @@ Information about some function, class or method.
    api_references/inner_modules/index
 
 
-Development documentation
+Development Documentation
 --------------------------
 
 If you're curious about the detail of implementation of this package includes workflow, software architecture, system design or development, this section is for you.
 
 .. toctree::
-   :caption: Development documentation
+   :caption: Development Documentation
    :maxdepth: 1
 
    development_document/flow
    development_document/software_architecture
    development_document/test
    development_document/ci-cd
+
+
+Release Notes
+---------------
+
+content ...
+
+.. toctree::
+   :caption: Release Notes
+   :maxdepth: 1
+
+   release_notes/0.X/index
 
 
 
