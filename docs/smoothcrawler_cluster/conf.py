@@ -37,9 +37,9 @@ master_doc = 'index'
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
-    "sphinx.ext.intersphinx",
 ]
 
 # The suffix(es) of source filenames.
@@ -59,7 +59,7 @@ language = 'en'
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 # exclude_patterns = []
-exclude_patterns = ['build']
+exclude_patterns = ['build', '_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -176,3 +176,7 @@ autosectionlabel_prefix_document = True
 # Permit duplicated titles in the resulting document.
 # See https://github.com/PyCQA/pylint/issues/7362#issuecomment-1256932866
 autosectionlabel_maxdepth = 2
+
+# Document body setting of autoclass directive
+# See https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#confval-autoclass_content
+autoclass_content = 'both'
