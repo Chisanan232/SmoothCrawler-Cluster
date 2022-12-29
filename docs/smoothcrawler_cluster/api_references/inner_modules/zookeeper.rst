@@ -1,32 +1,9 @@
-==========================
-Inner utils - Zookeeper
-==========================
+==================
+Utils - Zookeeper
+==================
 
-*module* smoothcrawler._utils.zookeeper
+.. automodule:: smoothcrawler_cluster._utils.zookeeper
 
-Some content for module zookeeper
-
-
-Framework Modules
-===================
-
-_BaseZookeeperNode
-----------------------
-
-.. autoclass:: smoothcrawler_cluster._utils.zookeeper._BaseZookeeperNode
-    :members:
-
-
-_BaseZookeeperClient
------------------------
-
-.. autoclass:: smoothcrawler_cluster._utils.zookeeper._BaseZookeeperClient
-    :members:
-
-
-
-Implementation Modules
-=======================
 
 ZookeeperNode
 ---------------
@@ -47,5 +24,4 @@ ZookeeperClient
 
 .. autoclass:: smoothcrawler_cluster._utils.zookeeper.ZookeeperClient
     :members:
-
 

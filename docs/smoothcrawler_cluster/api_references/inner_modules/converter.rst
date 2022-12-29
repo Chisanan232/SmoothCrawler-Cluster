@@ -1,25 +1,9 @@
-=========================
-Inner utils - Converter
-=========================
-
-*module* smoothcrawler._utils.converter
-
-Some content for module converter
-
-
-Framework Modules
+===================
+Utils - Converter
 ===================
 
-BaseConverter
----------------
+.. automodule:: smoothcrawler_cluster._utils.converter
 
-.. autoclass:: smoothcrawler_cluster._utils.converter.BaseConverter
-    :members:
-
-
-
-Implementation Modules
-=======================
 
 JsonStrConverter
 -------------------
