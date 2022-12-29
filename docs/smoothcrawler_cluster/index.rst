@@ -32,7 +32,7 @@ Let's demonstrate an example to show how easy and clear it is!
    zk_crawler.run()
 
 
-General documentation
+General Documentation
 ----------------------
 
 This part of documentation, which introduces the package and has some step-by-step instructions for using or building parallelism features.
