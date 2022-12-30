@@ -27,8 +27,7 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def path(self) -> str:
-        """
-        The path of node in Zookeeper.
+        """The path of node in Zookeeper.
 
         :getter: Return the node path.
         :setter: Set path value to this object.
@@ -44,8 +43,7 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def value(self) -> str:
-        """
-        The value of the path. It may need to deserialize the data if it needs.
+        """The value of the path. It may need to deserialize the data if it needs.
 
         :getter: Return the value the node keeps currently.
         :setter: Set value to this object.
@@ -95,27 +93,21 @@ class ZookeeperRecipe(Enum):
     """
 
     READ_LOCK: str = "ReadLock"
-    """
-    The `kazoo.recipe.lock.ReadLock`_ object.
+    """The `kazoo.recipe.lock.ReadLock`_ object.
 
-    # pylint: disable=line-too-long
-    .. _kazoo.recipe.lock.ReadLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.ReadLock
+    .. _kazoo.recipe.lock.ReadLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.ReadLock # pylint: disable=line-too-long
     """
 
     WRITE_LOCK: str = "WriteLock"
-    """
-    The `kazoo.recipe.lock.WriteLock`_ object.
+    """The `kazoo.recipe.lock.WriteLock`_ object.
 
-    # pylint: disable=line-too-long
-    .. _kazoo.recipe.lock.WriteLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.WriteLock
+    .. _kazoo.recipe.lock.WriteLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.WriteLock # pylint: disable=line-too-long
     """
 
     SEMAPHORE: str = "Semaphore"
-    """
-    The `kazoo.recipe.lock.Semaphore`_ object.
+    """The `kazoo.recipe.lock.Semaphore`_ object.
 
-    # pylint: disable=line-too-long
-    .. _kazoo.recipe.lock.Semaphore: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore
+    .. _kazoo.recipe.lock.Semaphore: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore # pylint: disable=line-too-long
     """
 
 
@@ -133,8 +125,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
             identifier: str,
             max_leases: Optional[int] = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
-        """
-        Limit Zookeeper operations in concurrency scenarios by distributed lock.
+        """Limit Zookeeper operations in concurrency scenarios by distributed lock.
 
         Args:
             path (str): The node path.
@@ -171,8 +162,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def exist_node(self, path: str) -> bool:
-        """
-        Check whether the target node exist or not.
+        """Check whether the target node exist or not.
 
         Args:
             path (str): The node path.
@@ -185,8 +175,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        """
-        Get one specific node by path in Zookeeper.
+        """Get one specific node by path in Zookeeper.
 
         Args:
             path (str): The node path.
@@ -199,8 +188,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def create_node(self, path: str, value: Union[str, bytes]) -> None:
-        """
-        Create a node with the path and value in Zookeeper.
+        """Create a node with the path and value in Zookeeper.
 
         Args:
             path (str): The node path.
@@ -214,8 +202,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def delete_node(self, path: str) -> bool:
-        """
-        Delete the node by path in Zookeeper.
+        """Delete the node by path in Zookeeper.
 
         Args:
             path (str): The node path.
@@ -228,8 +215,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def get_value_from_node(self, path: str) -> str:
-        """
-        Get the value directly from the Zookeeper path.
+        """Get the value directly from the Zookeeper path.
 
         Args:
             path (str): The node path.
@@ -243,8 +229,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def set_value_to_node(self, path: str, value: str) -> bool:
-        """
-        Set a value to the one specific Zookeeper path.
+        """Set a value to the one specific Zookeeper path.
 
         Args:
             path (str): The node path.
