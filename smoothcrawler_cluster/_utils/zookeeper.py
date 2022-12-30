@@ -98,6 +98,7 @@ class ZookeeperRecipe(Enum):
     """
     The `kazoo.recipe.lock.ReadLock`_ object.
 
+    # pylint: disable=line-too-long
     .. _kazoo.recipe.lock.ReadLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.ReadLock
     """
 
@@ -105,6 +106,7 @@ class ZookeeperRecipe(Enum):
     """
     The `kazoo.recipe.lock.WriteLock`_ object.
 
+    # pylint: disable=line-too-long
     .. _kazoo.recipe.lock.WriteLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.WriteLock
     """
 
@@ -112,6 +114,7 @@ class ZookeeperRecipe(Enum):
     """
     The `kazoo.recipe.lock.Semaphore`_ object.
 
+    # pylint: disable=line-too-long
     .. _kazoo.recipe.lock.Semaphore: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore
     """
 
@@ -161,6 +164,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
                 with lock:
                     # Do something with the lock
 
+        # pylint: disable=line-too-long
         .. _kazoo.recipe.lock.Semaphore.__init__: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore.__init__
         """
         pass
