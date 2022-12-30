@@ -10,6 +10,8 @@ JsonStrConverter
 
 .. autoclass:: smoothcrawler_cluster._utils.converter.JsonStrConverter
     :members:
+    :private-members:
+    :inherited-members:
 
 
 
