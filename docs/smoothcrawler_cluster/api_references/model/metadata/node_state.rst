@@ -2,9 +2,7 @@
 Node State
 ===========
 
-*module* smoothcrawler.model.metadata
-
-Some content for module metadata
+.. _MetaData_NodeState:
 
 
 .. autoclass:: smoothcrawler_cluster.model.metadata.NodeState

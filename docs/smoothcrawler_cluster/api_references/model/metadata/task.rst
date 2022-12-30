@@ -2,9 +2,7 @@
 Task
 ======
 
-*module* smoothcrawler.model.metadata
-
-Some content for module metadata
+.. _MetaData_Task:
 
 
 .. autoclass:: smoothcrawler_cluster.model.metadata.Task
