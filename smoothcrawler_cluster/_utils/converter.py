@@ -1,4 +1,4 @@
-"""Util functions of serializing and deserializing of data from Zookeeper
+"""*Util functions of serializing and deserializing of data from Zookeeper*
 
 No matter operating data as getting from or setting to Zookeeper, it must be byte or string type value. Therefore, the
 serializing or deserializing features would be deeply necessary in this package. Here module for all the features about
@@ -16,7 +16,7 @@ _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
 
 class BaseConverter(metaclass=ABCMeta):
-    """The base class of serializing or deserializing features
+    """*The base class of serializing or deserializing features*
 
     In addiction to serializing or deserializing features, it also rules some functions of operating (serialize or
     deserialize) with some needed meta-data objects.
@@ -170,7 +170,7 @@ class BaseConverter(metaclass=ABCMeta):
 
 
 class JsonStrConverter(BaseConverter):
-    """Operating with JSON format data
+    """*Operating with JSON format data*
 
     It would operate with JSON format data to do serialize or deserialize, in the other words, it would try to serialize
     `json object`_ to be string type value, or deserialize JSON format string data as *json object* in Python.
@@ -239,7 +239,7 @@ class JsonStrConverter(BaseConverter):
 
 
 class TaskContentDataUtils:
-    """Detail data in meta-data
+    """*Detail data in meta-data*
 
     For some meta-data, e.g., **Task**, it has a little bit complex meta-data structure. For example, its option
     *running_result* is also a dict type value, options *running_content* and *result_detail* even a list which

@@ -1,4 +1,4 @@
-"""Util functions of operating with Zookeeper
+"""*Util functions of operating with Zookeeper*
 
 Here are some objects for ZookeeperCrawler which won't take care meta-data objects by itself. It would let third party
 application to handle them --- Zookeeper. Therefore, some util functions about doing operations with Zookeeper in this
@@ -19,7 +19,7 @@ BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
 
 class _BaseZookeeperNode(metaclass=ABCMeta):
-    """Framework module to define some attributes of node in Zookeeper
+    """*Framework module to define some attributes of node in Zookeeper*
 
     A node of Zookeeper.
     """
@@ -58,7 +58,7 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
 
 
 class ZookeeperNode(_BaseZookeeperNode):
-    """Zookeeper node object
+    """*Zookeeper node object*
 
     All data be got from Zookeeper would be converted to this object in all util functions for getting value.
     """
@@ -87,7 +87,7 @@ _BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperN
 
 
 class ZookeeperRecipe(Enum):
-    """Distributed Lock features
+    """*Distributed Lock features*
 
     The enum value is the object naming which could be found in the module *kazoo.recipe.lock*.
     """
@@ -112,7 +112,7 @@ class ZookeeperRecipe(Enum):
 
 
 class _BaseZookeeperClient(metaclass=ABCMeta):
-    """Framework module for defining some attributes for Zookeeper client APIs
+    """*Framework module for defining some attributes for Zookeeper client APIs*
 
     Here rules some necessary APIs of Zookeeper client.
     """
@@ -243,7 +243,7 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
 
 class ZookeeperClient(_BaseZookeeperClient):
-    """The Zookeeper client object which be implemented by Python library `kazoo`_.
+    """*The Zookeeper client object which be implemented by Python library `kazoo`_.*
 
     .. _kazoo: https://github.com/python-zk/kazoo
 
