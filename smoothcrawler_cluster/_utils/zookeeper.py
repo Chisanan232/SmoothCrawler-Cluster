@@ -27,12 +27,7 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def path(self) -> str:
-        """The path of node in Zookeeper.
-
-        :getter: Return the node path.
-        :setter: Set path value to this object.
-        :type: str
-        """
+        """:obj:`str`: Properties with both a getter and setter for the path of node in Zookeeper."""
         pass
 
     @path.setter
@@ -43,11 +38,8 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
     @property
     @abstractmethod
     def value(self) -> str:
-        """The value of the path. It may need to deserialize the data if it needs.
-
-        :getter: Return the value the node keeps currently.
-        :setter: Set value to this object.
-        :type: str
+        """:obj:`str`: Properties with both a getter and setter for the value of the path. It may need to deserialize
+        the data if it needs.
         """
         pass
 
