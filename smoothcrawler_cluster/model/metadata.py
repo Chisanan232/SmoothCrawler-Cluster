@@ -1,4 +1,4 @@
-"""***Meta-Data***
+"""*Meta-Data*
 
 Here are the meta-data which keeps state for distributed system running finely with each others.
 """
