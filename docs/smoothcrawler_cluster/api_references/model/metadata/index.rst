@@ -2,7 +2,9 @@
 Meta-Data Modules
 ===================
 
-Test content ...
+.. automodule:: smoothcrawler_cluster.model.metadata
+
+Refer below to get more details of each meta-data objects:
 
 .. toctree::
    :maxdepth: 2
