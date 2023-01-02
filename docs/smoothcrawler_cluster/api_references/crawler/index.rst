@@ -2,7 +2,7 @@
 Crawler
 ==========
 
-Test content ...
+.. automodule:: smoothcrawler_cluster.crawler
 
 .. toctree::
    :maxdepth: 1
