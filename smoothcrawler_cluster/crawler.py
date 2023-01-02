@@ -1,6 +1,7 @@
-"""Module
+"""*Different types cluster crawler with SmoothCrawler*
 
-TODO: Add docstring
+It integrates the features of **SmoothCrawler** into all the cluster crawler. So it has the features of
+**SmoothCrawler**, and it also could extend the features to run in a cluster right now!
 """
 
 from abc import ABCMeta
@@ -34,7 +35,7 @@ BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 
 
 class BaseDistributedCrawler(metaclass=ABCMeta):
-    """Class
+    """*Base class for distributed crawler*
 
     TODO: Add docstring
     """
@@ -42,7 +43,7 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
 
 
 class BaseDecentralizedCrawler(BaseDistributedCrawler):
-    """Class
+    """*Base class for decentralized crawler*
 
     TODO: Add docstring
     """
@@ -50,9 +51,10 @@ class BaseDecentralizedCrawler(BaseDistributedCrawler):
 
 
 class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
-    """Class
+    """*Cluster crawler with Zookeeper*
 
-    TODO: Add docstring
+    This crawler reaches cluster feature though third party application --- Zookeeper. So it let Zookeeper manage all
+    processing of meta-data objects, e.g., *GroupState*, *Heartbeat*, etc.
     """
 
     _zookeeper_client: ZookeeperClient = None
@@ -88,7 +90,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             election_strategy: Generic[BaseElectionType] = None,
             factory: Optional[Type[BaseFactory]] = None,
     ):
-        """This is one of **decentralized** crawler cluster implementation with **Zookeeper**.
+        """
 
         Args:
             runner (int): The number of crawler to run task. This value is equal to attribute *GroupState.total_runner*.
@@ -123,7 +125,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             election_strategy (BaseElection): The strategy of election. Default strategy is **IndexElection**.
             factory (Type[BaseFactory]): The factory which saves SmoothCrawler components.
         """
-
         super().__init__(factory=factory)
 
         self._total_crawler = runner + backup
