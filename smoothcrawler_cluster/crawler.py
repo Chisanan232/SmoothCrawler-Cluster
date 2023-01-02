@@ -1,4 +1,5 @@
 """Module
+
 TODO: Add docstring
 """
 
@@ -34,6 +35,7 @@ BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 
 class BaseDistributedCrawler(metaclass=ABCMeta):
     """Class
+
     TODO: Add docstring
     """
     pass
@@ -41,6 +43,7 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
 
 class BaseDecentralizedCrawler(BaseDistributedCrawler):
     """Class
+
     TODO: Add docstring
     """
     pass
@@ -48,6 +51,7 @@ class BaseDecentralizedCrawler(BaseDistributedCrawler):
 
 class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     """Class
+
     TODO: Add docstring
     """
 
@@ -84,40 +88,40 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             election_strategy: Generic[BaseElectionType] = None,
             factory: Optional[Type[BaseFactory]] = None,
     ):
-        """
-        This is one of **_decentralized_** crawler cluster implementation with **Zookeeper**.
+        """This is one of **decentralized** crawler cluster implementation with **Zookeeper**.
 
-        :param runner: The number of crawler to run task. This value is equal to attribute _GroupState.total_runner_.
-        :param backup: The number of crawler to check all crawler runner is alive or not and standby to activate by
-               itself to be another runner if anyone is dead. This value is equal to attribute GroupState.total_backup.
-        :param name: The name of crawler instance. Default value is _sc-crawler_1_.
-        :param group: The group name this crawler instance would belong to it. Default value is _sc-crawler-cluster_.
-        :param index_sep: The separator of what index is in _name_. It only accepts 2 types: dash ('-') or under line
-               ('_').
-        :param initial: It would run initial processing if this option is True. The initial processing detail procedure
-               is:
-                   register meta-data to Zookeeper -> activate and run a new thread about keeping updating heartbeat
-                   info -> wait and check whether it's ready for running election or not -> run election of task runner
-                   -> update role
-        :param ensure_initial: If it's True, it would guarantee the value of register meta-data processing is satisfied
-               of size of _GroupState.current_crawler_ is equal to the total of runner and backup, and this crawler name
-               must be in it.
-        :param ensure_timeout: The times of timeout to guarantee the register meta-data processing finish. Default value
-               is 3.
-        :param ensure_wait: How long to wait between every checking. Default value is 0.5 (unit is second).
-        :param heartbeat_update: The time frequency to update heartbeat info, i.g., if value is '2', it would update
-               heartbeat info every 2 seconds. The unit is seconds.
-        :param heartbeat_update_timeout: The timeout value of updating, i.g., if value is '3', it is time out if it
-               doesn't to update heartbeat info exceeds 3 seconds. The unit is seconds.
-        :param heartbeat_dead_threshold: The threshold of timeout times to judge it is dead, i.g., if value is '3' and
-               the updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or
-               'Dead_Backup').
-        :param zk_hosts: The Zookeeper hosts. Use comma to separate each hosts if it has multiple values. Default value
-               is _localhost:2181_.
-        :param zk_converter: The converter to parse data content to be an object. It must be a type of
-               **_BaseConverter_**. Default value is **_JsonStrConverter_**.
-        :param election_strategy: The strategy of election. Default strategy is **_IndexElection_**.
-        :param factory: The factory which saves SmoothCrawler components.
+        Args:
+            runner (int): The number of crawler to run task. This value is equal to attribute *GroupState.total_runner*.
+            backup (int): The number of crawler to check all crawler runner is alive or not and standby to activate by
+                itself to be another runner if anyone is dead. This value is equal to attribute GroupState.total_backup.
+            name (str): The name of crawler instance. Default value is *sc-crawler_1*.
+            group (str): The group name this crawler instance would belong to it. Default value is *sc-crawler-cluster*.
+            index_sep (list of str): The separator of what index is in *name*. It only accepts 2 types: dash ('-') or
+                under line ('_').
+            initial (bool): It would run initial processing if this option is True. The initial processing detail
+                procedure is:
+                    register meta-data to Zookeeper -> activate and run a new thread about keeping updating heartbeat
+                    info -> wait and check whether it's ready for running election or not -> run election of task runner
+                    -> update role
+            ensure_initial (bool): If it's True, it would guarantee the value of register meta-data processing is
+                satisfied of size of *GroupState.current_crawler* is equal to the total of runner and backup, and
+                this crawler name must be in it.
+            ensure_timeout (int): The times of timeout to guarantee the register meta-data processing finish. Default
+                value is 3.
+            ensure_wait (float): How long to wait between every checking. Default value is 0.5 (unit is second).
+            heartbeat_update (float): The time frequency to update heartbeat info, i.g., if value is '2', it would
+                update heartbeat info every 2 seconds. The unit is seconds.
+            heartbeat_update_timeout (float): The timeout value of updating, i.g., if value is '3', it is time out if it
+                doesn't to update heartbeat info exceeds 3 seconds. The unit is seconds.
+            heartbeat_dead_threshold (int): The threshold of timeout times to judge it is dead, i.g., if value is '3'
+                and the updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or
+                'Dead_Backup').
+            zk_hosts (str): The Zookeeper hosts. Use comma to separate each hosts if it has multiple values. Default
+                value is *localhost:2181*.
+            zk_converter (Type[BaseConverter]): The converter to parse data content to be an object. It must be a type
+                of **BaseConverter**. Default value is **JsonStrConverter**.
+            election_strategy (BaseElection): The strategy of election. Default strategy is **IndexElection**.
+            factory (Type[BaseFactory]): The factory which saves SmoothCrawler components.
         """
 
         super().__init__(factory=factory)
@@ -184,55 +188,39 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def name(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. This crawler instance name. It MUST be unique naming
+        in cluster (the same group) for let entire crawler cluster to distinguish every one, for example, the properties
+        *current_crawler*, *current_runner* and *current_backup* in meta-data **GroupState** would record by crawler
+        names. This option value could be modified by Zookeeper object option *name*.
         """
-        This crawler instance name. It MUST be unique naming in cluster (the same group) for let entire crawler cluster
-        to distinguish every one, for example, the properties _current_crawler_, _current_runner_ and _current_backup_
-        in meta-data **GroupState** would record by crawler names.
-        This option value could be modified by Zookeeper object option _name_.
-
-        :return: A string type value.
-        """
-
         return self._crawler_name
 
     @property
     def group(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The group name of this crawler instance. This also
+        means the cluster naming to let system distinguishes which crawler instance belong to which cluster.
+        This option value could be modified by Zookeeper object option *group*.
         """
-        The group name of this crawler instance. This also means the cluster naming to let system distinguishes which
-        crawler instance belong to which cluster.
-        This option value could be modified by Zookeeper object option _group_.
-
-        :return: A string type value.
-        """
-
         return self._crawler_group
 
     @property
     def role(self) -> CrawlerStateRole:
+        """:obj:`str`: Properties with both a getter and setter. The role of crawler instance. Please refer to
+        *CrawlerStateRole* to get more detail of it.
         """
-        The role of crawler instance. Please refer to _CrawlerStateRole_ to get more detail of it.
-
-        :return: The current crawler role it is.
-        """
-
         return self._crawler_role
 
     @property
     def zookeeper_hosts(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The Zookeeper hosts current crawler instance use to
+        connect. The value should be as IP:Port (multi: IP:Port,IP:Port) format content.
         """
-        The Zookeeper hosts.
-
-        :return: A string type value which should be as IP:Port (multi: IP:Port,IP:Port) format content.
-        """
-
         return self._zk_hosts
 
     @property
     def ensure_register(self) -> bool:
+        """:obj:`str`: Properties with both a getter and setter. The getter and setter of option *ensure_initial*.
         """
-        The getter and setter of option _ensure_initial_.
-        """
-
         return self._ensure_register
 
     @ensure_register.setter
@@ -241,10 +229,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def ensure_timeout(self) -> int:
+        """:obj:`str`: Properties with both a getter and setter. The getter and setter of option *ensure_timeout*.
         """
-        The getter and setter of option _ensure_timeout_.
-        """
-
         return self._ensure_timeout
 
     @ensure_timeout.setter
@@ -253,10 +239,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def ensure_wait(self) -> float:
+        """:obj:`str`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*.
         """
-        The getter and setter of option _ensure_wait_.
-        """
-
         return self._ensure_wait
 
     @ensure_wait.setter
@@ -265,71 +249,64 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def group_state_zookeeper_path(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper.
         """
-        The node path of meta-data _GroupState_ in Zookeeper.
-        """
-
         return f"{self._generate_path(self._crawler_group, is_group=True)}/{self._zookeeper_group_state_node_path}"
 
     @property
     def node_state_zookeeper_path(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper.
         """
-        The node path of meta-data _NodeState_ in Zookeeper.
-        """
-
         return f"{self._generate_path(self._crawler_name)}/{self._zookeeper_node_state_node_path}"
 
     @property
     def task_zookeeper_path(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper.
         """
-        The node path of meta-data _Task_ in Zookeeper.
-        """
-
         return f"{self._generate_path(self._crawler_name)}/{self._zookeeper_task_node_path}"
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper.
         """
-        The node path of meta-data _Heartbeat_ in Zookeeper.
-        """
-
         return f"{self._generate_path(self._crawler_name)}/{self._zookeeper_heartbeat_node_path}"
 
     @classmethod
     def _generate_path(cls, crawler_name: str, is_group: bool = False) -> str:
-        """
-        Generate node path of Zookeeper with fixed format.
+        """Generate node path of Zookeeper with fixed format.
 
-        :param crawler_name: The crawler name.
-        :param is_group: If it's True, generate node path for _group_ type meta-data.
-        :return: A string type value with fixed format.
-        """
+        Args:
+            crawler_name (str): The crawler name.
+            is_group (bool): If it's True, generate node path for _group_ type meta-data.
 
+        Returns:
+            str: A Zookeeper node path.
+
+        """
         if is_group:
             return f"smoothcrawler/group/{crawler_name}"
         else:
             return f"smoothcrawler/node/{crawler_name}"
 
     def initial(self) -> None:
-        """
-        Initial processing of entire cluster running. This processing procedure like below:
+        """Initial processing of entire cluster running. This processing procedure like below:
 
         <Has an image of workflow>
 
         * Register
-        Initial each needed meta-data (_GroupState_, _NodeState_, _Task_ and _Heartbeat_) and set them to Zookeeper,
+        Initial each needed meta-data (*GroupState*, *NodeState*, *Task* and *Heartbeat*) and set them to Zookeeper,
         it also creates their node if it doesn't exist in Zookeeper. This processing about setting meta-data to
-        Zookeeper be called _register_.
+        Zookeeper be called *register*.
 
         * Activate and run new thread to keep updating heartbeat info
-        If the signal __Updating_Stop_Signal_ is False, it would create a new thread here and it only keeps doing
+        If the signal *_Updating_Stop_Signal* is False, it would create a new thread here and it only keeps doing
         one thing again and again --- updating it owns heartbeat info by itself.
 
         * Check it's ready for running election
         There are 2 conditions to check whether it is ready or not:
-            1. The size of _GroupState.current_crawler_ is equal to the sum of runner and backup.
-            2. Current crawler instance's name be included in the list _GroupState.current_crawler_.
-        The checking is forever (option _timeout_ is -1) and it only waits 0.5 seconds between every checks.
+            1. The size of *GroupState.current_crawler* is equal to the sum of runner and backup.
+            2. Current crawler instance's name be included in the list *GroupState.current_crawler*.
+        The checking is forever (option *timeout* is -1) and it only waits 0.5 seconds between every checks.
 
         * Run election for runner
         Elect which ones are runner and rest ones are backup. It could exchange different strategies to let election has
@@ -339,9 +316,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         After election, everyone must know what role it is, and they would update this info to Zookeeper to prepare for
         doing their own jobs.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         self.register_metadata()
         if self._updating_stop_signal is False:
             self._run_updating_heartbeat_thread()
@@ -355,12 +333,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             raise TimeoutError("Timeout to wait for crawler be ready in register process.")
 
     def register_metadata(self) -> None:
-        """
-        Register all needed meta-data (_GroupState_, _NodeState_, _Task_ and _Heartbeat_) to Zookeeper.
+        """Register all needed meta-data (*GroupState*, *NodeState*, *Task* and *Heartbeat*) to Zookeeper.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         # Question: How could it name the web crawler with number?
         # Current Answer:
         # 1. Index: get data from Zookeeper first and check the value, and it set the next index of crawler and
@@ -375,21 +353,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                 heart_rhythm_timeout=self._heartbeat_dead_threshold)
 
     def register_group_state(self) -> None:
-        """
-        Register meta-data _GroupState_ to Zookeeper. This processing is more difficult than others because it's a
+        """Register meta-data *GroupState* to Zookeeper. This processing is more difficult than others because it's a
         common meta-data for all crawler instances in cluster to refer. So here processing we need to wait everyone
         sync their info to it, in other words, it runs synchronously to ensure they won't cover other's values by
         each others.
 
-        It also has a flag _ensure_register_. If it's True, it would double confirm the meta-data would be reasonable
+        It also has a flag *ensure_register*. If it's True, it would double confirm the meta-data would be reasonable
         by specific conditions:
 
-            1. The size of _GroupState.current_crawler_ is equal to the sum of runner and backup.
-            2. Current crawler instance's name be included in the list _GroupState.current_crawler_.
+        * The size of *GroupState.current_crawler* is equal to the sum of runner and backup.
+        * Current crawler instance's name be included in the list *GroupState.current_crawler*.
 
-        :return: None
+        Returns:
+            None
+
         """
-
         for _ in range(self._ensure_timeout):
             with self._zookeeper_client.restrict(path=self.group_state_zookeeper_path,
                                                  restrict=ZookeeperRecipe.WRITE_LOCK,
@@ -430,12 +408,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 f"It gets timeout of registering meta data *GroupState* to Zookeeper cluster '{self.zookeeper_hosts}'.")
 
     def register_node_state(self) -> None:
-        """
-        Register meta-data _NodeState_ to Zookeeper.
+        """Register meta-data *NodeState* to Zookeeper.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         state = Initial.node_state(group=self._crawler_group)
         create_node = not self._zookeeper_client.exist_node(path=self.node_state_zookeeper_path)
         self._metadata_util.set_metadata_to_zookeeper(path=self.node_state_zookeeper_path,
@@ -443,12 +421,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                                       create_node=create_node)
 
     def register_task(self) -> None:
-        """
-        Register meta-data _Task_ to Zookeeper.
+        """Register meta-data *Task* to Zookeeper.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         task = Initial.task()
         create_node = not self._zookeeper_client.exist_node(path=self.task_zookeeper_path)
         self._metadata_util.set_metadata_to_zookeeper(path=self.task_zookeeper_path,
@@ -462,20 +440,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             heart_rhythm_timeout: int = None,
             time_format: str = None,
     ) -> None:
-        """
-        Register meta-data _Heartbeat_ to Zookeeper.
+        """Register meta-data *Heartbeat* to Zookeeper.
 
-        :param update_time: The time frequency to update heartbeat info, i.g., if value is '2', it would update
-               heartbeat info every 2 seconds. The unit is seconds.
-        :param update_timeout: The timeout value of updating, i.g., if value is '3', it is time out if it doesn't
-               to update heartbeat info exceeds 3 seconds. The unit is seconds.
-        :param heart_rhythm_timeout: The threshold of timeout times to judge it is dead, i.g., if value is '3' and
-               the updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or
-               'Dead_Backup').
-        :param time_format: The time format. This format rule is same as 'datetime'.
-        :return: None
-        """
+        Args:
+            update_time (float): The time frequency to update heartbeat info, i.g., if value is '2', it would update
+                heartbeat info every 2 seconds. The unit is seconds.
+            update_timeout (float): The timeout value of updating, i.g., if value is '3', it is time out if it doesn't
+                to update heartbeat info exceeds 3 seconds. The unit is seconds.
+            heart_rhythm_timeout (int): The threshold of timeout times to judge it is dead, i.g., if value is '3' and
+                the updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or
+                'Dead_Backup').
+            time_format (str): The time format. This format rule is same as 'datetime'.
 
+        Returns:
+            None
+
+        """
         update_time = f"{update_time}s" if update_time else None
         update_timeout = f"{update_timeout}s" if update_timeout else None
         heart_rhythm_timeout = f"{heart_rhythm_timeout}" if heart_rhythm_timeout else None
@@ -489,21 +469,24 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                                       create_node=create_node)
 
     def stop_update_heartbeat(self) -> None:
-        """
-        Set the flag of __Updating_Stop_Signal_ to be True.
+        """Set the flag of *_Updating_Stop_Signal* to be True.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         self._updating_stop_signal = True
 
     def is_ready_for_election(self, interval: float = 0.5, timeout: float = -1) -> bool:
-        """
-        Check whether it is ready to run next processing for function **_elect_**.
+        """Check whether it is ready to run next processing for function **elect**.
 
-        :param interval: How long it should wait between every check. Default value is 0.5 (unit is seconds).
-        :param timeout: Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
-        :return: A boolean type value. if it's True, means that it's ready to run next processing.
+        Args:
+            interval (float): How long it should wait between every check. Default value is 0.5 (unit is seconds).
+            timeout (float): Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
+
+        Returns:
+            bool: If it's True, means that it's ready to run next processing.
+
         """
 
         def _chk_by_condition(state: GroupState) -> bool:
@@ -514,12 +497,15 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                             timeout=timeout)
 
     def is_ready_for_run(self, interval: float = 0.5, timeout: float = -1) -> bool:
-        """
-        Check whether it is ready to run next processing for function **_run_**.
+        """Check whether it is ready to run next processing for function **run**.
 
-        :param interval: How long it should wait between every check. Default value is 0.5 (unit is seconds).
-        :param timeout: Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
-        :return: A boolean type value. if it's True, means that it's ready to run next processing.
+        Args:
+            interval (float): How long it should wait between every check. Default value is 0.5 (unit is seconds).
+            timeout (float): Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
+
+        Returns:
+            bool: If it's True, means that it's ready to run next processing.
+
         """
 
         def _chk_by_condition(state: GroupState) -> bool:
@@ -533,19 +519,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                                             timeout=timeout)
 
     def _is_ready_by_groupstate(self, condition_callback: Callable, interval: float = 0.5, timeout: float = -1) -> bool:
-        """
-        Use the _condition_callback_ option to judge it is ready for next running or not. The callback function must
-        have an argument is _GroupState_.
+        """Use the *condition_callback* option to judge it is ready for next running or not. The callback function must
+        have an argument is **GroupState**.
 
         In cluster running, it has some scenarios would need to wait for data be synced successfully and finish. And
         the scenarios in SmoothCrawler-Cluster would deeply depend on meta-data _GroupState_.
 
-        :param condition_callback: The callback function of checking and judge it's ready to run next process or not.
-        :param interval: How long it should wait between every check. Default value is 0.5 (unit is seconds).
-        :param timeout: Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
-        :return: A boolean type value. if it's True, means that it's ready to run next processing.
-        """
+        Args:
+            condition_callback (Callable): The callback function of checking and judge it's ready to run next process or
+                not.
+            interval (float): How long it should wait between every check. Default value is 0.5 (unit is seconds).
+            timeout (float): Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
 
+        Returns:
+            bool: If it's True, means that it's ready to run next processing.
+
+        """
         if timeout < -1:
             raise ValueError("The option *timeout* value is incorrect. Please configure more than -1, and -1 means it "
                              "never timeout.")
@@ -562,12 +551,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             time.sleep(interval)
 
     def elect(self) -> ElectionResult:
-        """
-        Run election to choose which crawler instances are runner and rest ones are backup.
+        """Run election to choose which crawler instances are runner and rest ones are backup.
 
-        :return: A **ElectionResult** type value.
-        """
+        Returns:
+            A **ElectionResult** type value.
 
+        """
         state = self._metadata_util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
                                                                 as_obj=GroupState)
         return self._election_strategy.elect(candidate=self._crawler_name,
@@ -584,24 +573,26 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             wait_to_be_standby_time: float = 2,
             reset_timeout_threshold: int = 10,
     ) -> None:
-        """
-        The major function of the cluster. It has a simple workflow cycle:
+        """The major function of the cluster. It has a simple workflow cycle:
 
         <has an image of the workflow>
 
-        :param interval: How long it should wait between every check. Default value is 0.5 (unit is seconds).
-        :param timeout: Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
-        :param wait_task_time: For a Runner, how long does the crawler instance wait a second for next task. The unit
-               is seconds and default value is 2.
-        :param standby_wait_time: For a Backup, how long does the crawler instance wait a second for next checking
-               heartbeat. The unit is seconds and default value is 0.5.
-        :param wait_to_be_standby_time: For a Backup but isn't the primary one, how long does the crawler instance wait
-               a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
-        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
-               the timeout record.
-        :return: None
-        """
+        Args:
+            interval (float): How long it should wait between every check. Default value is 0.5 (unit is seconds).
+            timeout (int): Waiting timeout, if it's -1 means it always doesn't time out. Default value is -1.
+            wait_task_time (float): For a Runner, how long does the crawler instance wait a second for next task. The
+                unit is seconds and default value is 2.
+            standby_wait_time (float): For a Backup, how long does the crawler instance wait a second for next checking
+                heartbeat. The unit is seconds and default value is 0.5.
+            wait_to_be_standby_time (float): For a Backup but isn't the primary one, how long does the crawler instance
+                wait a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
+            reset_timeout_threshold (int): The threshold of how many straight times it doesn't occur, then it would
+                reset the timeout record.
 
+        Returns:
+            None
+
+        """
         if self.is_ready_for_run(interval=interval, timeout=timeout):
             while True:
                 self.pre_running()
@@ -617,10 +608,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             raise TimeoutError("Timeout to wait for crawler be ready for running crawler cluster.")
 
     def pre_running(self) -> None:
-        """
-        Pre-processing which would be run first of all. Default implementation is doing nothing.
+        """Pre-processing which would be run first of all. Default implementation is doing nothing.
 
-        :return: None
+        Returns:
+            None
+
         """
         pass
 
@@ -632,8 +624,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             wait_to_be_standby_time: float = 2,
             reset_timeout_threshold: int = 10,
     ) -> None:
-        """
-        Running the crawler instance's own job by what role it is.
+        """Running the crawler instance's own job by what role it is.
 
         * _CrawlerStateRole.Runner_ ->
             waiting for tasks and run it if it gets.
@@ -643,18 +634,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         * _CrawlerStateRole.Backup_Runner_ with index is not standby_id ->
             keep checking the standby ID, and to be primary backup if the standby ID is equal to its index.
 
-        :param role: The role of crawler instance.
-        :param wait_task_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is
-               seconds and default value is 2.
-        :param standby_wait_time: For a Backup, how long does the crawler instance wait a second for next checking
-               heartbeat. The unit is seconds and default value is 0.5.
-        :param wait_to_be_standby_time: For a Backup but isn't the primary one, how long does the crawler instance wait
-               a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
-        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
-               the timeout record.
-        :return: None
-        """
+        Args:
+            role (CrawlerStateRole): The role of crawler instance.
+            wait_task_time (float): For a Runner, how long does the crawler instance wait a second for next task. The
+                unit is seconds and default value is 2.
+            standby_wait_time (float): For a Backup, how long does the crawler instance wait a second for next checking
+                heartbeat. The unit is seconds and default value is 0.5.
+            wait_to_be_standby_time (float): For a Backup but isn't the primary one, how long does the crawler instance
+                wait a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
+            reset_timeout_threshold (int): The threshold of how many straight times it doesn't occur, then it would
+                reset the timeout record.
 
+        Returns:
+            None
+
+        """
         if role is CrawlerStateRole.RUNNER:
             self.wait_for_task(wait_time=wait_task_time)
         elif role is CrawlerStateRole.BACKUP_RUNNER:
@@ -666,24 +660,28 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 self.wait_for_to_be_standby(wait_time=wait_to_be_standby_time)
 
     def before_dead(self, exception: Exception) -> None:
-        """
-        Do something when it gets an exception. The default implementation is raising the exception to outside.
+        """Do something when it gets an exception. The default implementation is raising the exception to outside.
 
-        :param exception: The exception it got.
-        :return: None
-        """
+        Args:
+            exception (Exception): The exception it got.
 
+        Returns:
+            None
+
+        """
         raise exception
 
     def wait_for_task(self, wait_time: float = 2) -> None:
-        """
-        Keep waiting for tasks coming and run it.
+        """Keep waiting for tasks coming and run it.
 
-        :param wait_time: For a Runner, how long does the crawler instance wait a second for next task. The unit is
-               seconds and default value is 2.
-        :return: None
-        """
+        Args:
+            wait_time (float): For a Runner, how long does the crawler instance wait a second for next task. The unit is
+                seconds and default value is 2.
 
+        Returns:
+            None
+
+        """
         # 1. Try to get data from the target mode path of Zookeeper
         # 2. if (step 1 has data and it's valid) {
         #        Start to run tasks from the data
@@ -702,29 +700,30 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 time.sleep(wait_time)
 
     def wait_and_standby(self, wait_time: float = 0.5, reset_timeout_threshold: int = 10) -> None:
-        """
-        Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers anyone
-        is dead.
+        """Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers
+        anyone is dead.
 
         It would record 2 types checking result as dict type value and the data structure like below:
-
             * timeout records: {<crawler_name>: <timeout times>}
             * not timeout records: {<crawler_name>: <not timeout times>}
 
         It would record the timeout times into the value, and it would get each types timeout threshold from meta-data
-        _Heartbeat_. So it would base on them to run the checking process.
+        **Heartbeat**. So it would base on them to run the checking process.
 
         Prevent from the times be counted by unstable network environment and cause the crawler instance be marked as
-        _Dead_, it won't count the times by accumulation, it would reset the timeout value if the record be counted long
+        *Dead*, it won't count the times by accumulation, it would reset the timeout value if the record be counted long
         time ago. Currently, it would reset the timeout value if it was counted 10 times ago.
 
-        :param wait_time: For a Backup, how long does the crawler instance wait a second for next checking heartbeat.
-               The unit is seconds and default value is 0.5.
-        :param reset_timeout_threshold: The threshold of how many straight times it doesn't occur, then it would reset
-               the timeout record.
-        :return: None
-        """
+        Args:
+            wait_time (float): For a Backup, how long does the crawler instance wait a second for next checking
+                heartbeat. The unit is seconds and default value is 0.5.
+            reset_timeout_threshold (int): The threshold of how many straight times it doesn't occur, then it would
+                reset the timeout record.
 
+        Returns:
+            None
+
+        """
         timeout_records: Dict[str, int] = {}
         no_timeout_records: Dict[str, int] = {}
 
@@ -774,14 +773,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             time.sleep(wait_time)
 
     def wait_for_to_be_standby(self, wait_time: float = 2) -> bool:
-        """
-        Keep waiting to be the primary backup crawler instance.
+        """Keep waiting to be the primary backup crawler instance.
 
-        :param wait_time: For a Backup but isn't the primary one, how long does the crawler instance wait a second for
-               next checking GroupState.standby_id. The unit is seconds and default value is 2.
-        :return: It would return True if it directs the standby ID attribute value is equal to its index of name.
-        """
+        Args:
+            wait_time (float): For a Backup but isn't the primary one, how long does the crawler instance wait a second
+                for next checking GroupState.standby_id. The unit is seconds and default value is 2.
 
+        Returns:
+            bool: It's True if it directs the standby ID attribute value is equal to its index of name.
+
+        """
         while True:
             group_state = self._metadata_util.get_metadata_from_zookeeper(path=self.group_state_zookeeper_path,
                                                                           as_obj=GroupState)
@@ -791,17 +792,19 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             time.sleep(wait_time)
 
     def run_task(self, task: Task) -> None:
+        """Run the task it directs. It runs the task by meta-data *Task.running_content* and records the running result
+        back to meta-data *Task.running_result* and *Task.result_detail*.
+
+        The core implementation of how it works web spider job in protected function *_run_crawling_processing* (and
+        *processing_crawling_task*).
+
+        Args:
+            task (Task): The task it directs.
+
+        Returns:
+            None
+
         """
-        Run the task it directs. It runs the task by meta-data _Task.running_content_ and records the running result
-        back to meta-data _Task.running_result_ and _Task.result_detail_.
-
-        The core implementation of how it works web spider job in protected function __run_crawling_processing_ (and
-        _processing_crawling_task_).
-
-        :param task: The task it directs.
-        :return: None
-        """
-
         running_content = task.running_content
         current_task: Task = task
         start_task_id = task.in_progressing_id
@@ -870,14 +873,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._metadata_util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=current_task)
 
     def processing_crawling_task(self, content: RunningContent) -> Any:
-        """
-        The core of web spider implementation. All running functions it used are developers are familiar with ---
+        """The core of web spider implementation. All running functions it used are developers are familiar with ---
         SmoothCrawler components.
 
-        :param content: A RunningContent type object which provides clear attributes to run crawling task.
-        :return: Any type object (The running result of crawling).
-        """
+        Args:
+            content (RunningContent): A RunningContent type object which provides clear attributes to run crawling task.
 
+        Returns:
+            Any: The running result of crawling.
+
+        """
         # TODO: Consider about how to let crawler core implementation to be more scalable and flexible.
         parsed_response = self.crawl(method=content.method, url=content.url)
         data = self.data_process(parsed_response)
@@ -885,16 +890,18 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return data
 
     def discover(self, dead_crawler_name: str, heartbeat: Heartbeat) -> Task:
-        """
-        When backup role crawler instance discover anyone is dead, it would mark the target one as _Dead_
-        (_HeartState.Asystole_) and update its meta-data _Heartbeat_. In the same time, it would try to get its _Task_
-         and take over it.
+        """When backup role crawler instance discover anyone is dead, it would mark the target one as *Dead*
+        (*HeartState.Asystole*) and update its meta-data **Heartbeat**. In the same time, it would try to get
+        its **Task** and take over it.
 
-        :param dead_crawler_name: The crawler name which be under checking.
-        :param heartbeat: The meta-data _Heartbeat_ of crawler be under checking.
-        :return: Meta-data _Task_ from dead crawler instance.
-        """
+        Args:
+            dead_crawler_name (str): The crawler name which be under checking.
+            heartbeat (Heartbeat): The meta-data **Heartbeat** of crawler be under checking.
 
+        Returns:
+            Task: Meta-data **Task** from dead crawler instance.
+
+        """
         node_state_path = f"{self._generate_path(dead_crawler_name)}/{self._zookeeper_node_state_node_path}"
         node_state = self._metadata_util.get_metadata_from_zookeeper(path=node_state_path, as_obj=NodeState)
         node_state.role = CrawlerStateRole.DEAD_RUNNER
@@ -912,14 +919,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return task
 
     def activate(self, dead_crawler_name: str) -> None:
-        """
-        After backup role crawler instance marks target as _Dead_, it would start to activate to be running by itself
+        """After backup role crawler instance marks target as *Dead*, it would start to activate to be running by itself
         and run the runner's job.
 
-        :param dead_crawler_name: The crawler name which be under checking.
-        :return: None
-        """
+        Args:
+            dead_crawler_name (str): The crawler name which be under checking.
 
+        Returns:
+            None
+
+        """
         node_state = self._metadata_util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
                                                                      as_obj=NodeState)
         self._crawler_role = CrawlerStateRole.RUNNER
@@ -944,18 +953,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             self._metadata_util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=state)
 
     def hand_over_task(self, task: Task) -> None:
-        """
-        Hand over the task of the dead crawler instance. It would get the meta-data _Task_ from dead crawler and write
-        it to this crawler's meta-data _Task_.
+        """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
+        write it to this crawler's meta-data **Task**.
 
         Args:
-            task: The meta-data _Task_ of crawler be under checking.
+            task (Task): The meta-data **Task** of crawler be under checking.
 
         Returns:
             None
 
         """
-
         if task.running_status == TaskResult.PROCESSING.value:
             # Run the tasks from the start index
             self._metadata_util.set_metadata_to_zookeeper(path=self.task_zookeeper_path, metadata=task)
@@ -972,13 +979,15 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             pass
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
-        """
-        Update to be what role current crawler instance is in crawler cluster.
+        """Update to be what role current crawler instance is in crawler cluster.
 
-        :param role: The role of crawler instance.
-        :return: None
-        """
+        Args:
+            role (CrawlerStateRole): The role of crawler instance.
 
+        Returns:
+            None
+
+        """
         node_state = self._metadata_util.get_metadata_from_zookeeper(path=self.node_state_zookeeper_path,
                                                                      as_obj=NodeState)
         updated_node_state = Update.node_state(node_state=node_state, role=role)
@@ -1006,24 +1015,26 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             self._metadata_util.set_metadata_to_zookeeper(path=self.group_state_zookeeper_path, metadata=updated_state)
 
     def _run_updating_heartbeat_thread(self) -> None:
-        """
-        Activate and run a new thread to keep updating _Heartbeat_ info.
+        """Activate and run a new thread to keep updating **Heartbeat** info.
 
-        :return: None
-        """
+        Returns:
+            None
 
+        """
         updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
         updating_heartbeat_thread.daemon = True
         updating_heartbeat_thread.start()
 
     def _update_heartbeat(self) -> None:
-        """
-        The main function of updating _Heartbeat_ info.
-        It has a flag __Updating_Exception_. If it's True, it would stop updating _Heartbeat_.
+        """The main function of updating **Heartbeat** info.
 
-        :return: None
-        """
+        .. note::
+            It has a flag *_Updating_Exception*. If it's True, it would stop updating **Heartbeat**.
 
+        Returns:
+            None
+
+        """
         while True:
             if not self._updating_stop_signal:
                 try:
@@ -1059,14 +1070,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             raise self._updating_exception
 
     def _run_crawling_processing(self, content: RunningContent) -> Any:
-        """
-        The wrapper function of core crawling function _processing_crawling_task_. This meaning is checking the
+        """The wrapper function of core crawling function *processing_crawling_task*. This meaning is checking the
         SmoothCrawler components have been registered or not.
 
-        :param content: A RunningContent type object which provides clear attributes to run crawling task.
-        :return: Any type object (The running result of crawling).
-        """
+        Args:
+            content (RunningContent): A RunningContent type object which provides clear attributes to run crawling task.
 
+        Returns:
+            Any: The running result of crawling.
+
+        """
         if self._chk_register(persist=False):
             data = self.processing_crawling_task(content)
             return data
@@ -1080,16 +1093,18 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             data_hdler: bool = True,
             persist: bool = True,
     ) -> bool:
-        """
-        Checking the SmoothCrawler components has been registered or not.
+        """Checking the SmoothCrawler components has been registered or not.
 
-        :param http_sender: Checking component _CrawlerFactory.http_factory_ if it;s True.
-        :param http_resp_parser: Checking component _CrawlerFactory.parser_factory_ if it;s True.
-        :param data_hdler: Checking component _CrawlerFactory.data_handling_factory_ if it;s True.
-        :param persist: Checking component _CrawlerFactory.data_handling_factory_ if it;s True.
-        :return: A boolean type value. If it's True, means SmoothCrawler have been registered.
-        """
+        Args:
+            http_sender: Checking component *CrawlerFactory.http_factory* if it's True.
+            http_resp_parser: Checking component *CrawlerFactory.parser_factory* if it's True.
+            data_hdler: Checking component *CrawlerFactory.data_handling_factory* if it's True.
+            persist: Checking component *CrawlerFactory.data_handling_factory* if it's True.
 
+        Returns:
+            bool: If it's True, means SmoothCrawler have been registered.
+
+        """
         def _is_not_none(chk: bool, val) -> bool:
             if chk:
                 return val is not None
