@@ -8,34 +8,42 @@ SmoothCrawler-Cluster
 
 |python-versions| |release-version| |pypi-version| |license| |github-actions build-status| |codecov-coverage| |pylint| |codacy-level|
 
-A Python package which is encapsulation of cluster features to build a cluster or decentralized crawler system with *SmoothCrawler*.
+*A Python package which is encapsulation of cluster features to build a cluster or distributed crawler system with *SmoothCrawler*.*
 
 
 Overview
 ----------
 
-Content ...
+Do you ever been troubled how to develop a high fault tolerance program of crawler? In generally, crawler must gets fails or other
+weired issues so that occur any exceptions in running for a while because the Font-End code always be changed (no matter for new
+feature, breaking change or against web spider 🫣 ). So about the *SmoothCrawler*, it targets to separating the different concerns
+to different objects to let every components could focus on what thing they should and only to do; about the *SmoothCrawler-Cluster*,
+it extends the SoC features as a distributed or cluster system further, it gives crawler has high fault tolerance feature!
 
-Let's demonstrate an example to show how easy and clear it is!
+However, we could develop a high fault tolerance crawler easily. Let's demonstrate an example to show how easy and clear it is!
 
 .. code-block:: python
 
-   from smoothcrawler_cluster.crawler import ZookeeperCrawler
+   from smoothcrawler_cluster import ZookeeperCrawler
 
+   # Instantiate some crawlers with Zookeeper
    zk_crawler = ZookeeperCrawler(runner=2,
                                  backup=1,
                                  ensure_initial=True,
                                  zk_hosts=_ZK_HOSTS)
+   # Same as SmoothCrawler general usage, register the components into factory
    zk_crawler.register_factory(http_req_sender=RequestsHTTPRequest(),
                                http_resp_parser=RequestsExampleHTTPResponseParser(),
                                data_process=ExampleDataHandler())
+   # Listen and wait for tasks
    zk_crawler.run()
 
 
 General Documentation
 ----------------------
 
-This part of documentation, which introduces the package and has some step-by-step instructions for using or building parallelism features.
+This part of documentation, which introduces the package and has some step-by-step instructions for using or building a crawler with
+high fault tolerance features.
 
 .. toctree::
    :maxdepth: 1
@@ -50,7 +58,7 @@ This part of documentation, which introduces the package and has some step-by-st
 Usage Guides
 -------------
 
-content ...
+This section for who racks his/her brain developing and designing his/her own customized crawler but still have no idea.
 
 .. toctree::
    :maxdepth: 1
@@ -64,7 +72,7 @@ content ...
 API Reference
 ---------------
 
-Information about some function, class or method.
+Detail information about some function, class or method.
 
 .. toctree::
    :maxdepth: 1
@@ -80,7 +88,8 @@ Information about some function, class or method.
 Development Documentation
 --------------------------
 
-If you're curious about the detail of implementation of this package includes workflow, software architecture, system design or development, this section is for you.
+If you're curious about the detail of implementation of this package includes workflow, software architecture, system design or
+development, this section is for you.
 
 .. toctree::
    :caption: Development Documentation
@@ -95,7 +104,7 @@ If you're curious about the detail of implementation of this package includes wo
 Release Notes
 ---------------
 
-content ...
+Release information.
 
 .. toctree::
    :caption: Release Notes
