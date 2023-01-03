@@ -1,0 +1,7 @@
+.toctree-wrapper > p.caption {
+    display: none;
+}
+
+section#smoothcrawler-cluster > p {
+    text-align: center;
+}
