@@ -2,9 +2,6 @@
 Abstract Election
 ===================
 
-content ...
-
-
 Base Election
 ===============
 
