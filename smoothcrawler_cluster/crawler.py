@@ -37,7 +37,7 @@ BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 class BaseDistributedCrawler(metaclass=ABCMeta):
     """*Base class for distributed crawler*
 
-    TODO: Add docstring
+    TODO: Add docstring, consider and define abstract functions
     """
     pass
 
@@ -45,7 +45,7 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
 class BaseDecentralizedCrawler(BaseDistributedCrawler):
     """*Base class for decentralized crawler*
 
-    TODO: Add docstring
+    TODO: Add docstring, consider and define abstract functions
     """
     pass
 
