@@ -2,11 +2,6 @@
 Abstract Crawlers
 ===================
 
-*module* smoothcrawler.crawler
-
-content ...
-
-
 Base Distributed Crawler
 ==========================
 
