@@ -101,13 +101,13 @@ development, this section is for you.
    development_document/ci-cd
 
 
-Release Notes
----------------
+Change Logs
+------------
 
 Release information.
 
 .. toctree::
-   :caption: Release Notes
+   :caption: Change Logs
    :maxdepth: 1
 
    release_notes/0.X/index
