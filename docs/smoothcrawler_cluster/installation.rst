@@ -1,6 +1,8 @@
-===============
+.. _Installation:
+
+=============
 Installation
-===============
+=============
 
 *SmoothCrawler-Cluster* is installable using a Python package manager. *SmoothCrawler-Cluster* is depends on another one package
 *SmoothCrawler*, so it would also installs it if you never install it before.
