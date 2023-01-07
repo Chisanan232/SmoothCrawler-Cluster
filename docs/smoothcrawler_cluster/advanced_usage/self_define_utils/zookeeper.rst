@@ -2,9 +2,11 @@
 How to implement new Zookeeper client
 ======================================
 
-In *SmoothCrawler-Cluster* package, it implements Zookeeper client feature with Kazoo. That's the reason why its dependency
-has ``kazoo``. However, it you have other customized requirement so that it must to implement another new one, here would
+In *SmoothCrawler-Cluster* package, it implements Zookeeper client feature with `Kazoo`_. That's the reason why its dependency
+has *kazoo*. However, it you have other customized requirement so that it must to implement another new one, here would
 teach you step by step how to implement a your own customized Zookeeper client feature.
+
+.. _Kazoo: https://kazoo.readthedocs.io/en/latest/#
 
 About customizing a new Zookeeper client API, we could import the base class **_BaseZookeeperClient** from
 *smoothcrawler_cluster._utils.zookeeper*:
