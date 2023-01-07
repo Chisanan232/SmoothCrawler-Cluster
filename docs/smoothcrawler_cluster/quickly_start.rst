@@ -326,6 +326,12 @@ they're *sc-crawler_1* and *sc-crawler_2*, total amount of **Backup Runner** is 
 
 Therefore, we could make sure that the crawler cluster works finely!
 
+.. hint::
+
+    If you need, you could find the `example crawler code`_ here.
+
+.. _example crawler code: https://github.com/Chisanan232/SmoothCrawler-Cluster/blob/develop/crawler/scripts/pycode/sample_crawler.py
+
 Trigger the crawler running
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -383,5 +389,11 @@ You could observe that 3 options has been changed: ``running_result``, ``running
 
 ``result_detail`` is the most important option because it records the details of running result. So all what you want would
 be here. You could see that it crawling result is ``Example Domain``.
+
+.. hint::
+
+    If you need, you could find the `example code of assigning task`_ here.
+
+.. _example code of assigning task: https://github.com/Chisanan232/SmoothCrawler-Cluster/blob/develop/crawler/scripts/pycode/assign_task.py
 
 That's all how to quickly start with *SmoothCrawler-Cluster*. Hope you could enjoy it and build your own crawler cluster with it!
