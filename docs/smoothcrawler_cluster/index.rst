@@ -30,7 +30,7 @@ However, we could develop a high fault tolerance crawler easily. Let's demonstra
    zk_crawler = ZookeeperCrawler(runner=2,
                                  backup=1,
                                  ensure_initial=True,
-                                 zk_hosts=_ZK_HOSTS)
+                                 zk_hosts="localhost:2181")
    # Same as SmoothCrawler general usage, register the components into factory
    zk_crawler.register_factory(http_req_sender=RequestsHTTPRequest(),
                                http_resp_parser=RequestsExampleHTTPResponseParser(),
@@ -95,8 +95,8 @@ development, this section is for you.
    :caption: Development Documentation
    :maxdepth: 1
 
-   development_document/flow
-   development_document/software_architecture
+   development_document/flow/index
+   development_document/software_architecture/index
    development_document/test
    development_document/ci-cd
 
