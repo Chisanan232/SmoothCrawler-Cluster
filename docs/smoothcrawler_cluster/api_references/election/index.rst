@@ -1,12 +1,14 @@
-==========
+=========
 Election
-==========
+=========
 
 .. automodule:: smoothcrawler_cluster.election
 
 
 Common Modules
 ===============
+
+.. _ElectionResult:
 
 Election Result
 -----------------
