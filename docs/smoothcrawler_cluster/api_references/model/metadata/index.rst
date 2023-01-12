@@ -1,6 +1,8 @@
-===================
+.. _MetaDataModules:
+
+==================
 Meta-Data Modules
-===================
+==================
 
 .. automodule:: smoothcrawler_cluster.model.metadata
 
