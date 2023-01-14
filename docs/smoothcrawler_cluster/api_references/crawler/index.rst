@@ -1,6 +1,8 @@
-==========
+.. _CrawlerAPIRef:
+
+========
 Crawler
-==========
+========
 
 .. automodule:: smoothcrawler_cluster.crawler
 
