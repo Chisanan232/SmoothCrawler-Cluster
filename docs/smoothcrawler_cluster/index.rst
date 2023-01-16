@@ -97,7 +97,6 @@ development, this section is for you.
 
    development_document/flow/index
    development_document/software_architecture/index
-   development_document/test
    development_document/ci-cd
 
 
