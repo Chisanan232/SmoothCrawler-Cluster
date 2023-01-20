@@ -109,7 +109,7 @@ Release information.
    :caption: Change Logs
    :maxdepth: 1
 
-   change_logs/0.X/index
+   change_logs/index
 
 
 
