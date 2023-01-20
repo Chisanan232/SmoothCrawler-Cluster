@@ -2,7 +2,7 @@
 No Leader
 ==========
 
-In infra design of *SmoothCrawler-Cluster* usage, it provides some different way to developers to consider and implement it.
+.. include:: ../summary_leader_design.rst
 
 The direction of this section is **cluster without leader**. All members would be the same level in a no leader cluster, i.e.,
 they don't have *leader* or *master*, they all are *follower* or *slave*. In the other words, it is **decentralized**. If they
