@@ -1,0 +1,17 @@
+==============
+Version 0.1.0
+==============
+
+Release date: 2023-01-20 (UTC+08:00)
+
+New Feature
+============
+
+* Meta-data objects in cluster
+* Util modules
+
+  * Converter about serialization and deserialization
+  * Operations with Zookeeper
+
+* Election --- base class and **Index election**
+* Crawler --- **ZookeeperCrawler**
