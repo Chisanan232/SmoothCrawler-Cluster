@@ -8,7 +8,7 @@ New Feature
 ============
 
 * Meta-data objects in cluster
-* Util modules
+* Utility modules
 
   * Converter about serialization and deserialization
   * Operations with Zookeeper
