@@ -12,7 +12,7 @@ def get_requirements(file: str) -> List[str]:
     with open(file, "r", encoding="utf-8") as r:
         r_lines = r.read().splitlines()
         for r_line in r_lines:
-            if len(r_line) != 0 and r_line[0] != "#":
+            if len(r_line) and r_line[0] != "#":
                 requirements.append(r_line)
     return requirements
 
