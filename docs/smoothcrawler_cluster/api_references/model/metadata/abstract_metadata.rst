@@ -2,13 +2,11 @@
 Abstract Meta-Data
 ===================
 
-*module* smoothcrawler.model.metadata
-
-content ...
+.. _MetaData_BaseClass:
 
 
 Base Meta Data
 ===============
 
-    :members:
 .. autoclass:: smoothcrawler_cluster.model.metadata._BaseMetaData
+    :members:

@@ -1,5 +1,9 @@
-"""Module
-TODO: Add docstring
+"""*Model: data classes or enum objects for package*
+
+In a crawler cluster/decentralized system or distributed system, it must have a lot of meta-data objects to transfer to
+each other instances to get information about state in the entire system to know what happen and what things they should
+do to processing that. Here are the data classes and enum objects for recording, serialize, deserialize, etc, these
+information.
 """
 
 from abc import ABCMeta, abstractmethod
@@ -11,50 +15,88 @@ from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
 
 
 class _BaseDataObjectUtils(metaclass=ABCMeta):
-    """Class
-    TODO: Add docstring
+    """*The base class of different util objects*
+
+    There are some different types of operating meta-data objects: *empty*, *initial* and *update*. So it's naming the
+    operating as class name and rules every operating object should have functions for every different meta-data objects
+    *GroupState*, *NodeState*, *Task* and *Heartbeat*.
     """
 
     @staticmethod
     @abstractmethod
     def group_state(*args, **kwargs) -> GroupState:
-        """Function
-        TODO: Add docstring
+        """Operating for meta-data object **GroupState**.
+
+        Args:
+            *args (tuple): Pass parameters though tuple type value.
+            **kwargs (dict): Pass parameters though dict type value.
+
+        Returns:
+            GroupState: The **GroupState** meta-data object.
+
         """
         pass
 
     @staticmethod
     @abstractmethod
     def node_state(*args, **kwargs) -> NodeState:
-        """Function
-        TODO: Add docstring
+        """Operating for meta-data object **NodeState**.
+
+        Args:
+            *args (tuple): Pass parameters though tuple type value.
+            **kwargs (dict): Pass parameters though dict type value.
+
+        Returns:
+            NodeState: The **NodeState** meta-data object.
+
         """
         pass
 
     @staticmethod
     @abstractmethod
     def task(*args, **kwargs) -> Task:
-        """Function
-        TODO: Add docstring
+        """Operating for meta-data object **Task**.
+
+        Args:
+            *args (tuple): Pass parameters though tuple type value.
+            **kwargs (dict): Pass parameters though dict type value.
+
+        Returns:
+            Task: The **Task** meta-data object.
+
         """
         pass
 
     @staticmethod
     @abstractmethod
     def heartbeat(*args, **kwargs) -> Heartbeat:
-        """Function
-        TODO: Add docstring
+        """Operating for meta-data object **Heartbeat**.
+
+        Args:
+            *args (tuple): Pass parameters though tuple type value.
+            **kwargs (dict): Pass parameters though dict type value.
+
+        Returns:
+            Heartbeat: The **Heartbeat** meta-data object.
+
         """
         pass
 
 
 class Empty(_BaseDataObjectUtils):
-    """
-    Create data object you need with empty values.
+    """*Empty meta-data objects*
+
+    Generate an empty meta-data objects without any values.
     """
 
     @staticmethod
     def group_state() -> GroupState:
+        """Generate an empty meta-data object **GroupState**.
+
+        Returns:
+            GroupState: An empty **GroupState** meta-data object.
+
+        """
         group_state = GroupState()
         group_state.total_crawler = 0
         group_state.total_runner = 0
@@ -70,6 +112,12 @@ class Empty(_BaseDataObjectUtils):
 
     @staticmethod
     def node_state() -> NodeState:
+        """Generate an empty meta-data object **NodeState**.
+
+        Returns:
+            NodeState: An empty **NodeState** meta-data object.
+
+        """
         node_state = NodeState()
         node_state.group = ""
         node_state.role = CrawlerStateRole.INITIAL
@@ -77,6 +125,12 @@ class Empty(_BaseDataObjectUtils):
 
     @staticmethod
     def task() -> Task:
+        """Generate an empty meta-data object **Task**.
+
+        Returns:
+            Task: An empty **Task** meta-data object.
+
+        """
         task = Task()
         task.running_content = []
         task.cookie = {}
@@ -89,6 +143,12 @@ class Empty(_BaseDataObjectUtils):
 
     @staticmethod
     def heartbeat() -> Heartbeat:
+        """Generate an empty meta-data object **Heartbeat**.
+
+        Returns:
+            Heartbeat: An empty **Heartbeat** meta-data object.
+
+        """
         heartbeat = Heartbeat()
         heartbeat.time_format = "%Y-%m-%d %H:%M:%S"
         heartbeat.heart_rhythm_time = datetime.now().strftime(heartbeat.time_format)
@@ -101,8 +161,9 @@ class Empty(_BaseDataObjectUtils):
 
 
 class Initial(_BaseDataObjectUtils):
-    """
-    Initial data object with every different options.
+    """*Initialize a meta-data object with values*
+
+    Initial meta-data object with values at one or more multiple specific different options.
     """
 
     @staticmethod
@@ -119,6 +180,25 @@ class Initial(_BaseDataObjectUtils):
             fail_runner: List[str] = [],
             fail_backup: List[str] = [],
     ) -> GroupState:
+        """Initialize a meta-data object **GroupState** with values.
+
+        Args:
+            crawler_name (str): Crawler instance's name.
+            total_crawler (int): Total amount of crawler includes every role.
+            total_runner (int): Total amount of crawler which is *Runner*.
+            total_backup (int): Total amount of crawler which is *Backup_Runner*.
+            standby_id (str): The standby ID. It should be the index of crawler name.
+            current_crawler (list of str): A list of total crawler instance's name includes every role.
+            current_runner (list of str): A list of total crawler instance's name which is *Runner*.
+            current_backup (list of str): A list of total crawler instance's name which is *Backup_Runner*.
+            fail_crawler (list of str): A list of total crawler instance's name which is dead state.
+            fail_runner (list of str): A list of total crawler instance's name which is *Dead_Runner*.
+            fail_backup (list of str): A list of total crawler instance's name which is *Dead_Backup_Runner*.
+
+        Returns:
+            GroupState: An **GroupState** meta-data object with value(s).
+
+        """
         group_state = GroupState()
         group_state.total_crawler = total_crawler
         group_state.total_runner = total_runner
@@ -137,6 +217,16 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def node_state(group: str = None, role: CrawlerStateRole = None) -> NodeState:
+        """Initialize a meta-data object **NodeState** with values.
+
+        Args:
+            group (str): The name of group which the current crawler instance belong to.
+            role (CrawlerStateRole): The role of current crawler instance.
+
+        Returns:
+            NodeState: An **NodeState** meta-data object with value(s).
+
+        """
         node_state = NodeState()
         if group:
             node_state.group = group
@@ -155,6 +245,22 @@ class Initial(_BaseDataObjectUtils):
             running_state: TaskResult = None,
             result_detail: List[Union[dict, ResultDetail]] = [],
     ) -> Task:
+        """Initialize a meta-data object **Task** with values.
+
+        Args:
+            running_content (List[Union[dict, RunningContent]]): The details of task content.
+            cookie (dict): Cookie.
+            authorization (dict): Authorization settings of HTTP request.
+            in_progressing_id (str): The task ID which is in processing state.
+            running_result (Union[dict, RunningResult]): The running result statistics about amount of successful and
+                fail done tasks.
+            running_state (TaskResult): The status of task running.
+            result_detail (List[Union[dict, ResultDetail]]): The details of running result.
+
+        Returns:
+            Task: An **Task** meta-data object with value(s).
+
+        """
         task = Task()
         task.running_content = running_content
         task.cookie = cookie
@@ -178,6 +284,20 @@ class Initial(_BaseDataObjectUtils):
             healthy_state: HeartState = None,
             task_state: TaskResult = None,
     ) -> Heartbeat:
+        """Initialize a meta-data object **Heartbeat** with values.
+
+        Args:
+            time_format (str): The format of datetime value.
+            update_time (str): The timer for updating heartbeat.
+            update_timeout (str): The timeout threshold of updating.
+            heart_rhythm_timeout (str): The timeout threshold of entire updating process.
+            healthy_state (HeartState): Heartbeat status.
+            task_state (TaskResult): Task running status.
+
+        Returns:
+            Heartbeat: An **Heartbeat** meta-data object with value(s).
+
+        """
         heartbeat = Heartbeat()
         if not time_format:
             time_format = "%Y-%m-%d %H:%M:%S"
@@ -202,8 +322,9 @@ class Initial(_BaseDataObjectUtils):
 
 
 class Update(_BaseDataObjectUtils):
-    """
-    Update the data object with every different options.
+    """*Updating a meta-data object with values*
+
+    Update the meta-data object with one or more multiple options.
     """
 
     @staticmethod
@@ -220,7 +341,30 @@ class Update(_BaseDataObjectUtils):
             append_fail_runner: List[str] = [],
             append_fail_backup: List[str] = [],
     ) -> GroupState:
+        """Updating a meta-data object **GroupState** with values.
 
+        .. note::
+
+            The updating of some options which is list type would update value though appending element(s) at the
+            current list value in Zookeeper and assigning it at the target option.
+
+        Args:
+            state (GroupState): Current *GroupState* meta-data object.
+            total_crawler (int): Total amount of crawler includes every role.
+            total_runner (int): Total amount of crawler which is *Runner*.
+            total_backup (int): Total amount of crawler which is *Backup_Runner*.
+            standby_id (str): The standby ID. It should be the index of crawler name.
+            append_current_crawler (list of str): A list of total crawler instance's name includes every role.
+            append_current_runner (list of str): A list of total crawler instance's name which is *Runner*.
+            append_current_backup (list of str): A list of total crawler instance's name which is *Backup_Runner*.
+            append_fail_crawler (list of str): A list of total crawler instance's name which is dead state.
+            append_fail_runner (list of str): A list of total crawler instance's name which is *Dead_Runner*.
+            append_fail_backup (list of str): A list of total crawler instance's name which is *Dead_Backup_Runner*.
+
+        Returns:
+            GroupState: An **GroupState** meta-data object with value(s).
+
+        """
         Update._update_ele_if_not_none(data_obj=state, prop="total_crawler", new_val=total_crawler)
         Update._update_ele_if_not_none(data_obj=state, prop="total_runner", new_val=total_runner)
         Update._update_ele_if_not_none(data_obj=state, prop="total_backup", new_val=total_backup)
@@ -239,6 +383,17 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def node_state(node_state: NodeState, group: str = None, role: CrawlerStateRole = None) -> NodeState:
+        """Updating a meta-data object **NodeState** with values.
+
+        Args:
+            node_state (NodeState): Current *NodeState* meta-data object.
+            group (str): The name of group which the current crawler instance belong to.
+            role (CrawlerStateRole): The role of current crawler instance.
+
+        Returns:
+            NodeState: An **NodeState** meta-data object with value(s).
+
+        """
         Update._update_ele_if_not_none(data_obj=node_state, prop="group", new_val=group)
         Update._update_ele_if_not_none(data_obj=node_state, prop="role", new_val=role)
         return node_state
@@ -254,6 +409,23 @@ class Update(_BaseDataObjectUtils):
             running_status: TaskResult = None,
             result_detail: List[Union[dict, ResultDetail]] = None,
     ) -> Task:
+        """Updating a meta-data object **Task** with values.
+
+        Args:
+            task (Task): Current *Task* meta-data object.
+            running_content (List[Union[dict, RunningContent]]): The details of task content.
+            cookie (dict): Cookie.
+            authorization (dict): Authorization settings of HTTP request.
+            in_progressing_id (str): The task ID which is in processing state.
+            running_result (Union[dict, RunningResult]): The running result statistics about amount of successful and
+                fail done tasks.
+            running_status (TaskResult): The status of task running.
+            result_detail (List[Union[dict, ResultDetail]]): The details of running result.
+
+        Returns:
+            Task: An **Task** meta-data object with value(s).
+
+        """
         Update._update_ele_if_not_none(data_obj=task, prop="running_content", new_val=running_content)
         Update._update_ele_if_not_none(data_obj=task, prop="cookie", new_val=cookie)
         Update._update_ele_if_not_none(data_obj=task, prop="authorization", new_val=authorization)
@@ -274,6 +446,22 @@ class Update(_BaseDataObjectUtils):
             healthy_state: HeartState = None,
             task_state: Union[str, TaskResult] = None,
     ) -> Heartbeat:
+        """Updating a meta-data object **Heartbeat** with values.
+
+        Args:
+            heartbeat (Heartbeat): Current *Heartbeat* meta-data object.
+            heart_rhythm_time (datetime): It should be a *datetime.datetime* type object.
+            time_format (str): The format of datetime value.
+            update_time (str): The timer for updating heartbeat.
+            update_timeout (str): The timeout threshold of updating.
+            heart_rhythm_timeout (str): The timeout threshold of entire updating process.
+            healthy_state (HeartState): Heartbeat status.
+            task_state (TaskResult): Task running status.
+
+        Returns:
+            Heartbeat: An **Heartbeat** meta-data object with value(s).
+
+        """
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="heart_rhythm_time", new_val=heart_rhythm_time)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="time_format", new_val=time_format)
         Update._update_ele_if_not_none(data_obj=heartbeat, prop="update_time", new_val=update_time)

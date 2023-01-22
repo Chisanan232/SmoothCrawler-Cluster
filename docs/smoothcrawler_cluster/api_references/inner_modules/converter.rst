@@ -1,39 +1,27 @@
-=========================
-Inner utils - Converter
-=========================
+.. _UtilConverterAPIRef:
 
-*module* smoothcrawler._utils.converter
+==================
+Utils - Converter
+==================
 
-Some content for module converter
+.. automodule:: smoothcrawler_cluster._utils.converter
 
-
-Framework Modules
-===================
-
-BaseConverter
----------------
-
-.. autoclass:: smoothcrawler_cluster._utils.converter.BaseConverter
-    :members:
-
-
-
-Implementation Modules
-=======================
 
 JsonStrConverter
--------------------
+-----------------
 
 .. autoclass:: smoothcrawler_cluster._utils.converter.JsonStrConverter
     :members:
+    :private-members:
+    :inherited-members:
 
 
 
 Other Modules
-================
+==============
 
 TaskContentDataUtils
--------------------
+---------------------
 
 .. autoclass:: smoothcrawler_cluster._utils.converter.TaskContentDataUtils
     :members:

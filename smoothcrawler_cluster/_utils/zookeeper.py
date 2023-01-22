@@ -1,5 +1,8 @@
-"""Module docstring
-# TODO: Need to add document here
+"""*Util functions of operating with Zookeeper*
+
+Here are some objects for ZookeeperCrawler which won't take care meta-data objects by itself. It would let third party
+application to handle them --- Zookeeper. Therefore, some util functions about doing operations with Zookeeper in this
+module for that.
 """
 
 from abc import ABCMeta, abstractmethod
@@ -16,54 +19,40 @@ BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
 
 class _BaseZookeeperNode(metaclass=ABCMeta):
-    """
-    The object which saving information of one specific path of Zookeeper.
+    """*Framework module to define some attributes of node in Zookeeper*
+
+    A node of Zookeeper.
     """
 
     @property
     @abstractmethod
     def path(self) -> str:
-        """
-        The path in Zookeeper.
-
-        :return: A string type value.
-        """
+        """:obj:`str`: Properties with both a getter and setter for the path of node in Zookeeper."""
         pass
 
     @path.setter
     @abstractmethod
     def path(self, val: str) -> None:
-        """
-        The path in Zookeeper.
-
-        :return: A string type value.
-        """
         pass
 
     @property
     @abstractmethod
     def value(self) -> str:
-        """
-        The value of the path.
-
-        :return: A string type value. You may need to deserialize the data if it needs.
+        """:obj:`str`: Properties with both a getter and setter for the value of the path. It may need to deserialize
+        the data if it needs.
         """
         pass
 
     @value.setter
     @abstractmethod
     def value(self, val: str) -> None:
-        """
-        The value of the path.
-
-        :return: A string type value. You may need to deserialize the data if it needs.
-        """
         pass
 
 
 class ZookeeperNode(_BaseZookeeperNode):
-    """Class Docstring
-    # TODO: Need to add docstring here.
+    """*Zookeeper node object*
+
+    All data be got from Zookeeper would be converted to this object in all util functions for getting value.
     """
 
     _path: str = None
@@ -90,18 +79,34 @@ _BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperN
 
 
 class ZookeeperRecipe(Enum):
-    """Class Docstring
-    # TODO: Need to add docstring here.
+    """*Distributed Lock features*
+
+    The enum value is the object naming which could be found in the module *kazoo.recipe.lock*.
     """
 
-    READ_LOCK = "ReadLock"
-    WRITE_LOCK = "WriteLock"
-    SEMAPHORE = "Semaphore"
+    READ_LOCK: str = "ReadLock"
+    """The `kazoo.recipe.lock.ReadLock`_ object.
+
+    .. _kazoo.recipe.lock.ReadLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.ReadLock # pylint: disable=line-too-long
+    """
+
+    WRITE_LOCK: str = "WriteLock"
+    """The `kazoo.recipe.lock.WriteLock`_ object.
+
+    .. _kazoo.recipe.lock.WriteLock: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.WriteLock # pylint: disable=line-too-long
+    """
+
+    SEMAPHORE: str = "Semaphore"
+    """The `kazoo.recipe.lock.Semaphore`_ object.
+
+    .. _kazoo.recipe.lock.Semaphore: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore # pylint: disable=line-too-long
+    """
 
 
 class _BaseZookeeperClient(metaclass=ABCMeta):
-    """Class Docstring
-    # TODO: Need to add docstring here.
+    """*Framework module for defining some attributes for Zookeeper client APIs*
+
+    Here rules some necessary APIs of Zookeeper client.
     """
 
     @abstractmethod
@@ -112,72 +117,129 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
             identifier: str,
             max_leases: Optional[int] = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
+        """Limit Zookeeper operations in concurrency scenarios by distributed lock.
+
+        Args:
+            path (str): The node path.
+            restrict (ZookeeperRecipe): Which type of distributed lock to instantiate and use.
+            identifier (str): The identifier of distributed lock.
+            max_leases (Optional[int]): This option for distributed lock *Semaphore*. The maximum amount to leases
+                available for the semaphore. It's same as the argument of `kazoo.recipe.lock.Semaphore.__init__`_.
+
+        Returns:
+            Union[ReadLock, WriteLock, Semaphore]: The distributed lock be instantiated by *kazoo.recipe.lock.ReadLock*,
+                *kazoo.recipe.lock.WriteLock* or *kazoo.recipe.lock.Semaphore*.
+
+            The return type would be effected by the arguments *restrict* and *max_leaves*. In generally, it would
+            generate the mapping object by the naming. But it would try to instantiate **Semaphore** if argument
+            *max_leaves* is not None. So it DOES NOT suggest that giving value to option *max_leaves* if it doesn't
+            want to use **Semaphore**.
+
+        .. note::
+
+            The instance it returns also could be operated by Python keyword *with*.
+
+            .. code-block:: python
+
+                lock = <_BaseZookeeperClient type instance>.restrict(path="/test",
+                                                                     restrict=ZookeeperRecipe.READ_LOCK,
+                                                                     identifier="test_id")
+                with lock:
+                    # Do something with the lock
+
+        # pylint: disable=line-too-long
+        .. _kazoo.recipe.lock.Semaphore.__init__: https://kazoo.readthedocs.io/en/latest/api/recipe/lock.html#kazoo.recipe.lock.Semaphore.__init__
+        """
         pass
 
     @abstractmethod
     def exist_node(self, path: str) -> bool:
-        """
-        Check whether the target node exist or not.
+        """Check whether the target node exist or not.
 
-        :param path: The path of target node.
-        :return: Boolean value. It returns True if the path exists, nor False.
+        Args:
+            path (str): The node path.
+
+        Returns:
+            bool: True if the target path is existed, nor False.
+
         """
         pass
 
     @abstractmethod
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        """
-        Get one specific node by path in Zookeeper.
+        """Get one specific node by path in Zookeeper.
 
-        :param path: The path of target node.
-        :return: It would return a _BaseZookeeperPathType type object.
-        """
+        Args:
+            path (str): The node path.
 
+        Returns:
+            Generic[_BaseZookeeperNodeType]: It would return a _BaseZookeeperPathType type object.
+
+        """
         pass
 
     @abstractmethod
     def create_node(self, path: str, value: Union[str, bytes]) -> None:
-        """
-        Create a path as the target path in Zookeeper.
+        """Create a node with the path and value in Zookeeper.
 
-        :param path: The path of target node.
-        :param value:
-        :return:
-        """
+        Args:
+            path (str): The node path.
+            value (Union[str, bytes]): Assign value to the node by path when create it.
 
+        Returns:
+            None
+
+        """
         pass
 
     @abstractmethod
     def delete_node(self, path: str) -> bool:
+        """Delete the node by path in Zookeeper.
+
+        Args:
+            path (str): The node path.
+
+        Returns:
+            bool: True if it deletes the node successfully.
+
+        """
         pass
 
     @abstractmethod
     def get_value_from_node(self, path: str) -> str:
-        """
-        Get the value directly from the Zookeeper path.
+        """Get the value directly from the Zookeeper path.
 
-        :param path: The path of target node.
-        :return: A string type value. You may need to deserialize the data if it needs.
-        """
+        Args:
+            path (str): The node path.
 
+        Returns:
+            str: The value from node in Zookeeper. It must be a string type value, but it might as a specific format,
+                e.g.,JSON format, so it's possible to deserialize the data if it needs.
+
+        """
         pass
 
     @abstractmethod
     def set_value_to_node(self, path: str, value: str) -> bool:
-        """
-        Set a value to the one specific Zookeeper path.
+        """Set a value to the one specific Zookeeper path.
 
-        :param path: The path of target node.
-        :param value: A string type value.
-        :return: Boolean type value, it would return True if it does finely without any issue, nor it returns False.
-        """
+        Args:
+            path (str): The node path.
+            value (str): Data which must be string type value.
 
+        Returns:
+            bool: True if it runs finely without any issue, nor it returns False.
+
+        """
         pass
 
 
 class ZookeeperClient(_BaseZookeeperClient):
-    """Class Docstring
-    # TODO: Need to add docstring here.
+    """*The Zookeeper client object which be implemented by Python library `kazoo`_.*
+
+    .. _kazoo: https://github.com/python-zk/kazoo
+
+    This object is the default usage in this package used as Zookeeper client.
     """
 
     def __init__(self, hosts: str):

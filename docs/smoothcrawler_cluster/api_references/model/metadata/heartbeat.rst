@@ -2,9 +2,7 @@
 Heartbeat
 ===========
 
-*module* smoothcrawler.model.metadata
-
-Some content for module metadata
+.. _MetaData_Heartbeat:
 
 
 .. autoclass:: smoothcrawler_cluster.model.metadata.Heartbeat

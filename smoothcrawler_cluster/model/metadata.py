@@ -1,5 +1,6 @@
-"""Module Docstring
-TODO: Add docstring
+"""*Meta-Data*
+
+Here are the meta-data which keeps state for distributed system running finely with each others.
 """
 
 from abc import ABCMeta, abstractmethod
@@ -14,17 +15,30 @@ _DatetimeType = TypeVar("_DatetimeType", bound=dt)
 
 
 class _BaseMetaData(metaclass=ABCMeta):
+    """*The base class of all meta-data which be used in this package*
+
+    It only defines one abstracted function every meta-data must implement --- *to_readable_object* which for
+    deserializing.
+    """
 
     def __str__(self):
         return str(self.to_readable_object())
 
     @abstractmethod
     def to_readable_object(self) -> dict:
+        """Converse the instance's current data to be dict type value. Its target is let data converse as JSON format
+        value for deserializing conveniently.
+
+        Returns:
+            dict: A dict type value keeps the current instance's data.
+
+        """
         pass
 
 
 class GroupState(_BaseMetaData):
-    """
+    """*Meta-Data for group in cluster*
+
     One of the meta-data of *SmoothCrawler-Cluster*. It saves info about which VMs (web spider name) are **Runner**
     and another VMs are **Backup Runner**. The cluster would check the content of this info to run **Runner Election**
     to determine who is **Runner** and who is ***Backup Runner**.
@@ -34,15 +48,12 @@ class GroupState(_BaseMetaData):
         It could consider one thing: use 2 modes to determine how cluster works:
 
         1. *Decentralized mode*: no backup member, but each member could cover anyone which is dead.
-        2. *Master-Slave mode*: has backup member and they do nothing (only check heartbeat) until anyone dead.
+        2. *Master-Slave mode*: has backup member, and they do nothing (only check heartbeat) until anyone dead.
 
     * Zookeeper node path:
+    */smoothcrawler/group/<crawler group name>/state/*
 
-    /smoothcrawler/group/<crawler group name>/state/
-
-
-    * Example info at node *state*:
-
+    * Example data:
     .. code-block:: python
 
         {
@@ -90,12 +101,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def total_crawler(self) -> int:
-        """
-        The total count of the web spiders **Runner** & **Backup Runner**.
+        """:obj:`int`: Properties with both a getter and setter for total amount of the crawler includes role is
+        **Runner** & **Backup Runner**.
 
-        :return: An integer value.
+        Setter would block the data which type is NOT int.
         """
-
         return self._total_crawlers
 
     @total_crawler.setter
@@ -106,12 +116,10 @@ class GroupState(_BaseMetaData):
 
     @property
     def total_runner(self) -> int:
-        """
-        The total count of web spider **Runner**.
+        """:obj:`int`: Properties with both a getter and setter for total amount of crawler with role **Runner**.
 
-        :return: An integer type value.
+        Setter would block the data which type is NOT int.
         """
-
         return self._total_runner
 
     @total_runner.setter
@@ -122,12 +130,10 @@ class GroupState(_BaseMetaData):
 
     @property
     def total_backup(self) -> int:
-        """
-        The total count of web spider **Backup Runner**.
+        """:obj:`int`: Properties with both a getter and setter for total amount of crawler with role **Backup Runner**.
 
-        :return: An integer value.
+        Setter would block the data which type is NOT int.
         """
-
         return self._total_backup
 
     @total_backup.setter
@@ -138,12 +144,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def current_crawler(self) -> List[str]:
-        """
-        The total count of **Runner** & **Backup Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total of **Runner** &
+        **Backup Runner** as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._current_crawler
 
     @current_crawler.setter
@@ -154,12 +159,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def current_runner(self) -> List[str]:
-        """
-        The total count of **Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total amount of **Runner**
+        as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._current_runner
 
     @current_runner.setter
@@ -170,12 +174,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def current_backup(self) -> List[str]:
-        """
-        The total count of **Backup Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total amount of **Backup
+        Runner** as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._current_backup
 
     @current_backup.setter
@@ -186,13 +189,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def standby_id(self) -> str:
-        """
-        The next one member of **Backup Runner** should activate to take over the task of **Runner** member which
-        is dead (doesn't update heartbeat stamp and timeout).
+        """:obj:`str`: Properties with both a getter and setter for the next one member of **Backup Runner** should
+        activate to take over the task of **Runner** member which is dead (doesn't update heartbeat stamp and timeout).
 
-        :return: An string type value and it is ID of the web spider's name.
+        Setter would block the data which type is NOT str.
         """
-
         return self._standby_id
 
     @standby_id.setter
@@ -203,12 +204,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def fail_crawler(self) -> List[str]:
-        """
-        The total count of **Dead Runner** & **Dead Backup Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total amount of **Dead
+        Runner** & **Dead Backup Runner** as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._fail_crawler
 
     @fail_crawler.setter
@@ -219,12 +219,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def fail_runner(self) -> List[str]:
-        """
-        The total count of **Dead Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total amount of **Dead
+        Runner** as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._fail_runner
 
     @fail_runner.setter
@@ -235,12 +234,11 @@ class GroupState(_BaseMetaData):
 
     @property
     def fail_backup(self) -> List[str]:
-        """
-        The total count of **Dead Backup Runner** currently.
+        """:obj:`list` of :obj:`str`: Properties with both a getter and setter for CURRENTLY total amount of **Dead
+        Backup Runner** as a list of their name.
 
-        :return: A list type value which element is web spider name.
+        Setter would block the data which type is NOT list.
         """
-
         return self._fail_backup
 
     @fail_backup.setter
@@ -251,17 +249,15 @@ class GroupState(_BaseMetaData):
 
 
 class NodeState(_BaseMetaData):
-    """
-    _GroupState_ is a state info for multiple nodes which also in same **group**. _NodeState_ is the state info for one
+    """*Meta-Data for one specific crawler's state in cluster*
+
+    *GroupState* is a state info for multiple nodes which also in same **group**. *NodeState* is the state info for one
     specific crawler instance. It would save some more detail info of the crawler instance of the cluster.
 
     * Zookeeper node path:
+    */smoothcrawler/node/<crawler name>/state/*
 
-    /smoothcrawler/node/<crawler name>/state/
-
-
-    * Example info at node *state*:
-
+    * Example data:
     .. code-block:: python
 
         {
@@ -282,10 +278,10 @@ class NodeState(_BaseMetaData):
 
     @property
     def group(self) -> str:
-        """
-        The name of group current crawler instance in.
+        """:obj:`str`: Properties with both a getter and setter for the group name which is the current crawler instance
+        in.
 
-        :return: group name.
+        Setter would block the data which type is NOT str.
         """
         return self._group
 
@@ -297,14 +293,12 @@ class NodeState(_BaseMetaData):
 
     @property
     def role(self) -> CrawlerStateRole:
-        """
-        Role of *SmoothCrawler-Cluster*. It recommends that use enum object **CrawlerStateRole** to configure this
-        property. But it still could use string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-
-        runner') to do it.
+        """:obj:`str`: Properties with both a getter and setter for the crawler role what current crawler instance is.
+        It recommends that use enum object **CrawlerStateRole** to configure this property. But it still could use
+        string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-runner') to do it.
 
-        :return: The enumerate object *CrawlerStateRole* or string type value.
+        Setter only accepts the enum object **CrawlerStateRole** or string type value.
         """
-
         return self._role
 
     @role.setter
@@ -326,16 +320,50 @@ class NodeState(_BaseMetaData):
 
 _RunningContent_Attrs: List[str] = ["task_id", "url", "method", "parameters", "header", "body"]
 RunningContent = namedtuple("RunningContent", _RunningContent_Attrs)
+"""*The object for the task content detail*
+
+About the option *running_content* of meta-data object **Task**.
+
+By the way, this is a *namedtuple* object.
+
+Parameters:
+  task_id (str): Task ID. It's a unique index for every task content object.
+  url (str): The URL target to crawl.
+  method (str): HTTP method of URL to send request.
+  parameters (str): Parameter of HTTP request.
+  header (str): HTTP header of request.
+  body (str): The body of HTTP request.
+"""
 
 _RunningResult_Attrs: List[str] = ["success_count", "fail_count"]
 RunningResult = namedtuple("RunningResult", _RunningResult_Attrs)
+"""*The object for the running result statistics*
+
+The object for the option *running_result* of meta-data object **Task**.
+
+Parameters:
+  success_count (int): The total amount of successfully done task.
+  fail_count (int): The total amount of fail done task.
+"""
 
 _ResultDetail_Attrs: List[str] = ["task_id", "state", "status_code", "response", "error_msg"]
 ResultDetail = namedtuple("ResultDetail", _ResultDetail_Attrs)
+"""*The object for the running result details*
+
+The object for the option *result_detail* of meta-data object **Task**.
+
+Parameters:
+  task_id (str): Task ID. It would be assigned from the task ID in **RunningContent**.
+  state (str): Task running state. This option could be assigned by enum **TaskResult**.
+  status_code (str): The HTTP status code in response.
+  response (str): The HTTP response.
+  error_msg (str): Error message.
+"""
 
 
 class Task(_BaseMetaData):
-    """
+    """*Meta-Data for one specific crawler's task*
+
     The current web spider task **Runner** member got. It's the record for **Runner** or **Backup Runner** in different
     scenarios to do different things.
 
@@ -354,12 +382,9 @@ class Task(_BaseMetaData):
 
 
     * Zookeeper node path:
+    */smoothcrawler/node/<crawler name>/task/*
 
-    /smoothcrawler/node/<crawler name>/task/
-
-
-    * Example value at node *task*:
-
+    * Example data:
     .. code-block:: python
 
         {
@@ -415,14 +440,16 @@ class Task(_BaseMetaData):
 
     @property
     def running_content(self) -> List[dict]:
-        """
-        Detail of task. In generally, it should record some necessary data about task like *url*, *method*, etc. It
-        suggests developers use object *RunningContent* to configure this attribute. This would be reset after crawler
-        instance finish all tasks.
+        """:obj:`list` of :obj:`dict`: Properties with both a getter and setter for detail of task content. In
+        generally, it should record some necessary info about task like *url*, *method*, etc. It suggests that
+        developers could use object *RunningContent* to configure this attribute.
 
-        :return: A list type value which be combined with dict type elements.
-        """
+        This property would be reset back to empty list after crawler instance finish all tasks.
 
+        Setter would raise ValueError in 2 scenarios:
+            * Value type is NOT list.
+            * Any one of elements in list data type is NOT dict or *RunningContent*.
+        """
         return self._running_content
 
     @running_content.setter
@@ -441,12 +468,10 @@ class Task(_BaseMetaData):
 
     @property
     def cookie(self) -> dict:
-        """
-        The cookie for tasks.
+        """:obj:`dict`: Properties with both a getter and setter for the cookie for tasks.
 
-        :return: A dict type value.
+        Setter would raise ValueError if the value data type is NOT dict.
         """
-
         return self._cookie
 
     @cookie.setter
@@ -457,12 +482,10 @@ class Task(_BaseMetaData):
 
     @property
     def authorization(self) -> dict:
-        """
-        The authorization for tasks.
+        """:obj:`dict`: Properties with both a getter and setter for the authorization for tasks.
 
-        :return: A dict type value.
+        Setter would raise ValueError if the value data type is NOT dict.
         """
-
         return self._authorization
 
     @authorization.setter
@@ -473,12 +496,13 @@ class Task(_BaseMetaData):
 
     @property
     def in_progressing_id(self) -> str:
-        """
-        The ID of the task which be run by crawler instance currently.
+        """:obj:`str`: Properties with both a getter and setter for the ID of the task which be run by crawler instance
+        currently.
 
-        :return: A dict type value.
+        Setter would raise ValueError in 2 scenarios:
+            * Value type is NOT str or int.
+            * Value could NOT be parsed as number format value.
         """
-
         return self._in_progressing_id
 
     @in_progressing_id.setter
@@ -495,11 +519,11 @@ class Task(_BaseMetaData):
 
     @property
     def running_result(self) -> dict:
-        """
-        This attribute records statistics of the running result of tasks. Currently, it only has 2 type data: count of
-        success (_success_count_) and count of fail (_fail_count_).
+        """:obj:`dict`: Properties with both a getter and setter for the statistics of the running result of all
+        tasks. Currently, it only has 2 type data: amount of total success (_success_count_) and amount of total
+        fail (_fail_count_).
 
-        :return: A dict type value.
+        Setter would raise ValueError if the value data type is NOT dict or *RunningResult*.
         """
 
         return self._running_result
@@ -514,12 +538,11 @@ class Task(_BaseMetaData):
 
     @property
     def running_status(self) -> str:
-        """
-        The status of crawler runs task. It suggests developers configure this attribute by enum object **TaskResult**.
+        """:obj:`str`: Properties with both a getter and setter for the status of crawler runs task. It suggests
+        developers configure this attribute by enum object **TaskResult**.
 
-        :return: A string type value from enum object of **TaskResult**.
+        Setter would raise ValueError if the value data type is NOT dict or *TaskResult*.
         """
-
         return self._running_status
 
     @running_status.setter
@@ -531,12 +554,13 @@ class Task(_BaseMetaData):
 
     @property
     def result_detail(self) -> List[dict]:
-        """
-        This attributes saves the details of tasks running result.
+        """:obj:`list` of :obj:`dict`: Properties with both a getter and setter for the details of every task's running
+        result.
 
-        :return: A list type valur which be combined with dict type data be defined by object **ResultDetail**.
+        Setter would raise 2 types ValueError in below 2 scenarios:
+            * Value data type is NOT list.
+            * Any one element of list data type is NOT dict or *ResultDetail*.
         """
-
         return self._result_detail
 
     @result_detail.setter
@@ -561,23 +585,21 @@ class Task(_BaseMetaData):
 
 
 class Heartbeat(_BaseMetaData):
-    """
+    """*Meta-Data for one specific crawler's heartbeat*
+
     The cluster member of **Backup Runner** would use this info to determine the member of **Runner** is health or not.
     It only has one thing in this section --- *datetime*. The *datetime* is the stamp of **Runner** heartbeat to display
     when does it live and update the stamp last time. So **Backup Runner** could keep checking this info to determine
     whether current **Runner** member is alive or not. And if the current **Runner** member doesn't update stamp until
-    timeout and it also be discovered by **Backup Runner**, cluster rules that each **Backup Runner** members should
+    timeout, and it also is discovered by **Backup Runner**, cluster rules that each **Backup Runner** members should
     check its index behind its web spider name and the smaller one should activate itself to run first, another ones
     which index are bigger should NOT activate and keep waiting / checking the heartbeat stamp until next time they
     discover timeout of heartbeat.
 
     * Zookeeper node path:
+    */smoothcrawler/node/<crawler name>/heartbeat/*
 
-    /smoothcrawler/node/<crawler name>/heartbeat/
-
-
-    * Example value at node *heartbeat*:
-
+    * Example data:
     .. code-block:: python
 
         {
@@ -618,12 +640,34 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def heart_rhythm_time(self) -> Optional[str]:
-        """
-        The datetime value of currently heartbeat of one specific **Runner** web spider.
+        """:obj:`str`: Properties with both a getter and setter for the datetime value of currently heartbeat of one
+        specific **Runner** crawler.
 
-        :return: A string type value.
-        """
+        Getter would convert the datetime value to string type value and return it.
+        Setter would raise ValueError in below 2 scenarios:
 
+        * Value is NOT str or *datetime.datetime* type.
+        * The datetime value format is not satisfied with the format meta-data object has currently.
+
+        .. note::
+            About the setter of property *heart_rhythm_time*, it could accept 2 types: _string_ or _datetime.datetime_.
+            Because it wants to reach a feature about pre-checking the value it got is valid or not, it would try to
+            parse the datetime value before set the value. However, if it's _string_ type value, it has so many format
+            of datetime. So this property use a simple Python regex to check it:
+
+            .. code-block:: python
+
+                import re
+
+                checksum = re.search(
+                    r"[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}.[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}",
+                    str(heart_rhythm_time)
+                )
+
+            It try to check all format of datetime value, i.e., _yyyy-mm-dd hh:MM:DD_, _yy-mm-dd hh:MM:DD_,
+            _dd-mm-yy hh:MM:DD_, etc, checking all values as possible. But, it would pre-check the datetime value easily
+            if it already has property *time_format* value.
+        """
         if isinstance(self._heart_rhythm_time, str):
             return self._heart_rhythm_time
         else:
@@ -635,22 +679,6 @@ class Heartbeat(_BaseMetaData):
 
     @heart_rhythm_time.setter
     def heart_rhythm_time(self, heart_rhythm_time: Union[str, dt]) -> None:
-        """
-        Note:
-            About the setter of property *heart_rhythm_time*, it could accept 2 types: _string_ or _datetime.datetime_.
-            Because it wants to reach a feature about pre-checking the value it got is valid or not, it would try to
-            parse the datetime value before set the value. However, if it's _string_ type value, it has so many format
-            of datetime. So this property use a simple Python regex to check it:
-
-            ``` python
-                r"[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}.[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}"
-            ```
-
-            It try to check all format of datetime value, i.e., _yyyy-mm-dd hh:MM:DD_, _yy-mm-dd hh:MM:DD_,
-            _dd-mm-yy hh:MM:DD_, etc, checking all values as possible. But, it would pre-check the datetime value easily
-            if it already has property *time_format* value.
-        """
-
         if isinstance(heart_rhythm_time, (str, dt)) is False:
             raise ValueError("Property *heart_rhythm_time* only accept 'str' type or 'datetime.datetime' value.")
         if isinstance(heart_rhythm_time, str):
@@ -669,12 +697,13 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def time_format(self) -> str:
-        """
-        The string format of how smoothcrawler should to parse the value of *heart_rhythm_time*.
+        """:obj:`str`: Properties with both a getter and setter for the string format of how smoothcrawler should to
+        parse the value of *heart_rhythm_time*.
 
-        :return: A string type value.
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str.
+            * The value is invalid which cannot parse datetime value, e.g., *datetime.datetime.now()*.
         """
-
         return self._time_format
 
     @time_format.setter
@@ -689,15 +718,15 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def update_time(self) -> str:
-        """
-        How long deos the crawler should keep updating the value of heartbeat property *heart_rhythm_time*. This
-        property is the target to let smoothcrawler-cluster checks and may discover that one(s) of crawlers is(are)
-        dead, please activating backup one(s) as soon as possible.
+        """:obj:`str`: Properties with both a getter and setter for how long deos the crawler should keep updating the
+        value of heartbeat property *heart_rhythm_time*. This property is the target to let smoothcrawler-cluster checks
+        and may discover that one(s) of crawlers is(are) dead, please activating backup one(s) as soon as possible.
 
-        :return: A string type value and its format would be like <int><string in (s,m,h)>, i.g., 3s, 1m. _s_ is
-        seconds, _m_ is minutes and _h_ is hours.
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str.
+            * Value format is invalid. Its format would be like <int><string in (s,m,h)>, i.g., 3s, 1m. *s* is
+            seconds, *m* is minutes and *h* is hours.
         """
-
         return self._update_time
 
     @update_time.setter
@@ -711,20 +740,22 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def update_timeout(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter for the timeout threshold to let others crawler judge
+        current crawler instance is alive or dead. If it doesn't update the timestamp value of property
+        *heart_rhythm_time* until the time is longer than this property's value, the crawler instance which doesn't
+        update property *heart_rhythm_time* anymore would be marked as *HeartState.Arrhythmia* by others alive crawler
+        instance.
+
+        .. important:
+
+            It does NOT mean that instance is dead. It just means it doesn't update the property *heart_rhythm_time* on
+            time.
+
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str.
+            * Value format is invalid. Its format would be like <int><string in (s,m,h)>, i.g., 3s, 1m. *s* is
+            seconds, *m* is minutes and *h* is hours.
         """
-        The timeout threshold to let others crawler judge current crawler instance is alive or dead. If it doesn't
-        update the timestamp value of property *heart_rhythm_time* until the time is longer than this property's value,
-        the crawler instance which doesn't update property *heart_rhythm_time* anymore would be marked as
-        *HeartState.Arrhythmia* by others alive crawler instance.
-
-        ..important:
-        It does NOT mean that instance is dead. It just means it doesn't update the property *heart_rhythm_time* on
-        time.
-
-        :return: A string type value and its format would be like <int><string in (s,m,h)>, i.g., 3s, 1m. _s_ is
-                 seconds, _m_ is minutes and _h_ is hours.
-        """
-
         return self._update_timeout
 
     @update_timeout.setter
@@ -738,19 +769,20 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def heart_rhythm_timeout(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter for the property of *update_timeout* means one specific
+        crawler instance doesn't update value on time, it's possible that the network issue lead to it happens, doesn't
+        since the crawler instance is dead. And this property *heart_rhythm_timeout* means how many times is it late to
+        update. It would truly be judged it is dead by others crawler instances if it reaches this threshold. And it
+        would be marked as *HeartState.Asystole* by others crawler and be listed in *fail_crawler*.
+
+        .. important:
+
+            It truly means that instance is dead.
+
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str.
+            * Value is NOT integer format which cannot be converted by int.
         """
-        The property of *update_timeout* means one specific crawler instance doesn't update value on time, it's
-        possible that the network issue lead to it happens, doesn't since the crawler instance is dead. And this
-        property *heart_rhythm_timeout* means how many times is it late to update. It would truly be judged it is
-        dead by others crawler instances if it reaches this threshold. And it would be marked as *HeartState.Asystole*
-        by others crawler and be listed in *fail_crawler*.
-
-        ..important:
-        It truly means that instance is dead.
-
-        :return: A string type value and must be _int_ type.
-        """
-
         return self._heart_rhythm_timeout
 
     @heart_rhythm_timeout.setter
@@ -767,12 +799,13 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def healthy_state(self) -> str:
-        """
-        The healthy state of current crawler instance. It would be updated by itself or others in different scenarios.
+        """:obj:`str`: Properties with both a getter and setter for the healthy state of current crawler instance. It
+        would be updated by itself or others in different scenarios.
 
-        :return: A string type value which must be defined in HeartState enum object.
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str or *HeartState*.
+            * If value type is str, the string type value should be included in *HeartState*.
         """
-
         return self._healthy_state
 
     @healthy_state.setter
@@ -786,12 +819,12 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def task_state(self) -> str:
-        """
-        The running state of the task it takes currently.
+        """:obj:`str`: Properties with both a getter and setter for the running state of the task it takes currently.
 
-        :return: A string type value which must be defined in TaskResult enum object.
+        Setter would raise ValueError in 2 scenarios:
+            * Value data type is NOT str or *TaskResult*.
+            * If value type is str, the string type value should be included in *TaskResult*.
         """
-
         return self._task_state
 
     @task_state.setter
