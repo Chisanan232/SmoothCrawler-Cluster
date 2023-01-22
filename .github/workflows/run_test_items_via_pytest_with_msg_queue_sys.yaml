@@ -99,9 +99,22 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6,3.7,3.8,3.9,'3.10',3.11]
-        os: [ubuntu-latest]
-#        os: [ubuntu-latest,macos-latest]
+        python-version: [3.6, 3.7,3.8,3.9,'3.10',3.11]
+        os: [ubuntu-20.04,ubuntu-latest]
+#        os: [ubuntu-latest,macos-latest]    # macos doesn't support docker feature
+        exclude:
+          - os: ubuntu-latest
+            python-version: 3.6
+          - os: ubuntu-20.04
+            python-version: 3.7
+          - os: ubuntu-20.04
+            python-version: 3.8
+          - os: ubuntu-20.04
+            python-version: 3.9
+          - os: ubuntu-20.04
+            python-version: '3.10'
+          - os: ubuntu-20.04
+            python-version: 3.11
         test-path: ${{fromJson(inputs.all_test_items_paths)}}
 
     steps:
@@ -129,7 +142,7 @@ jobs:
 
       - name: Setup and run HTTP server for testing
         if: ${{ inputs.setup_http_server == true }}
-        run: gunicorn --bind ${{ inputs.http_server_host }}:${{ inputs.http_server_port }} '${{ inputs.http_server_app_module }}:${{ inputs.http_server_enter_point }}' --daemon
+        run: gunicorn --bind ${{ inputs.http_server_host }}:${{ inputs.http_server_port }} --workers 10 '${{ inputs.http_server_app_module }}:${{ inputs.http_server_enter_point }}' --daemon
 
       - name: Test to send HTTP request to sample HTTP server
         if: ${{ inputs.setup_http_server == true }}

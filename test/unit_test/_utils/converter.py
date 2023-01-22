@@ -1,65 +1,14 @@
-from smoothcrawler_cluster._utils.converter import JsonStrConverter
-from smoothcrawler_cluster.model.metadata import CrawlerStateRole, TaskResult, State, Task,  Heartbeat
+from smoothcrawler_cluster.model.metadata import (
+    GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat)
+from smoothcrawler_cluster._utils.converter import JsonStrConverter, TaskContentDataUtils
 import pytest
 import json
 
-
-_Test_State_Data = {
-    "role": CrawlerStateRole.Runner.value,
-    "total_crawler": 3,
-    "total_runner": 2,
-    "total_backup": 1,
-    "standby_id": "3",
-    "current_crawler": ["spider_1", "spider_2", "spider_3"],
-    "current_runner": ["spider_1", "spider_2"],
-    "current_backup": ["spider_3"],
-    "fail_crawler": [],
-    "fail_runner": [],
-    "fail_backup": []
-}
-
-_Test_Task_Data = {
-    "task_content": {
-        "url": "xxx",
-        "method": "GET",
-        "parameter": "",
-        "body": ""
-    },
-    "task_result": TaskResult.Done.value
-}
-
-_Test_Heartbeat_Data = {
-    "datetime": "2022-07-15 08:42:59"
-}
-
-
-def setup_state() -> State:
-    _state = State()
-    _state.role = _Test_State_Data["role"]
-    _state.total_crawler = _Test_State_Data["total_crawler"]
-    _state.total_runner = _Test_State_Data["total_runner"]
-    _state.total_backup = _Test_State_Data["total_backup"]
-    _state.current_crawler = _Test_State_Data["current_crawler"]
-    _state.current_runner = _Test_State_Data["current_runner"]
-    _state.current_backup = _Test_State_Data["current_backup"]
-    _state.fail_crawler = _Test_State_Data["fail_crawler"]
-    _state.fail_runner = _Test_State_Data["fail_runner"]
-    _state.fail_backup = _Test_State_Data["fail_backup"]
-    _state.standby_id = _Test_State_Data["standby_id"]
-    return _state
-
-
-def setup_task() -> Task:
-    _task = Task()
-    _task.task_content = _Test_Task_Data["task_content"]
-    _task.task_result = _Test_Task_Data["task_result"]
-    return _task
-
-
-def setup_heartbeat() -> Heartbeat:
-    _heartbeat = Heartbeat()
-    _heartbeat.datetime = _Test_Heartbeat_Data["datetime"]
-    return _heartbeat
+from ..._values import (
+    _Test_Group_State_Data, _Test_Node_State_Data, _Test_Task_Data, _Test_Heartbeat_Data,
+    _Task_Running_Content_Value, _Task_Running_Result, _Task_Result_Detail_Value,
+    setup_group_state, setup_node_state, setup_task, setup_heartbeat
+)
 
 
 class TestJsonStrConverter:
@@ -68,97 +17,122 @@ class TestJsonStrConverter:
     def converter(self) -> JsonStrConverter:
         return JsonStrConverter()
 
-    def test_serialize(self, converter: JsonStrConverter):
+    def test__convert_to_str(self, converter: JsonStrConverter):
         # Initial process
-        _state = setup_state()
+        state = setup_group_state()
 
         # Run target testing function
-        _serialized_data = converter.serialize(data=_state.to_readable_object())
+        serialized_data = converter._convert_to_str(data=state.to_readable_object())
 
         # Verify running result
-        self._verify_serialize_result(serialized_data=_serialized_data, expected_data=json.dumps(_Test_State_Data))
+        self._verify_serialize_result(serialized_data=serialized_data, expected_data=json.dumps(_Test_Group_State_Data))
 
-    def test_deserialize(self, converter: JsonStrConverter):
+    def test__convert_from_str(self, converter: JsonStrConverter):
         # Run target testing function
-        _deserialized_data: dict = converter.deserialize(data=json.dumps(_Test_State_Data))
+        deserialized_data: dict = converter._convert_from_str(data=json.dumps(_Test_Group_State_Data))
 
         # Verify running result
-        self._verify_deserialize_result(deserialized_data=_deserialized_data, expected_data=_Test_State_Data)
+        self._verify_deserialize_result(deserialized_data=deserialized_data, expected_data=_Test_Group_State_Data)
 
-    def test_state_to_str(self, converter: JsonStrConverter):
+    def test_serialize_meta_data(self, converter: JsonStrConverter):
         # Initial process
-        _state = setup_state()
+        group_state = setup_group_state()
+        node_state = setup_node_state()
+        task = setup_task()
+        heartbeat = setup_heartbeat()
 
         # Run target testing function
-        _state_str = converter.state_to_str(state=_state)
+        group_state_str = converter.serialize_meta_data(obj=group_state)
+        node_state_str = converter.serialize_meta_data(obj=node_state)
+        task_str = converter.serialize_meta_data(obj=task)
+        heartbeat_str = converter.serialize_meta_data(obj=heartbeat)
 
         # Verify running result
-        self._verify_serialize_result(serialized_data=_state_str, expected_data=json.dumps(_state.to_readable_object()))
+        self._verify_serialize_result(serialized_data=group_state_str,
+                                      expected_data=json.dumps(group_state.to_readable_object()))
+        self._verify_serialize_result(serialized_data=node_state_str,
+                                      expected_data=json.dumps(node_state.to_readable_object()))
+        self._verify_serialize_result(serialized_data=task_str,
+                                      expected_data=json.dumps(task.to_readable_object()))
+        self._verify_serialize_result(serialized_data=heartbeat_str,
+                                      expected_data=json.dumps(heartbeat.to_readable_object()))
 
-    def test_task_to_str(self, converter: JsonStrConverter):
+    def test_deserialize_meta_data(self, converter: JsonStrConverter):
         # Initial process
-        _task = setup_task()
+        test_group_state_str = json.dumps(_Test_Group_State_Data)
+        test_node_state_str = json.dumps(_Test_Node_State_Data)
+        test_task_str = json.dumps(_Test_Task_Data)
+        test_heartbeat_str = json.dumps(_Test_Heartbeat_Data)
 
         # Run target testing function
-        _task_str = converter.task_to_str(task=_task)
+        group_state = converter.deserialize_meta_data(data=test_group_state_str, as_obj=GroupState)
+        node_state = converter.deserialize_meta_data(data=test_node_state_str, as_obj=NodeState)
+        task = converter.deserialize_meta_data(data=test_task_str, as_obj=Task)
+        heartbeat = converter.deserialize_meta_data(data=test_heartbeat_str, as_obj=Heartbeat)
 
         # Verify running result
-        self._verify_serialize_result(serialized_data=_task_str, expected_data=json.dumps(_task.to_readable_object()))
-
-    def test_heartbeat_to_str(self, converter: JsonStrConverter):
-        # Initial process
-        _heartbeat = setup_heartbeat()
-
-        # Run target testing function
-        _heartbeat_str = converter.heartbeat_to_str(heartbeat=_heartbeat)
-
-        # Verify running result
-        self._verify_serialize_result(serialized_data=_heartbeat_str, expected_data=json.dumps(_heartbeat.to_readable_object()))
-
-    def test_str_to_state(self, converter: JsonStrConverter):
-        # Initial process
-        _test_state_str = json.dumps(_Test_State_Data)
-
-        # Run target testing function
-        _state = converter.str_to_state(data=_test_state_str)
-
-        # Verify running result
-        self._verify_deserialize_result(deserialized_data=_state.to_readable_object(), expected_data=_Test_State_Data)
-
-    def test_str_to_task(self, converter: JsonStrConverter):
-        # Initial process
-        _test_task_str = json.dumps(_Test_Task_Data)
-
-        # Run target testing function
-        _task = converter.str_to_task(data=_test_task_str)
-
-        # Verify running result
-        self._verify_deserialize_result(deserialized_data=_task.to_readable_object(), expected_data=_Test_Task_Data)
-
-    def test_str_to_heartbeat(self, converter: JsonStrConverter):
-        # Initial process
-        _test_heartbeat_str = json.dumps(_Test_Heartbeat_Data)
-
-        # Run target testing function
-        _heartbeat = converter.str_to_heartbeat(data=_test_heartbeat_str)
-
-        # Verify running result
-        self._verify_deserialize_result(deserialized_data=_heartbeat.to_readable_object(), expected_data=_Test_Heartbeat_Data)
+        self._verify_deserialize_result(deserialized_data=group_state.to_readable_object(),
+                                        expected_data=_Test_Group_State_Data)
+        self._verify_deserialize_result(deserialized_data=node_state.to_readable_object(),
+                                        expected_data=_Test_Node_State_Data)
+        self._verify_deserialize_result(deserialized_data=task.to_readable_object(),
+                                        expected_data=_Test_Task_Data)
+        self._verify_deserialize_result(deserialized_data=heartbeat.to_readable_object(),
+                                        expected_data=_Test_Heartbeat_Data)
 
     @classmethod
     def _verify_serialize_result(cls, serialized_data: str, expected_data: str) -> None:
-        _serialized_data_dict: dict = json.loads(serialized_data)
-        _expected_data_dict: dict = json.loads(expected_data)
-        assert _serialized_data_dict.keys() == _expected_data_dict.keys(), \
-            "The keys of both dict objects *_serialized_data_dict* and *_expected_data_dict* should be the same."
-        for _key in _expected_data_dict.keys():
-            assert _serialized_data_dict[_key] == _expected_data_dict[_key], \
-                f"The values of both objects *_serialized_data_dict* and *_expected_data_dict* with key '{_key}' should be the same."
+        serialized_data_dict: dict = json.loads(serialized_data)
+        expected_data_dict: dict = json.loads(expected_data)
+        assert serialized_data_dict.keys() == expected_data_dict.keys(), \
+            "The keys of both dict objects *serialized_data_dict* and *expected_data_dict* should be the same."
+        for key in expected_data_dict.keys():
+            assert serialized_data_dict[key] == expected_data_dict[key], \
+                f"The values of both objects *serialized_data_dict* and *expected_data_dict* with key '{key}' should " \
+                f"be the same."
 
     @classmethod
     def _verify_deserialize_result(cls, deserialized_data: dict, expected_data: dict) -> None:
         assert expected_data.keys() == deserialized_data.keys(), \
             "The keys of both dict objects *deserialized_data* and *expected_data* should be the same."
-        for _key in expected_data.keys():
-            assert deserialized_data[_key] == expected_data[_key], \
-                f"The values of both objects *deserialized_data* and *expected_data* with key '{_key}' should be the same."
+        for key in expected_data.keys():
+            assert deserialized_data[key] == expected_data[key], \
+                f"The values of both objects *deserialized_data* and *expected_data* with key '{key}' should be the" \
+                f" same."
+
+
+class TestTaskContentDataUtils:
+
+    @pytest.fixture(scope="function")
+    def utils(self) -> TaskContentDataUtils:
+        return TaskContentDataUtils()
+
+    def test_convert_to_running_content(self, utils: TaskContentDataUtils):
+        running_content = utils.convert_to_running_content(data=_Task_Running_Content_Value[0])
+        content = _Task_Running_Content_Value[0]
+        assert isinstance(running_content, RunningContent), "It should be converted as 'RunningContent' type object."
+        assert running_content.task_id == content["task_id"], "The *task_id* values should be the same."
+        assert running_content.url == content["url"], "The *url* values should be the same."
+        assert running_content.method == content["method"], "The *method* values should be the same."
+        assert running_content.parameters == content["parameters"], "The *parameters* values should be the same."
+        assert running_content.header == content["header"], "The *header* values should be the same."
+        assert running_content.body == content["body"], "The *body* values should be the same."
+
+    def test_convert_to_running_result(self, utils: TaskContentDataUtils):
+        running_result = utils.convert_to_running_result(data=_Task_Running_Result)
+        assert isinstance(running_result, RunningResult), "It should be converted as 'RunningResult' type object."
+        assert running_result.success_count == _Task_Running_Result["success_count"], \
+            "The *success_count* values should be the same."
+        assert running_result.fail_count == _Task_Running_Result["fail_count"], \
+            "The *fail_count* values should be the same."
+
+    def test_convert_to_result_detail(self, utils: TaskContentDataUtils):
+        result_detail = utils.convert_to_result_detail(data=_Task_Result_Detail_Value[0])
+        detail = _Task_Result_Detail_Value[0]
+        assert isinstance(result_detail, ResultDetail), "It should be converted as 'ResultDetail' type object."
+        assert result_detail.task_id == detail["task_id"], "The *task_id* values should be the same."
+        assert result_detail.state == detail["state"], "The *state* values should be the same."
+        assert result_detail.status_code == detail["status_code"], "The *status_code* values should be the same."
+        assert result_detail.response == detail["response"], "The *response* values should be the same."
+        assert result_detail.error_msg == detail["error_msg"], "The *error_msg* values should be the same."
+
