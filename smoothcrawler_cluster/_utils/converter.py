@@ -55,7 +55,7 @@ class BaseConverter(metaclass=ABCMeta):
 
             .. code-block:: python
 
-                >>> metadata = <BaseConverter type instance>.deserialize_meta_data(data=group_state_data, as_obj=GroupState)
+                >>> metadata = <BaseConverter type instance>.deserialize_meta_data(data=data, as_obj=GroupState)
                 >>> type(metadata)
                 <class 'GroupState'>
 
