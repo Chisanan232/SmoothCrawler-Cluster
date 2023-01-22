@@ -165,7 +165,6 @@ man_pages = [
 
 # pylint: disable-next=consider-using-namedtuple-or-dataclass
 intersphinx_mapping = {
-    "astroid": ("https://smoothcrawler-cluster.python.org/en/latest/", None),
     "python": ("https://docs.python.org/3", None),
 }
 
