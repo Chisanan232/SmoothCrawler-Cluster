@@ -30,7 +30,8 @@ def parse_timer(timer: str) -> Union[int, float]:
 
     Raises:
         ValueError (not number format): Invalid value which is NOT number format value so that it cannot be parsed.
-        ValueError (incorrect last character): The last character is NOT correct so that it couldn't judge its time unit is hour, minute or second.
+        ValueError (incorrect last character): The last character is NOT correct so that it couldn't judge its time unit
+            is hour, minute or second.
 
     """
     timer_val = timer[:-1]
