@@ -352,7 +352,7 @@ ResultDetail = namedtuple("ResultDetail", _ResultDetail_Attrs)
 
 The object for the option *result_detail* of meta-data object **Task**.
 
-Parameters: 
+Parameters:
   task_id (str): Task ID. It would be assigned from the task ID in **RunningContent**.
   state (str): Task running state. This option could be assigned by enum **TaskResult**.
   status_code (str): The HTTP status code in response.
