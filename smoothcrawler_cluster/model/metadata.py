@@ -278,7 +278,8 @@ class NodeState(_BaseMetaData):
 
     @property
     def group(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter for the group name which is the current crawler instance in.
+        """:obj:`str`: Properties with both a getter and setter for the group name which is the current crawler instance
+        in.
 
         Setter would block the data which type is NOT str.
         """
@@ -340,7 +341,7 @@ RunningResult = namedtuple("RunningResult", _RunningResult_Attrs)
 
 The object for the option *running_result* of meta-data object **Task**.
 
-Parameters: 
+Parameters:
   success_count (int): The total amount of successfully done task.
   fail_count (int): The total amount of fail done task.
 """
