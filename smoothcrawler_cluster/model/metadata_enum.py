@@ -44,7 +44,7 @@ class CrawlerStateRole(Enum):
 
     DEAD_RUNNER = "dead-runner"
     """If **Runner** cannot work finely, like the entire VM be shutdown where the crawler runtime environment in. It
-    would turn to be **Dead Runner** from **Runner**. In other words, it must to be **Dead Runner** if it cannot keep 
+    would turn to be **Dead Runner** from **Runner**. In other words, it must to be **Dead Runner** if it cannot keep
     updating its own heartbeat info.
     """
 
@@ -69,7 +69,7 @@ class TaskResult(Enum):
     """Finish the task and it works finely without any exceptions."""
 
     TERMINATE = "terminate"
-    """Web spider task running has been terminated so that it cannot finish all processes, but it doesn't occur any 
+    """Web spider task running has been terminated so that it cannot finish all processes, but it doesn't occur any
     exceptions except KeyboardInterrupt.
     """
 
