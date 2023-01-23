@@ -1,0 +1,36 @@
+name: smoothcrawler-cluster tox test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/tox-test.yaml"
+      - "tox.ini"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/tox-test.yaml"
+      - "tox.ini"
+
+jobs:
+  test-tox:
+#    name: Test the tox.init is valid, and ensure that it could run finely.
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
+    uses: ./.github/workflows/test-tox.yaml
+    with:
+      python_version: '3.10'
+      requirements_path: ./requirements/requirements-test.txt
+      tox_arguments: -- unit-test

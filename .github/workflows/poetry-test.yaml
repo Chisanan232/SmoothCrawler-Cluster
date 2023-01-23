@@ -1,0 +1,38 @@
+name: smoothcrawler-cluster poetry test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/poetry-test.yaml"
+      - "poetry.lock"
+      - "pyproject.toml"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/poetry-test.yaml"
+      - "poetry.lock"
+      - "pyproject.toml"
+
+jobs:
+  test-dockerfile:
+#    name: Test the pyproject.toml is valid, and ensure that it could run finely.
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
+    uses: ./.github/workflows/test-poetry.yaml
+    with:
+      python_version: '3.10'
+      python_cmd: python3
+      running_cmd: bash ./scripts/run_pytest_in_develop.sh unit-test

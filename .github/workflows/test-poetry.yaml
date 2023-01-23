@@ -1,0 +1,64 @@
+#################################################################################################################################
+#
+# Workflow Description:
+#     Run testing to check the function of Poetry in Python project.
+#
+# Workflow input parameters:
+#     * python_version: The Python version it would use in testing runtime environment.
+#     * python_cmd: The command line to run Python script.
+#     * running_cmd: The command to run via Poetry.
+#
+# Workflow running output:
+#     Nothing.
+#
+#################################################################################################################################
+
+name: Test Poetry
+
+on:
+  workflow_call:
+    inputs:
+      python_version:
+        description: "The Python version it would use in testing runtime environment."
+        required: true
+        type: string
+      python_cmd:
+        description: "The command line to run Python script."
+        required: false
+        type: string
+        default: python3
+      running_cmd:
+        description: "The command to run via Poetry."
+        type: string
+        required: true
+
+
+jobs:
+  test-poetry:
+#    name: Test the pyproject.toml is valid, and ensure that it could run finely.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install ${{ inputs.python_version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install the Poetry with Python
+        run: curl -sSL https://install.python-poetry.org | python3
+
+      - name: Check the version of tool 'Poetry'
+        run: poetry --version
+
+      - name: Build a virtual environment by Poetry with Python3
+        run: poetry env use ${{ inputs.python_cmd }}
+
+      - name: Install the Python dependencies in Poetry virtual environment
+        run: poetry install
+
+      - name: Show the Python dependencies tree
+        run: poetry show --tree
+
+      - name: Run the testing in Poetry virtual environment
+        run: poetry run ${{ inputs.running_cmd }}

@@ -1,0 +1,80 @@
+name: Running pre-testing before building with running setup.py script
+
+on:
+  workflow_call:
+    inputs:
+      python_package_name:
+        description: "The Python package name."
+        required: true
+        type: string
+      test_import_package_code_1:
+        description: "Test for importing the Python package."
+        required: true
+        type: string
+      test_import_package_code_2:
+        description: "Test for importing the Python package."
+        required: false
+        type: string
+      test_import_package_code_3:
+        description: "Test for importing the Python package."
+        required: false
+        type: string
+      test_python_script:
+        description: "Run a Python script for testing the Python package."
+        required: false
+        type: string
+
+
+jobs:
+  pre-building_check:
+    services:
+      # Zookeeper is necessary for Kafka.
+      pytest_zookeeper:
+        image: zookeeper:latest
+        env:
+          ZOO_MAX_CLIENT_CNXNS: 1000
+        ports:
+          - 2181:2181
+          - 2888:2888
+          - 3888:3888
+          - 7010:7010
+        options: >-
+          --name zookeeper
+          --health-cmd="/apache-zookeeper-3.8.0-bin/bin/zkServer.sh status"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.10 in Ubuntu OS
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install -U pip
+          pip3 install -U setuptools
+          pip3 install wheel
+          pip install -U -r ./requirements/requirements-test.txt
+
+      - name: Install Python package by setup.py
+        run: python3 setup.py install --user || exit 1
+
+      - name: Show the Python package information
+        run: pip3 show ${{ inputs.python_package_name }}
+
+      - name: Test to run script with package '${{ inputs.python_package_name }}' in command lines
+        run: |
+          ${{ inputs.test_import_package_code_1 }}
+          ${{ inputs.test_import_package_code_2 }}
+          ${{ inputs.test_import_package_code_3 }}
+        shell: python
+
+      - name: Test to run script with package '${{ inputs.python_package_name }}' with Python file
+        run: python3 ${{ inputs.test_python_script }}

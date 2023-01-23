@@ -10,4 +10,5 @@ build/
 code_source/
 coverage.xml
 dist/
+study/
 *.egg-info/

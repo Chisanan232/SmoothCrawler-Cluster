@@ -1,0 +1,44 @@
+name: smoothcrawler-cluster dockerfile test
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/docker-test.yaml"
+      - "*dockerfile*"
+      - "*Dockerfile*"
+
+  pull_request:
+    branches:
+      - "develop"
+      - "develop/**"
+      - "release"
+      - "release-**"
+      - "release/**"
+      - "master"
+    paths:
+      - ".github/workflows/docker-test.yaml"
+      - "*dockerfile*"
+      - "*Dockerfile*"
+
+jobs:
+  test-dockerfile:
+#    name: Test the Dockerfile is valid, and ensure that it could run finely.
+#    uses: Chisanan232/GitHub-Action-Template-Python/.github/workflows/prepare_test_items.yaml@v2
+    uses: ./.github/workflows/test-dockerfile.yaml
+    with:
+      docker_build_image_name: sc-cluster_pytest
+      docker_build_image_tag: v0
+      docker_build_context_path: ./
+      docker_build_file_name: ./pytest_Dockerfile
+      docker_run_name: sc-cluster_pytest
+      docker_run_option: -e TESTING_TYPE=unit-test
+      docker_run_image_name: sc-cluster_pytest
+      docker_run_image_tag: v0
+
