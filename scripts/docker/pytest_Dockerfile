@@ -21,12 +21,12 @@ WORKDIR ./apache-smoothcrawler-cluster/
 RUN pip install -U pip
 
 # # Install the Python dependencies for SmoothCrawler-Cluster package
-COPY ./requirements/requirements.txt ./requirements/
+COPY ../../requirements/requirements.txt ./requirements/
 
 RUN pip install -r ./requirements/requirements.txt
 
 # # Install the Python dependencies for development
-COPY ./requirements/requirements-test.txt ./requirements/
+COPY ../../requirements/requirements-test.txt ./requirements/
 
 RUN pip install -U -r ./requirements/requirements-test.txt
 
@@ -35,13 +35,13 @@ RUN apt-get update && \
       apt-get install -y --no-install-recommends jq
 
 # # Copy package code, testing code and scripts to container
-COPY ./smoothcrawler_cluster/ ./smoothcrawler_cluster/
-COPY ./test/ ./test/
-COPY ./scripts/ ./scripts/
+COPY ../../smoothcrawler_cluster ./smoothcrawler_cluster/
+COPY ../../test ./test/
+COPY ../../scripts ./scripts/
 
 # # Prepare some configurations for running pytest
-COPY ./.coveragerc ./
-COPY ./pytest.ini ./
+COPY ../../.coveragerc ./
+COPY ../../pytest.ini ./
 
 CMD bash ./scripts/docker/run-pytest.sh $TESTING_TYPE
 
