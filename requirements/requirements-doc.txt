@@ -5,3 +5,4 @@ sphinx-autobuild >= 2021.3.14
 
 ## For sphinx theme ##
 sphinx_rtd_theme >= 1.0.0
+furo
