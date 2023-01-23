@@ -1,22 +1,42 @@
-# SmoothCrawler-Cluster
+<div align="center" style="font-size: 32px; font-weight: bold; margin-bottom: 24px;">
+  SmoothCrawler-Cluster
+</div>
 
-[![Supported Versions](https://img.shields.io/pypi/pyversions/SmoothCrawler-Cluster.svg?logo=python&logoColor=FBE072)](
-https://pypi.org/project/SmoothCrawler-Cluster)
-[![PyPI version](https://img.shields.io/pypi/v/SmoothCrawler-Cluster?color=%23099cec&amp;label=PyPI&amp;logo=pypi&amp;logoColor=white)](
-https://pypi.org/project/SmoothCrawler-Cluster/)
-[![Release](https://img.shields.io/github/release/Chisanan232/SmoothCrawler-Cluster.svg?label=Release&amp;logo=github&color=orange)](
-https://github.com/Chisanan232/SmoothCrawler-Cluster/releases)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache)](https://opensource.org/licenses/Apache-2.0)
-[![smoothcrawler-cluster ci/cd](https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml/badge.svg)](
-https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml)
-[![codecov](https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster/branch/master/graph/badge.svg?token=H34TPZQXYL)](
-https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster)
-[![linting: pylint](https://img.shields.io/badge/linting-pylint-black)](https://github.com/PyCQA/pylint)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/171272bee2594687964f1f4473628a0f)](
-https://www.codacy.com/gh/Chisanan232/SmoothCrawler-Cluster/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chisanan232/SmoothCrawler-Cluster&amp;utm_campaign=Badge_Grade)
+<p align="center">
+  <a href="https://pypi.org/project/SmoothCrawler-Cluster">
+    <img src="https://img.shields.io/pypi/pyversions/SmoothCrawler-Cluster.svg?logo=python&logoColor=FBE072" alt="PyPI support versions">
+  </a>
+  <a href="https://pypi.org/project/SmoothCrawler-Cluster">
+    <img src="https://img.shields.io/pypi/v/SmoothCrawler-Cluster?color=%23099cec&amp;label=PyPI&amp;logo=pypi&amp;logoColor=white" alt="PyPI package version">
+  </a>
+  <a href="https://github.com/Chisanan232/SmoothCrawler-Cluster/releases">
+    <img src="https://img.shields.io/github/release/Chisanan232/SmoothCrawler-Cluster.svg?label=Release&amp;logo=github&color=orange" alt="GitHub release version">
+  </a>
+  <a href="https://opensource.org/licenses/Apache-2.0">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?logo=apache" alt="Software license">
+  </a>
+  <a href="https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml">
+    <img src="https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml/badge.svg" alt="CI/CD status">
+  </a>
+  <a href="https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster">
+    <img src="https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster/branch/master/graph/badge.svg?token=H34TPZQXYL" alt="Test coverage">
+  </a>
+  <a href="https://github.com/PyCQA/pylint">
+    <img src="https://img.shields.io/badge/linting-pylint-black" alt="Coding style">
+  </a>
+  <a href="https://www.codacy.com/gh/Chisanan232/SmoothCrawler-Cluster/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chisanan232/SmoothCrawler-Cluster&amp;utm_campaign=Badge_Grade">
+    <img src="https://app.codacy.com/project/badge/Grade/171272bee2594687964f1f4473628a0f" alt="Code quality level">
+  </a>
+  <a href='https://smoothcrawler-cluster.readthedocs.io/en/latest/?badge=latest'>
+      <img src='https://readthedocs.org/projects/smoothcrawler-cluster/badge/?version=latest' alt='Documentation Status' />
+  </a>
 
-*SmoothCrawler-Cluster* is a Python framework which is encapsulation of building cluster or decentralized crawler system 
-humanly with [*SmoothCrawler*](https://github.com/Chisanan232/smoothcrawler).
+</p>
+
+<p align="center">
+  <em>SmoothCrawler-Cluster</em> is a Python framework which is encapsulation of building cluster or decentralized crawler system 
+  humanly with <a href="https://github.com/Chisanan232/smoothcrawler"><em>SmoothCrawler</em></a>.
+</p>
 
 [Overview](#overview) | [Quickly Demo](#quickly-demo)
 <hr>
