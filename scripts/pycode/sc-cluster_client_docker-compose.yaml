@@ -16,7 +16,7 @@ services:
     image: client/sc-cluster:v3
 #    build:
 #      context: .
-#      dockerfile: sc-cluster_client_Dockerfile
+#      dockerfile: sc-crawler_Dockerfile
     networks:
       sc-cluster_client_network:
         ipv4_address: 10.20.23.2
@@ -46,7 +46,7 @@ services:
     image: client/sc-cluster:v3
 #    build:
 #      context: .
-#      dockerfile: sc-cluster_client_Dockerfile
+#      dockerfile: sc-crawler_Dockerfile
     networks:
       sc-cluster_client_network:
         ipv4_address: 10.20.23.3
@@ -76,7 +76,7 @@ services:
     image: client/sc-cluster:v3
 #    build:
 #      context: .
-#      dockerfile: sc-cluster_client_Dockerfile
+#      dockerfile: sc-crawler_Dockerfile
     networks:
       sc-cluster_client_network:
         ipv4_address: 10.20.23.4
@@ -106,7 +106,7 @@ services:
     image: client/sc-cluster:v3
 #    build:
 #      context: .
-#      dockerfile: sc-cluster_client_Dockerfile
+#      dockerfile: sc-crawler_Dockerfile
     networks:
       sc-cluster_client_network:
         ipv4_address: 10.20.23.5
