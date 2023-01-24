@@ -1,0 +1,36 @@
+FROM python:3.10
+
+WORKDIR ./apache-smoothcrawler-cluster/
+
+# # Prepare the runtime environment for Python
+RUN pip install -U pip
+
+# # Install the Python dependencies for SmoothCrawler-Cluster package
+COPY ./requirements/requirements.txt ./requirements/
+RUN pip install -r ./requirements/requirements.txt
+
+# # Install the Python dependencies for SmoothCrawler-Cluster package
+COPY ./requirements/requirements-test.txt ./requirements/
+RUN pip install -r ./requirements/requirements-test.txt
+
+# # Prepare for running shell scripts
+RUN apt-get update && \
+      apt-get install -y --no-install-recommends jq
+
+# # Install some internet tool for debug if it needs
+RUN apt-get install -y iputils-ping && \
+      apt-get install -y net-tools && \
+      apt-get install --no-install-recommends --assume-yes netcat
+
+# # Copy package code, testing code and scripts to container
+COPY ./ ./
+COPY ./scripts ./scripts/
+#COPY ./README.md ./README.md
+COPY ./setup.py ./setup.py
+
+RUN python3 setup.py install
+
+CMD python3 ./scripts/pycode/crawler_main.py
+
+# # For debug
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
