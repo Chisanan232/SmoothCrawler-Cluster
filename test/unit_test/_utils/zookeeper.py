@@ -44,6 +44,17 @@ class TestZookeeperPath:
         # Verify values
         ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
 
+    @pytest.mark.parametrize("is_group", [True, False])
+    def test_generate_parent_node(self, zk_path: ZookeeperPath, is_group: bool):
+        # Get value by target method for testing
+        path = zk_path.generate_parent_node(crawler_name=_Crawler_Name_Value, is_group=is_group)
+
+        # Verify values
+        if is_group:
+            ValueFormatAssertion(target=path, regex=r"smoothcrawler/group/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
+        else:
+            ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
+
 
 class TestZookeeperNode:
     @pytest.fixture(scope="function")
