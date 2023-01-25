@@ -21,8 +21,14 @@
   <a href="https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster">
     <img src="https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster/branch/master/graph/badge.svg?token=H34TPZQXYL" alt="Test coverage">
   </a>
+  <a href="https://github.com/psf/black">
+    <img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Coding style reformat tool">
+  </a>
   <a href="https://github.com/PyCQA/pylint">
-    <img src="https://img.shields.io/badge/linting-pylint-black" alt="Coding style">
+    <img src="https://img.shields.io/badge/linting-pylint-yellowgreen" alt="Coding style checking tool">
+  </a>
+  <a href="https://results.pre-commit.ci/latest/github/Chisanan232/SmoothCrawler-Cluster/master">
+    <img src="https://results.pre-commit.ci/badge/github/Chisanan232/SmoothCrawler-Cluster/master.svg" alt="Pre-Commit building state">
   </a>
   <a href="https://www.codacy.com/gh/Chisanan232/SmoothCrawler-Cluster/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chisanan232/SmoothCrawler-Cluster&amp;utm_campaign=Badge_Grade">
     <img src="https://app.codacy.com/project/badge/Grade/171272bee2594687964f1f4473628a0f" alt="Code quality level">
