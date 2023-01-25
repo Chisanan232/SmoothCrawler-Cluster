@@ -1,6 +1,6 @@
-<div align="center" style="font-size: 32px; font-weight: bold; margin-bottom: 24px;">
+<h1 align="center">
   SmoothCrawler-Cluster
-</div>
+</h1>
 
 <p align="center">
   <a href="https://pypi.org/project/SmoothCrawler-Cluster">

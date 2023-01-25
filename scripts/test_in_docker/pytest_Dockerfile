@@ -35,15 +35,15 @@ RUN apt-get update && \
       apt-get install -y --no-install-recommends jq
 
 # # Copy package code, testing code and scripts to container
-COPY ./smoothcrawler_cluster/ ./smoothcrawler_cluster/
-COPY ./test/ ./test/
-COPY ./scripts/ ./scripts/
+COPY ./smoothcrawler_cluster ./smoothcrawler_cluster/
+COPY ./test ./test/
+COPY ./scripts ./scripts/
 
 # # Prepare some configurations for running pytest
 COPY ./.coveragerc ./
 COPY ./pytest.ini ./
 
-CMD bash ./scripts/docker/run-pytest.sh $TESTING_TYPE
+CMD bash ./scripts/test_in_docker/run-pytest.sh $TESTING_TYPE
 
 # # For debug
 #ENTRYPOINT ["tail", "-f", "/dev/null"]
