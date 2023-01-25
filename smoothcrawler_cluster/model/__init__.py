@@ -10,8 +10,16 @@ from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import List, Union
 
-from .metadata import GroupState, NodeState, Task, RunningContent, RunningResult, ResultDetail, Heartbeat
-from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
+from .metadata import (
+    GroupState,
+    Heartbeat,
+    NodeState,
+    ResultDetail,
+    RunningContent,
+    RunningResult,
+    Task,
+)
+from .metadata_enum import CrawlerStateRole, HeartState, TaskResult
 
 
 class _BaseDataObjectUtils(metaclass=ABCMeta):
@@ -168,17 +176,17 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def group_state(
-            crawler_name: str,
-            total_crawler: int,
-            total_runner: int,
-            total_backup: int,
-            standby_id: str = "0",
-            current_crawler: List[str] = [],
-            current_runner: List[str] = [],
-            current_backup: List[str] = [],
-            fail_crawler: List[str] = [],
-            fail_runner: List[str] = [],
-            fail_backup: List[str] = [],
+        crawler_name: str,
+        total_crawler: int,
+        total_runner: int,
+        total_backup: int,
+        standby_id: str = "0",
+        current_crawler: List[str] = [],
+        current_runner: List[str] = [],
+        current_backup: List[str] = [],
+        fail_crawler: List[str] = [],
+        fail_runner: List[str] = [],
+        fail_backup: List[str] = [],
     ) -> GroupState:
         """Initialize a meta-data object **GroupState** with values.
 
@@ -237,13 +245,13 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def task(
-            running_content: List[Union[dict, RunningContent]] = [],
-            cookie: dict = {},
-            authorization: dict = {},
-            in_progressing_id: str = "-1",
-            running_result: Union[dict, RunningResult] = None,
-            running_state: TaskResult = None,
-            result_detail: List[Union[dict, ResultDetail]] = [],
+        running_content: List[Union[dict, RunningContent]] = [],
+        cookie: dict = {},
+        authorization: dict = {},
+        in_progressing_id: str = "-1",
+        running_result: Union[dict, RunningResult] = None,
+        running_state: TaskResult = None,
+        result_detail: List[Union[dict, ResultDetail]] = [],
     ) -> Task:
         """Initialize a meta-data object **Task** with values.
 
@@ -277,12 +285,12 @@ class Initial(_BaseDataObjectUtils):
 
     @staticmethod
     def heartbeat(
-            time_format: str = None,
-            update_time: str = None,
-            update_timeout: str = None,
-            heart_rhythm_timeout: str = None,
-            healthy_state: HeartState = None,
-            task_state: TaskResult = None,
+        time_format: str = None,
+        update_time: str = None,
+        update_timeout: str = None,
+        heart_rhythm_timeout: str = None,
+        healthy_state: HeartState = None,
+        task_state: TaskResult = None,
     ) -> Heartbeat:
         """Initialize a meta-data object **Heartbeat** with values.
 
@@ -329,17 +337,17 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def group_state(
-            state: GroupState,
-            total_crawler: int = None,
-            total_runner: int = None,
-            total_backup: int = None,
-            standby_id: str = None,
-            append_current_crawler: List[str] = [],
-            append_current_runner: List[str] = [],
-            append_current_backup: List[str] = [],
-            append_fail_crawler: List[str] = [],
-            append_fail_runner: List[str] = [],
-            append_fail_backup: List[str] = [],
+        state: GroupState,
+        total_crawler: int = None,
+        total_runner: int = None,
+        total_backup: int = None,
+        standby_id: str = None,
+        append_current_crawler: List[str] = [],
+        append_current_runner: List[str] = [],
+        append_current_backup: List[str] = [],
+        append_fail_crawler: List[str] = [],
+        append_fail_runner: List[str] = [],
+        append_fail_backup: List[str] = [],
     ) -> GroupState:
         """Updating a meta-data object **GroupState** with values.
 
@@ -400,14 +408,14 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def task(
-            task: Task,
-            running_content: List[Union[dict, RunningContent]] = None,
-            cookie: dict = None,
-            authorization: dict = None,
-            in_progressing_id: str = None,
-            running_result: Union[dict, RunningResult] = None,
-            running_status: TaskResult = None,
-            result_detail: List[Union[dict, ResultDetail]] = None,
+        task: Task,
+        running_content: List[Union[dict, RunningContent]] = None,
+        cookie: dict = None,
+        authorization: dict = None,
+        in_progressing_id: str = None,
+        running_result: Union[dict, RunningResult] = None,
+        running_status: TaskResult = None,
+        result_detail: List[Union[dict, ResultDetail]] = None,
     ) -> Task:
         """Updating a meta-data object **Task** with values.
 
@@ -437,14 +445,14 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def heartbeat(
-            heartbeat: Heartbeat,
-            heart_rhythm_time: datetime = None,
-            time_format: str = None,
-            update_time: str = None,
-            update_timeout: str = None,
-            heart_rhythm_timeout: str = None,
-            healthy_state: HeartState = None,
-            task_state: Union[str, TaskResult] = None,
+        heartbeat: Heartbeat,
+        heart_rhythm_time: datetime = None,
+        time_format: str = None,
+        update_time: str = None,
+        update_timeout: str = None,
+        heart_rhythm_timeout: str = None,
+        healthy_state: HeartState = None,
+        task_state: Union[str, TaskResult] = None,
     ) -> Heartbeat:
         """Updating a meta-data object **Heartbeat** with values.
 
@@ -473,9 +481,9 @@ class Update(_BaseDataObjectUtils):
 
     @staticmethod
     def _update_ele_if_not_none(
-            data_obj,
-            prop: str,
-            new_val: Union[int, str, list, dict, datetime, CrawlerStateRole, TaskResult, HeartState],
+        data_obj,
+        prop: str,
+        new_val: Union[int, str, list, dict, datetime, CrawlerStateRole, TaskResult, HeartState],
     ) -> None:
         if new_val is not None:
             setattr(data_obj, prop, new_val)

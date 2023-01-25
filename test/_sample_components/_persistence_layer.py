@@ -59,15 +59,16 @@ Note:
 
 """
 
+import re
+from typing import Dict, List, Tuple, Union
+
 from multirunnable.persistence.database.layer import BaseDao
-from multirunnable.persistence.file.mediator import SavingMediator
 from multirunnable.persistence.file.layer import BaseFao, SavingStrategy
+from multirunnable.persistence.file.mediator import SavingMediator
 from mysql.connector import errorcode
 from mysql.connector.errors import DatabaseError
-from typing import List, Tuple, Dict, Union
-import re
 
-from ._db_mysql import MySQLSingleConnection, MySQLDriverConnectionPool, MySQLOperator
+from ._db_mysql import MySQLDriverConnectionPool, MySQLOperator, MySQLSingleConnection
 
 
 class StockDao(BaseDao):
@@ -88,7 +89,7 @@ class StockDao(BaseDao):
             "port": "3306",
             "user": "root",
             "password": "password",
-            "database": "tw_stock"
+            "database": "tw_stock",
         }
 
     def _instantiate_strategy(self) -> MySQLSingleConnection:
@@ -106,8 +107,7 @@ class StockDao(BaseDao):
 
     def get_tables(self, database: str) -> List[str]:
         # super(MySQLDB, self).checker(session=self.__session)
-        sql = "SELECT table_name FROM information_schema.tables " \
-              f"WHERE table_schema = '{database}';"
+        sql = "SELECT table_name FROM information_schema.tables " f"WHERE table_schema = '{database}';"
 
         self.execute(sql)
         tables = list(self.fetch_all())
@@ -143,9 +143,11 @@ class StockDao(BaseDao):
             return True
 
     def get(self, stock_symbol: str):
-        sql = f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, " \
-              f"closing_price, gross_spread, turnover_volume " \
-              f"FROM tw_stock.stock_data_{stock_symbol}"
+        sql = (
+            f"SELECT stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, "
+            f"closing_price, gross_spread, turnover_volume "
+            f"FROM tw_stock.stock_data_{stock_symbol}"
+        )
 
         ## Method 1
         self.execute(sql)
@@ -162,28 +164,31 @@ class StockDao(BaseDao):
         else:
             data = ",".join(data)
 
-        sql = f"INSERT INTO tw_stock.stock_data_{stock_symbol} (" \
-              "stock_date, trade_volume, turnover_price, opening_price, " \
-              "highest_price, lowest_price, closing_price, gross_spread, turnover_volume" \
-              ") " \
-              f"VALUES ({data})"
+        sql = (
+            f"INSERT INTO tw_stock.stock_data_{stock_symbol} ("
+            "stock_date, trade_volume, turnover_price, opening_price, "
+            "highest_price, lowest_price, closing_price, gross_spread, turnover_volume"
+            ") "
+            f"VALUES ({data})"
+        )
 
         self.execute(sql)
         self.database_opts.commit()
 
     def batch_insert(self, stock_symbol: str, data: Tuple[tuple]) -> None:
-        sql = f"INSERT INTO tw_stock.stock_data_{stock_symbol} (" \
-              f"stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, " \
-              f"gross_spread, turnover_volume" \
-              f") " \
-              "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = (
+            f"INSERT INTO tw_stock.stock_data_{stock_symbol} ("
+            f"stock_date, trade_volume, turnover_price, opening_price, highest_price, lowest_price, closing_price, "
+            f"gross_spread, turnover_volume"
+            f") "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        )
 
         self.execute_many(sql, data)
         self.database_opts.commit()
 
 
 class StockFao(BaseFao):
-
     def __init__(self, strategy: SavingStrategy, **kwargs):
         super().__init__(strategy=strategy, **kwargs)
         self.__mediator = SavingMediator()
@@ -198,4 +203,3 @@ class StockFao(BaseFao):
             self.save_as_json(file=file, mode=mode, data=data)
         else:
             raise ValueError(f"It doesn't support the file format '{formatter}'.")
-

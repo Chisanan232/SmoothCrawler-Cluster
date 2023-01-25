@@ -1,8 +1,9 @@
-from bs4 import BeautifulSoup
-from smoothcrawler.components.httpio import HTTP
-from smoothcrawler.components.data import BaseHTTPResponseParser, BaseDataHandler
 from typing import Any
+
 import requests
+from bs4 import BeautifulSoup
+from smoothcrawler.components.data import BaseDataHandler, BaseHTTPResponseParser
+from smoothcrawler.components.httpio import HTTP
 
 
 class RequestsHTTPRequest(HTTP):
@@ -15,7 +16,6 @@ class RequestsHTTPRequest(HTTP):
 
 
 class RequestsExampleHTTPResponseParser(BaseHTTPResponseParser):
-
     def get_status_code(self, response: requests.Response) -> int:
         return response.status_code
 
@@ -26,7 +26,5 @@ class RequestsExampleHTTPResponseParser(BaseHTTPResponseParser):
 
 
 class ExampleDataHandler(BaseDataHandler):
-
     def process(self, result: Any) -> Any:
         return result
-

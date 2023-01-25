@@ -1,13 +1,13 @@
-from typing import List
 import multiprocessing as mp
 import threading
+from typing import List
 
 
 def run_multi_processes(
-        processes_num: int,
-        target_function,
-        index_sep_char: str = "_",
-        daemon: bool = True,
+    processes_num: int,
+    target_function,
+    index_sep_char: str = "_",
+    daemon: bool = True,
 ) -> List[mp.Process]:
     processes = []
     for i in range(1, processes_num + 1):

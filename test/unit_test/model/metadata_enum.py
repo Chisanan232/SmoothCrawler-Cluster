@@ -1,14 +1,19 @@
-from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
-from enum import Enum
 from abc import ABCMeta
+from enum import Enum
+
+from smoothcrawler_cluster.model.metadata_enum import (
+    CrawlerStateRole,
+    HeartState,
+    TaskResult,
+)
 
 
 class _EnumObjTest(metaclass=ABCMeta):
-
     @classmethod
     def _run_enum_value_test(cls, under_test_enum: Enum, expected_value: str) -> None:
-        assert under_test_enum.value == expected_value, \
-            f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
+        assert (
+            under_test_enum.value == expected_value
+        ), f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
 
 
 class TestCrawlerStateRole(_EnumObjTest):

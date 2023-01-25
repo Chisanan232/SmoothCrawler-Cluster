@@ -1,13 +1,16 @@
-from smoothcrawler_cluster.model import GroupState, NodeState, Task, Heartbeat
-from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from typing import List
 import json
+from typing import List
+
+from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from smoothcrawler_cluster.model import GroupState, Heartbeat, NodeState, Task
 
 from ..._values import (
-    # GroupState
-    _Runner_Crawler_Value, _Backup_Crawler_Value,
-    # common functions
-    setup_group_state, setup_node_state, setup_task, setup_heartbeat
+    _Backup_Crawler_Value,
+    _Runner_Crawler_Value,
+    setup_group_state,
+    setup_heartbeat,
+    setup_node_state,
+    setup_task,
 )
 
 
@@ -36,9 +39,9 @@ class _TestValue:
         return cls._test_value_instance
 
     def __init__(self):
-        self._zk_client_inst = ZookeeperCrawler(runner=_Runner_Crawler_Value,
-                                                backup=_Backup_Crawler_Value,
-                                                initial=False)
+        self._zk_client_inst = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False
+        )
 
     @property
     def name(self):
@@ -151,4 +154,3 @@ class _ZKNodePathUtils:
         for i in range(start_index, size + start_index):
             target_list.append(metadata_path.replace("1", str(i)))
         return target_list
-

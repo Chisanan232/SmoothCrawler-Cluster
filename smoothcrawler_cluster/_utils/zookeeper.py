@@ -7,13 +7,13 @@ module for that.
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from typing import Any, Generic, Optional, TypeVar, Union
+
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError
-from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
-from typing import Any, Union, Optional, TypeVar, Generic
+from kazoo.recipe.lock import ReadLock, Semaphore, WriteLock
 
 from .converter import BaseConverter
-
 
 BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
@@ -111,11 +111,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def restrict(
-            self,
-            path: str,
-            restrict: ZookeeperRecipe,
-            identifier: str,
-            max_leases: Optional[int] = None,
+        self,
+        path: str,
+        restrict: ZookeeperRecipe,
+        identifier: str,
+        max_leases: Optional[int] = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
         """Limit Zookeeper operations in concurrency scenarios by distributed lock.
 
@@ -247,11 +247,11 @@ class ZookeeperClient(_BaseZookeeperClient):
         self.__zk_client.start()
 
     def restrict(
-            self,
-            path: str,
-            restrict: ZookeeperRecipe,
-            identifier: str,
-            max_leases: int = None,
+        self,
+        path: str,
+        restrict: ZookeeperRecipe,
+        identifier: str,
+        max_leases: int = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
         restrict_obj = getattr(self.__zk_client, str(restrict.value))
         if max_leases:
@@ -264,7 +264,7 @@ class ZookeeperClient(_BaseZookeeperClient):
         return self.__zk_client.exists(path=path)
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        data, state = self.__zk_client.get(path=path)    # pylint: disable=unused-variable
+        data, state = self.__zk_client.get(path=path)  # pylint: disable=unused-variable
 
         zk_path = ZookeeperNode()
         zk_path.path = path

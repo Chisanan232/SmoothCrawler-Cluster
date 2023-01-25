@@ -5,19 +5,20 @@ serializing or deserializing features would be deeply necessary in this package.
 serializing and deserializing.
 """
 
-from abc import ABCMeta, abstractmethod
-from typing import Dict, Any, Type, TypeVar, Generic
 import json
+from abc import ABCMeta, abstractmethod
+from typing import Any, Dict, Generic, Type, TypeVar
 
 from ..model.metadata import (
-    # Base class
+    GroupState,
+    Heartbeat,
+    NodeState,
+    ResultDetail,
+    RunningContent,
+    RunningResult,
+    Task,
     _BaseMetaData,
-    # Meta-Data objects
-    GroupState, NodeState, Task, Heartbeat,
-    # Objects in meta-data
-    RunningContent, RunningResult, ResultDetail
 )
-
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
@@ -273,7 +274,7 @@ class TaskContentDataUtils:
             method=data["method"],
             parameters=data["parameters"],
             header=data["header"],
-            body=data["body"]
+            body=data["body"],
         )
 
     @staticmethod
@@ -305,5 +306,5 @@ class TaskContentDataUtils:
             state=data["state"],
             status_code=data["status_code"],
             response=data["response"],
-            error_msg=data["error_msg"]
+            error_msg=data["error_msg"],
         )

@@ -1,48 +1,62 @@
+import re
+import traceback
 from datetime import datetime
-from kazoo.client import KazooClient
-from smoothcrawler_cluster.model import TaskResult, HeartState, GroupState, NodeState, Task, Heartbeat
 from multiprocessing.managers import DictProxy
 from typing import Dict, Type, Union
-import traceback
-import re
+
+from kazoo.client import KazooClient
+
+from smoothcrawler_cluster.model import (
+    GroupState,
+    Heartbeat,
+    HeartState,
+    NodeState,
+    Task,
+    TaskResult,
+)
 
 from ._metadata_values import (
-    # For GroupState metadata
-    GroupStateData, GroupStateByObject, GroupStateByJsonData,
-    # For NodeState metadata
-    NodeStateData, NodeStateByObject, NodeStateByJsonData,
-    # For Task metadata
-    TaskData, TaskDataFromObject, TaskDataFromJsonData,
-    # For Heartbeat metadata
-    HeartbeatData, HeartbeatFromObject, HeartbeatFromJsonData
+    GroupStateByJsonData,
+    GroupStateByObject,
+    GroupStateData,
+    HeartbeatData,
+    HeartbeatFromJsonData,
+    HeartbeatFromObject,
+    NodeStateByJsonData,
+    NodeStateByObject,
+    NodeStateData,
+    TaskData,
+    TaskDataFromJsonData,
+    TaskDataFromObject,
 )
 from ._values import _Task_Running_Content_Value, _Time_Format_Value
 from .integration_test._test_utils._instance_value import _TestValue, _ZKNodePathUtils
-
 
 _Testing_Value: _TestValue = _TestValue()
 
 
 def _equal_assertion(under_test, expect=None, none_check: bool = False) -> None:
     if none_check is True:
-        assert under_test is not None,\
-            f"The value should be the same. Under test: {under_test}, expected value: not None."
+        assert (
+            under_test is not None
+        ), f"The value should be the same. Under test: {under_test}, expected value: not None."
     else:
-        assert under_test == expect,\
-            f"The value should be the same. Under test: {under_test}, expected value: {expect}."
+        assert (
+            under_test == expect
+        ), f"The value should be the same. Under test: {under_test}, expected value: {expect}."
 
 
 class Verify:
-
     @classmethod
     def exception(cls, exception: Union[Exception, Dict[str, Exception]]) -> None:
-
         def _print_traced_exception(e_name: str, e: Exception) -> str:
             print(f"[DEBUG in Verify] _e_name: {e_name}")
             print(f"[DEBUG in Verify] _e: {e}")
-            return f"=========================== {e_name} ===========================" \
-                   f"{traceback.format_exception(e)}" \
-                   f"================================================================="
+            return (
+                f"=========================== {e_name} ==========================="
+                f"{traceback.format_exception(e)}"
+                f"================================================================="
+            )
 
         print(f"[DEBUG in Verify] exception: {exception}")
         if type(exception) in [dict, DictProxy]:
@@ -66,7 +80,6 @@ class Verify:
 
 
 class VerifyMetaData:
-
     def __init__(self):
         self._client = None
 
@@ -74,11 +87,11 @@ class VerifyMetaData:
         self._client = client
 
     def group_state_is_not_empty(
-            self,
-            runner: int,
-            backup: int,
-            standby_id: str,
-            review_data: Union[str, bytes, GroupState] = None,
+        self,
+        runner: int,
+        backup: int,
+        standby_id: str,
+        review_data: Union[str, bytes, GroupState] = None,
     ) -> None:
         group_state = self._generate_group_state_data_opt(review_data)
 
@@ -88,62 +101,70 @@ class VerifyMetaData:
         _equal_assertion(group_state.standby_id, standby_id)
 
     def group_state_info(
-            self,
-            runner: int,
-            backup: int,
-            fail_runner: int = 0,
-            fail_runner_name: str = None,
-            standby_id: str = None,
-            index_sep_char: str = "_",
-            review_data: Union[str, bytes, GroupState] = None,
+        self,
+        runner: int,
+        backup: int,
+        fail_runner: int = 0,
+        fail_runner_name: str = None,
+        standby_id: str = None,
+        index_sep_char: str = "_",
+        review_data: Union[str, bytes, GroupState] = None,
     ) -> None:
         group_state = self._generate_group_state_data_opt(review_data)
 
         # Verify total parts
-        assert group_state.total_crawler == runner + backup, \
-            f"The attribute 'total_crawler' should be '{runner + backup}'."
+        assert (
+            group_state.total_crawler == runner + backup
+        ), f"The attribute 'total_crawler' should be '{runner + backup}'."
         assert group_state.total_runner == runner, f"The attribute 'total_runner' should be '{runner}'."
-        assert group_state.total_backup == backup - fail_runner,\
-            f"The attribute 'total_backup' should be '{backup - fail_runner}'."
+        assert (
+            group_state.total_backup == backup - fail_runner
+        ), f"The attribute 'total_backup' should be '{backup - fail_runner}'."
 
         # # Verify current section
-        self.group_state_current_section(review_data=review_data,
-                                         runner=runner,
-                                         backup=backup,
-                                         fail_runner=fail_runner,
-                                         index_sep_char=index_sep_char)
+        self.group_state_current_section(
+            review_data=review_data,
+            runner=runner,
+            backup=backup,
+            fail_runner=fail_runner,
+            index_sep_char=index_sep_char,
+        )
 
         # Verify standby_id
         if standby_id is not None:
             assert group_state.standby_id == standby_id, f"The attribute 'standby_id' should be '{standby_id}'."
         standby_id_checksum_list = list(
-            map(lambda _crawler: group_state.standby_id in _crawler, group_state.current_backup))
+            map(lambda _crawler: group_state.standby_id in _crawler, group_state.current_backup)
+        )
         if len(group_state.current_backup) != 0:
-            assert True in standby_id_checksum_list, \
-                "The standby ID (the index of crawler name) should be included in the one name of backup crawlers list."
+            assert (
+                True in standby_id_checksum_list
+            ), "The standby ID (the index of crawler name) should be included in the one name of backup crawlers list."
 
         # Verify fail parts
-        assert len(group_state.fail_crawler) == fail_runner,\
-            f"The length of attribute 'fail_crawler' should be '{fail_runner}'."
+        assert (
+            len(group_state.fail_crawler) == fail_runner
+        ), f"The length of attribute 'fail_crawler' should be '{fail_runner}'."
         if fail_runner != 0 and fail_runner_name is not None:
             assert False not in [fail_runner_name in crawler for crawler in group_state.fail_crawler], ""
-        assert len(group_state.fail_runner) == fail_runner,\
-            f"The length of attribute 'fail_runner' should be '{fail_runner}'."
+        assert (
+            len(group_state.fail_runner) == fail_runner
+        ), f"The length of attribute 'fail_runner' should be '{fail_runner}'."
         if fail_runner != 0 and fail_runner_name is not None:
             assert False not in [fail_runner_name in crawler for crawler in group_state.fail_runner], ""
         assert len(group_state.fail_backup) == 0, f"The length of attribute 'fail_backup' should be '{0}'."
 
     def group_state_current_section(
-            self,
-            runner: int,
-            backup: int,
-            fail_runner: int = 0,
-            fail_runner_name: str = None,
-            index_sep_char: str = "_",
-            review_data: Union[str, bytes, GroupState, GroupStateData] = None,
-            verify_crawler: bool = True,
-            verify_runner: bool = True,
-            verify_backup: bool = True,
+        self,
+        runner: int,
+        backup: int,
+        fail_runner: int = 0,
+        fail_runner_name: str = None,
+        index_sep_char: str = "_",
+        review_data: Union[str, bytes, GroupState, GroupStateData] = None,
+        verify_crawler: bool = True,
+        verify_runner: bool = True,
+        verify_backup: bool = True,
     ) -> None:
         if isinstance(review_data, GroupStateData):
             group_state = review_data
@@ -152,45 +173,52 @@ class VerifyMetaData:
 
         # Verify current_crawler
         if verify_crawler is True:
-            assert len(group_state.current_crawler) == runner + backup - fail_runner,\
-                f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'."
-            assert len(group_state.current_crawler) == len(set(group_state.current_crawler)),\
-                "Attribute *current_crawler* should NOT have any element is repeated."
+            assert (
+                len(group_state.current_crawler) == runner + backup - fail_runner
+            ), f"The length of attribute 'current_crawler' should be '{runner + backup - fail_runner}'."
+            assert len(group_state.current_crawler) == len(
+                set(group_state.current_crawler)
+            ), "Attribute *current_crawler* should NOT have any element is repeated."
             # TODO: How to let fail crawler name to be parameter?
             if fail_runner != 0 and fail_runner_name is not None:
-                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_crawler],\
-                    ""
+                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_crawler], ""
 
         # Verify current_runner
         if verify_runner is True:
-            assert len(group_state.current_runner) == runner,\
-                f"The length of attribute 'current_runner' should be '{runner}'."
+            assert (
+                len(group_state.current_runner) == runner
+            ), f"The length of attribute 'current_runner' should be '{runner}'."
             if fail_runner == 0:
                 runer_checksum_iter = map(
-                    lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= runner,
-                    group_state.current_runner)
-                assert False not in list(runer_checksum_iter),\
-                    f"The index of all crawler name should be <= {runner} (the count of runner)."
+                    lambda _crawler: int(_crawler.split(index_sep_char)[-1]) <= runner, group_state.current_runner
+                )
+                assert False not in list(
+                    runer_checksum_iter
+                ), f"The index of all crawler name should be <= {runner} (the count of runner)."
             if fail_runner != 0 and fail_runner_name is not None:
-                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_runner],\
-                    ""
+                assert False not in [fail_runner_name not in crawler for crawler in group_state.current_runner], ""
 
         # Verify current_backup
         if verify_backup is True:
-            assert len(group_state.current_backup) == backup - fail_runner,\
-                f"The length of attribute 'current_backup' should be '{backup - fail_runner}'."
+            assert (
+                len(group_state.current_backup) == backup - fail_runner
+            ), f"The length of attribute 'current_backup' should be '{backup - fail_runner}'."
             if fail_runner == 0:
-                backup_checksum_iter = map(lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup,
-                                           group_state.current_backup)
-                assert False not in list(backup_checksum_iter),\
-                    f"The index of all crawler name should be > {backup} (the count of runner)."
+                backup_checksum_iter = map(
+                    lambda _crawler: int(_crawler.split(index_sep_char)[-1]) > backup, group_state.current_backup
+                )
+                assert False not in list(
+                    backup_checksum_iter
+                ), f"The index of all crawler name should be > {backup} (the count of runner)."
 
     def _generate_group_state_data_opt(self, review_data: Union[str, bytes, GroupState] = None) -> GroupStateData:
-        return self.__get_metadata_opts(review_data,
-                                        metadata_type=GroupState,
-                                        zk_path=_Testing_Value.group_state_zookeeper_path,
-                                        data_by_object=GroupStateByObject,
-                                        data_by_json_obj=GroupStateByJsonData)
+        return self.__get_metadata_opts(
+            review_data,
+            metadata_type=GroupState,
+            zk_path=_Testing_Value.group_state_zookeeper_path,
+            data_by_object=GroupStateByObject,
+            data_by_json_obj=GroupStateByJsonData,
+        )
 
     def node_state_is_not_empty(self, role: str, group: str, review_data: Union[str, bytes, NodeState] = None) -> None:
         node_state = self._generate_node_state_data_opt(review_data)
@@ -199,21 +227,21 @@ class VerifyMetaData:
         _equal_assertion(node_state.group, group)
 
     def all_node_state_role(
-            self,
-            runner: int,
-            backup: int,
-            expected_role: dict,
-            expected_group: dict,
-            start_index: int = 1,
+        self,
+        runner: int,
+        backup: int,
+        expected_role: dict,
+        expected_group: dict,
+        start_index: int = 1,
     ) -> None:
         state_paths = _ZKNodePathUtils.all_node_state(size=runner + backup, start_index=start_index)
         for path in list(state_paths):
             data, state = self._client.get(path=path)
             chksum = re.search(r"[0-9]{1,3}", path)
             if chksum is not None:
-                self.one_node_state(data,
-                                    role=expected_role[chksum.group(0)].value,
-                                    group=expected_group[chksum.group(0)])
+                self.one_node_state(
+                    data, role=expected_role[chksum.group(0)].value, group=expected_group[chksum.group(0)]
+                )
             else:
                 assert False, ""
 
@@ -226,21 +254,23 @@ class VerifyMetaData:
             assert node_state.group == group, f"The attribute 'group' should be '{group}'."
 
     def _generate_node_state_data_opt(self, node_state: Union[str, bytes, NodeStateData] = None) -> NodeStateData:
-        return self.__get_metadata_opts(node_state,
-                                        metadata_type=NodeState,
-                                        zk_path=_Testing_Value.node_state_zookeeper_path,
-                                        data_by_object=NodeStateByObject,
-                                        data_by_json_obj=NodeStateByJsonData)
+        return self.__get_metadata_opts(
+            node_state,
+            metadata_type=NodeState,
+            zk_path=_Testing_Value.node_state_zookeeper_path,
+            data_by_object=NodeStateByObject,
+            data_by_json_obj=NodeStateByJsonData,
+        )
 
     def task_is_not_empty(
-            self,
-            running_content: list = [],
-            cookies: dict = {},
-            authorization: dict = {},
-            running_result: dict = None,
-            running_status: str = None,
-            result_detail: list = [],
-            review_data: Union[str, bytes, Task] = None,
+        self,
+        running_content: list = [],
+        cookies: dict = {},
+        authorization: dict = {},
+        running_result: dict = None,
+        running_status: str = None,
+        result_detail: list = [],
+        review_data: Union[str, bytes, Task] = None,
     ) -> None:
         task = self._generate_task_data_opt(review_data)
 
@@ -256,63 +286,70 @@ class VerifyMetaData:
         _equal_assertion(task.result_detail, result_detail)
 
     def all_task_info(
-            self,
-            runner: int,
-            backup: int,
-            running_content_len: int = None,
-            cookies: dict = None,
-            authorization: dict = None,
-            in_progressing_id: str = None,
-            running_status: str = None,
-            running_result: dict = None,
-            result_detail_len: int = None,
-            start_index: int = 1,
+        self,
+        runner: int,
+        backup: int,
+        running_content_len: int = None,
+        cookies: dict = None,
+        authorization: dict = None,
+        in_progressing_id: str = None,
+        running_status: str = None,
+        running_result: dict = None,
+        result_detail_len: int = None,
+        start_index: int = 1,
     ) -> None:
         task_paths = _ZKNodePathUtils.all_task(size=runner + backup, start_index=start_index)
         for path in list(task_paths):
             data, state = self._client.get(path=path)
             print(f"[DEBUG in testing] _task_path: {path}, _task: {data}")
-            self.one_task_info(data,
-                               running_content_len=running_content_len,
-                               cookies=cookies,
-                               authorization=authorization,
-                               in_progressing_id=in_progressing_id,
-                               running_status=running_status,
-                               running_result=running_result,
-                               result_detail_len=result_detail_len)
+            self.one_task_info(
+                data,
+                running_content_len=running_content_len,
+                cookies=cookies,
+                authorization=authorization,
+                in_progressing_id=in_progressing_id,
+                running_status=running_status,
+                running_result=running_result,
+                result_detail_len=result_detail_len,
+            )
 
     def one_task_info(
-            self,
-            task: Union[str, bytes, Task],
-            running_content_len: int = None,
-            cookies: dict = None,
-            authorization: dict = None,
-            in_progressing_id: str = None,
-            running_status: str = None,
-            running_result: dict = None,
-            result_detail_len: int = None,
+        self,
+        task: Union[str, bytes, Task],
+        running_content_len: int = None,
+        cookies: dict = None,
+        authorization: dict = None,
+        in_progressing_id: str = None,
+        running_status: str = None,
+        running_result: dict = None,
+        result_detail_len: int = None,
     ) -> None:
         task = self._generate_task_data_opt(task)
 
         assert isinstance(task.running_content, list), "The data type of attribute 'running_content' should be list."
         if running_content_len is not None:
-            assert len(task.running_content) == running_content_len,\
-                f"The length of attribute 'running_content' should be {len(task.running_content)}."
+            assert (
+                len(task.running_content) == running_content_len
+            ), f"The length of attribute 'running_content' should be {len(task.running_content)}."
         if cookies is not None:
             assert task.cookies == cookies, f"The attribute 'cookie' should be '{cookies}'."
         if authorization is not None:
             assert task.authorization == authorization, f"The attribute 'authorization' should be '{authorization}'."
         if in_progressing_id is not None:
-            assert task.in_progressing_id == in_progressing_id,\
-                f"The attribute 'in_progressing_id' should be '{in_progressing_id}'."
+            assert (
+                task.in_progressing_id == in_progressing_id
+            ), f"The attribute 'in_progressing_id' should be '{in_progressing_id}'."
         if running_status is not None:
-            assert task.running_status == running_status,\
-                f"The attribute 'running_status' should be '{running_status}'."
+            assert (
+                task.running_status == running_status
+            ), f"The attribute 'running_status' should be '{running_status}'."
         if running_result is not None:
-            assert ("success_count", "fail_count") == tuple(task.running_result.keys()), \
-                "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'."
-            assert task.running_result == running_result,\
-                f"The attribute 'running_result' should be '{running_result}'."
+            assert ("success_count", "fail_count") == tuple(
+                task.running_result.keys()
+            ), "The keys of attribute 'running_result' should be 'success_count' and 'fail_count'."
+            assert (
+                task.running_result == running_result
+            ), f"The attribute 'running_result' should be '{running_result}'."
         if result_detail_len is not None:
             assert len(task.result_detail) == result_detail_len, f"The authorization should be '{authorization}'."
 
@@ -335,11 +372,13 @@ class VerifyMetaData:
             assert False, ""
 
     def _generate_task_data_opt(self, task: Union[str, bytes, Task] = None) -> TaskData:
-        return self.__get_metadata_opts(task,
-                                        metadata_type=Task,
-                                        zk_path=_Testing_Value.task_zookeeper_path,
-                                        data_by_object=TaskDataFromObject,
-                                        data_by_json_obj=TaskDataFromJsonData)
+        return self.__get_metadata_opts(
+            task,
+            metadata_type=Task,
+            zk_path=_Testing_Value.task_zookeeper_path,
+            data_by_object=TaskDataFromObject,
+            data_by_json_obj=TaskDataFromJsonData,
+        )
 
     def heartbeat_is_not_empty(self, review_data: Union[str, bytes, Heartbeat] = None) -> None:
         heartbeat = self._generate_heartbeat_data_opt(review_data)
@@ -370,17 +409,20 @@ class VerifyMetaData:
         heart_rhythm_datetime = datetime.strptime(heartbeat.heart_rhythm_time, heartbeat.time_format)
         now_datetime = datetime.now()
         diff_datetime = now_datetime - heart_rhythm_datetime
-        assert diff_datetime.total_seconds() < \
-               float(heartbeat.update_time[:-1]) + float(heartbeat.update_timeout[:-1]), ""
+        assert diff_datetime.total_seconds() < float(heartbeat.update_time[:-1]) + float(
+            heartbeat.update_timeout[:-1]
+        ), ""
         assert heartbeat.healthy_state == HeartState.HEALTHY.value, ""
         assert heartbeat.task_state == TaskResult.NOTHING.value, ""
 
     def _generate_heartbeat_data_opt(self, heartbeat: Union[str, bytes, Heartbeat] = None) -> HeartbeatData:
-        return self.__get_metadata_opts(heartbeat,
-                                        metadata_type=Heartbeat,
-                                        zk_path=_Testing_Value.heartbeat_zookeeper_path,
-                                        data_by_object=HeartbeatFromObject,
-                                        data_by_json_obj=HeartbeatFromJsonData)
+        return self.__get_metadata_opts(
+            heartbeat,
+            metadata_type=Heartbeat,
+            zk_path=_Testing_Value.heartbeat_zookeeper_path,
+            data_by_object=HeartbeatFromObject,
+            data_by_json_obj=HeartbeatFromJsonData,
+        )
 
     @classmethod
     def _check_running_status(cls, running_flag: Dict[str, bool]) -> None:
@@ -400,7 +442,7 @@ class VerifyMetaData:
             "state": TaskResult.DONE.value,
             "status_code": 200,
             "response": "Example Domain",
-            "error_msg": None
+            "error_msg": None,
         }, "The detail should be completely same as above."
 
     @classmethod
@@ -428,13 +470,14 @@ class VerifyMetaData:
         assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     def __get_metadata_opts(
-            self,
-            review_data: Union[str, bytes, GroupState, NodeState, Task, Heartbeat],
-            zk_path: str,
-            metadata_type: Type[Union[GroupState, NodeState, Task, Heartbeat]],
-            data_by_json_obj:
-            Type[Union[GroupStateByJsonData, NodeStateByJsonData, TaskDataFromJsonData, HeartbeatFromJsonData]],
-            data_by_object: Type[Union[GroupStateByObject, NodeStateByObject, TaskDataFromObject, HeartbeatFromObject]],
+        self,
+        review_data: Union[str, bytes, GroupState, NodeState, Task, Heartbeat],
+        zk_path: str,
+        metadata_type: Type[Union[GroupState, NodeState, Task, Heartbeat]],
+        data_by_json_obj: Type[
+            Union[GroupStateByJsonData, NodeStateByJsonData, TaskDataFromJsonData, HeartbeatFromJsonData]
+        ],
+        data_by_object: Type[Union[GroupStateByObject, NodeStateByObject, TaskDataFromObject, HeartbeatFromObject]],
     ) -> Union[GroupStateData, NodeStateData, TaskData, HeartbeatData]:
         if review_data is None:
             data, state = self._client.get(path=zk_path)

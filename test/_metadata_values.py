@@ -1,11 +1,11 @@
-from abc import ABCMeta, abstractmethod
-from smoothcrawler_cluster.model.metadata import GroupState, NodeState, Task, Heartbeat
-from typing import List, Union
 import json
+from abc import ABCMeta, abstractmethod
+from typing import List, Union
+
+from smoothcrawler_cluster.model.metadata import GroupState, Heartbeat, NodeState, Task
 
 
 class GroupStateData(metaclass=ABCMeta):
-
     def __init__(self, data: Union[str, bytes, GroupState]):
         self._data = data
 
@@ -61,7 +61,6 @@ class GroupStateData(metaclass=ABCMeta):
 
 
 class GroupStateByObject(GroupStateData):
-
     @property
     def total_crawler(self) -> int:
         return self._data.total_crawler
@@ -104,7 +103,6 @@ class GroupStateByObject(GroupStateData):
 
 
 class _GetDataFromJsonData(metaclass=ABCMeta):
-
     def __init__(self, data: Union[str, bytes]):
         if type(data) is bytes:
             json_format_data = data.decode("utf-8")
@@ -117,7 +115,6 @@ class _GetDataFromJsonData(metaclass=ABCMeta):
 
 
 class GroupStateByJsonData(_GetDataFromJsonData, GroupStateData):
-
     def __init__(self, data: Union[str, bytes]):
         super().__init__(data=data)
 
@@ -163,7 +160,6 @@ class GroupStateByJsonData(_GetDataFromJsonData, GroupStateData):
 
 
 class NodeStateData(metaclass=ABCMeta):
-
     def __init__(self, data: Union[str, bytes, NodeState]):
         self._data = data
 
@@ -179,7 +175,6 @@ class NodeStateData(metaclass=ABCMeta):
 
 
 class NodeStateByObject(NodeStateData):
-
     @property
     def role(self) -> str:
         return self._data.role
@@ -190,7 +185,6 @@ class NodeStateByObject(NodeStateData):
 
 
 class NodeStateByJsonData(_GetDataFromJsonData, NodeStateData):
-
     @property
     def role(self) -> str:
         return self._data["role"]
@@ -201,7 +195,6 @@ class NodeStateByJsonData(_GetDataFromJsonData, NodeStateData):
 
 
 class TaskData(metaclass=ABCMeta):
-
     def __init__(self, data: Union[str, bytes, Task]):
         self._data = data
 
@@ -242,7 +235,6 @@ class TaskData(metaclass=ABCMeta):
 
 
 class TaskDataFromObject(TaskData):
-
     @property
     def running_content(self) -> List:
         return self._data.running_content
@@ -273,7 +265,6 @@ class TaskDataFromObject(TaskData):
 
 
 class TaskDataFromJsonData(_GetDataFromJsonData, TaskData):
-
     @property
     def running_content(self) -> List:
         return self._data["running_content"]
@@ -304,7 +295,6 @@ class TaskDataFromJsonData(_GetDataFromJsonData, TaskData):
 
 
 class HeartbeatData(metaclass=ABCMeta):
-
     def __init__(self, data: Union[str, bytes, Heartbeat]):
         self._data = data
 
@@ -345,7 +335,6 @@ class HeartbeatData(metaclass=ABCMeta):
 
 
 class HeartbeatFromObject(HeartbeatData):
-
     @property
     def heart_rhythm_time(self) -> str:
         return self._data.heart_rhythm_time
@@ -376,7 +365,6 @@ class HeartbeatFromObject(HeartbeatData):
 
 
 class HeartbeatFromJsonData(_GetDataFromJsonData, HeartbeatData):
-
     @property
     def heart_rhythm_time(self) -> str:
         return self._data["heart_rhythm_time"]

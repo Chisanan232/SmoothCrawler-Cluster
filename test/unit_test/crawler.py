@@ -1,23 +1,23 @@
+from unittest.mock import MagicMock, patch
+
+import pytest
 from kazoo.client import KazooClient
-from unittest.mock import patch, MagicMock
+
+from smoothcrawler_cluster._utils import MetaDataUtil
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
 from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
-from smoothcrawler_cluster._utils import MetaDataUtil
-import pytest
 
 from .._assertion import ValueFormatAssertion
-from .._values import _Runner_Crawler_Value, _Backup_Crawler_Value
+from .._values import _Backup_Crawler_Value, _Runner_Crawler_Value
 
 
 class TestZookeeperCrawler:
-
     @pytest.fixture(scope="function")
     def zk_crawler(self) -> ZookeeperCrawler:
         with patch.object(KazooClient, "start", return_value=None) as mock_zk_cli:
-            zk_crawler = ZookeeperCrawler(runner=_Runner_Crawler_Value,
-                                           backup=_Backup_Crawler_Value,
-                                           initial=False,
-                                           zk_hosts="1.1.1.1:8080")
+            zk_crawler = ZookeeperCrawler(
+                runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts="1.1.1.1:8080"
+            )
             mock_zk_cli.assert_called_once()
         return zk_crawler
 
@@ -26,62 +26,58 @@ class TestZookeeperCrawler:
         crawler_name = zk_crawler.name
 
         # Verify values
-        ValueFormatAssertion(target=crawler_name,
-                             regex=r"sc-crawler_[0-9]{1,3}")
+        ValueFormatAssertion(target=crawler_name, regex=r"sc-crawler_[0-9]{1,3}")
 
     def test_property_group(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing (with default, doesn't modify it by the initial options)
         group_name = zk_crawler.group
 
         # Verify values
-        ValueFormatAssertion(target=group_name,
-                             regex=r"sc-crawler-cluster")
+        ValueFormatAssertion(target=group_name, regex=r"sc-crawler-cluster")
 
     def test_property_zookeeper_hosts(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing (with default, doesn't modify it by the initial options)
         zookeeper_hosts = zk_crawler.zookeeper_hosts
 
         # Verify values
-        ValueFormatAssertion(target=zookeeper_hosts,
-                             regex="(localhost|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):[0-9]{1,6}")
+        ValueFormatAssertion(
+            target=zookeeper_hosts, regex="(localhost|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):[0-9]{1,6}"
+        )
 
     def test_property_group_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         path = zk_crawler.group_state_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=path,
-                             regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
+        ValueFormatAssertion(target=path, regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
 
     def test_property_node_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         path = zk_crawler.node_state_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=path,
-                             regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
+        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
 
     def test_property_task_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         path = zk_crawler.task_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=path,
-                             regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
+        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
 
     def test_property_heartbeat_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing
         path = zk_crawler.heartbeat_zookeeper_path
 
         # Verify values
-        ValueFormatAssertion(target=path,
-                             regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
+        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
 
     def test_property_ensure_register(self, zk_crawler: ZookeeperCrawler):
         # Test getter
         ensure_register = zk_crawler.ensure_register
-        assert ensure_register is not None, \
-            "After instantiate ZookeeperCrawler, its property 'ensure_register' should NOT be None."
+        assert (
+            ensure_register is not None
+        ), "After instantiate ZookeeperCrawler, its property 'ensure_register' should NOT be None."
 
         # Test setter
         zk_crawler.ensure_register = True
@@ -91,8 +87,9 @@ class TestZookeeperCrawler:
     def test_property_ensure_timeout(self, zk_crawler: ZookeeperCrawler):
         # Test getter
         ensure_register = zk_crawler.ensure_timeout
-        assert ensure_register is not None, \
-            "After instantiate ZookeeperCrawler, its property 'ensure_timeout' should NOT be None."
+        assert (
+            ensure_register is not None
+        ), "After instantiate ZookeeperCrawler, its property 'ensure_timeout' should NOT be None."
 
         # Test setter
         zk_crawler.ensure_timeout = 2
@@ -102,8 +99,9 @@ class TestZookeeperCrawler:
     def test_property_ensure_wait(self, zk_crawler: ZookeeperCrawler):
         # Test getter
         ensure_register = zk_crawler.ensure_wait
-        assert ensure_register is not None, \
-            "After instantiate ZookeeperCrawler, its property 'ensure_wait' should NOT be None."
+        assert (
+            ensure_register is not None
+        ), "After instantiate ZookeeperCrawler, its property 'ensure_wait' should NOT be None."
 
         # Test setter
         zk_crawler.ensure_wait = 2

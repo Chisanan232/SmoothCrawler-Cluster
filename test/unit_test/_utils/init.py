@@ -1,11 +1,12 @@
-from smoothcrawler_cluster._utils import parse_timer
-import pytest
 import re
 import traceback
 
+import pytest
+
+from smoothcrawler_cluster._utils import parse_timer
+
 
 class TestInitModule:
-
     @pytest.mark.parametrize("timer", ["2s", "2.5s", "2m", "2.5m", "2h", "2.5h"])
     def test_parse_timer_with_valid_value(self, timer: str):
         is_float: bool = False
@@ -42,10 +43,11 @@ class TestInitModule:
             timer_chksum = re.search(r"[0-9]", timer)
             if timer_chksum is not None:
                 assert isinstance(e, ValueError), "It should raise a 'ValueError' exception."
-                assert "It only supports 's' (seconds), 'm' (minutes) or 'h' (hours) setting value." in str(e), \
-                    "The error message is not correct."
+                assert "It only supports 's' (seconds), 'm' (minutes) or 'h' (hours) setting value." in str(
+                    e
+                ), "The error message is not correct."
             else:
                 assert isinstance(e, ValueError), "It should raise a 'ValueError' exception."
-                assert f"Invalid value {timer[:-1]}. It should be an integer format value." in str(e), \
-                    "The error message is not correct."
-
+                assert f"Invalid value {timer[:-1]}. It should be an integer format value." in str(
+                    e
+                ), "The error message is not correct."
