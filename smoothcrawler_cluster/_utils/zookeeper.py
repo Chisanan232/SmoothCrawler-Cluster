@@ -66,24 +66,24 @@ class ZookeeperPath:
         self._group = group
 
     @property
-    def group_state_zookeeper_path(self) -> str:
+    def group_state(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper."""
         return f"{self.generate_path(self._group, is_group=True)}/{self._group_state_node}"
 
     @property
-    def node_state_zookeeper_path(self) -> str:
+    def node_state(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper."""
         return f"{self.generate_path(self._name)}/{self._node_state_node}"
 
     @property
-    def task_zookeeper_path(self) -> str:
+    def task(self) -> str:
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper."""
         return f"{self.generate_path(self._name)}/{self._task_node}"
 
     @property
-    def heartbeat_zookeeper_path(self) -> str:
+    def heartbeat(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper."""
         return f"{self.generate_path(self._name)}/{self._heartbeat_node}"

@@ -52,25 +52,25 @@ class _TestValue:
     @property
     def group_state_zookeeper_path(self) -> str:
         if self._group_state_zk_path == "":
-            self._group_state_zk_path = self._zk_path.group_state_zookeeper_path
+            self._group_state_zk_path = self._zk_path.group_state
         return self._group_state_zk_path
 
     @property
     def node_state_zookeeper_path(self) -> str:
         if self._node_state_zk_path == "":
-            self._node_state_zk_path = self._zk_path.node_state_zookeeper_path
+            self._node_state_zk_path = self._zk_path.node_state
         return self._node_state_zk_path
 
     @property
     def task_zookeeper_path(self) -> str:
         if self._task_zk_path == "":
-            self._task_zk_path = self._zk_path.task_zookeeper_path
+            self._task_zk_path = self._zk_path.task
         return self._task_zk_path
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
         if self._heartbeat_zk_path == "":
-            self._heartbeat_zk_path = self._zk_path.heartbeat_zookeeper_path
+            self._heartbeat_zk_path = self._zk_path.heartbeat
         return self._heartbeat_zk_path
 
     @property
