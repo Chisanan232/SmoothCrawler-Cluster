@@ -70,7 +70,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     def test__update_crawler_role(self, uit_object: ZookeeperCrawler):
         # Checking initial state
         group_state = uit_object._metadata_util.get_metadata_from_zookeeper(
-            path=uit_object.group_state_zookeeper_path, as_obj=GroupState
+            path=uit_object._zk_path.group_state_zookeeper_path, as_obj=GroupState
         )
         assert (
             len(group_state.current_crawler) == 0
@@ -83,7 +83,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         ), "At initial process, the length of current backup list should be 0."
 
         node_state = uit_object._metadata_util.get_metadata_from_zookeeper(
-            path=uit_object.node_state_zookeeper_path, as_obj=NodeState
+            path=uit_object._zk_path.node_state_zookeeper_path, as_obj=NodeState
         )
         assert node_state.role == CrawlerStateRole.INITIAL.value, (
             "At initial process, the role of crawler instance should be *initial* (or value of "
@@ -95,7 +95,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
         # Verify the updated state
         updated_group_state = uit_object._metadata_util.get_metadata_from_zookeeper(
-            path=uit_object.group_state_zookeeper_path, as_obj=GroupState
+            path=uit_object._zk_path.group_state_zookeeper_path, as_obj=GroupState
         )
         assert (
             len(updated_group_state.current_runner) == 1
@@ -105,7 +105,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         ), "After update the *state* meta data, the length of current crawler list should be 0 because it's *runner*."
 
         updated_node_state = uit_object._metadata_util.get_metadata_from_zookeeper(
-            path=uit_object.node_state_zookeeper_path, as_obj=NodeState
+            path=uit_object._zk_path.node_state_zookeeper_path, as_obj=NodeState
         )
         assert (
             updated_node_state.role == CrawlerStateRole.RUNNER.value
@@ -631,6 +631,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
 
         # Verify the running result
         task_data, state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
+        print(f"[DEBUG in testing] _Testing_Value.task_zookeeper_path: {_Testing_Value.task_zookeeper_path}")
         print(f"[DEBUG in testing] task_data: {task_data}")
         self._verify_metadata.one_task_info(
             task_data,
@@ -749,10 +750,12 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             current_runner=["sc-crawler_0"],
             current_backup=["sc-crawler_1", "sc-crawler_2"],
         )
-        if self._exist_node(path=zk_crawler.group_state_zookeeper_path) is None:
+        if self._exist_node(path=zk_crawler._zk_path.group_state_zookeeper_path) is None:
             state_data_str = json.dumps(state.to_readable_object())
             self._create_node(
-                path=zk_crawler.group_state_zookeeper_path, value=bytes(state_data_str, "utf-8"), include_data=True
+                path=zk_crawler._zk_path.group_state_zookeeper_path,
+                value=bytes(state_data_str, "utf-8"),
+                include_data=True,
             )
 
         result = _Manager.Value("result", None)
@@ -764,7 +767,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 time.sleep(5)
                 state.standby_id = "2"
                 zk_crawler._metadata_util.set_metadata_to_zookeeper(
-                    path=zk_crawler.group_state_zookeeper_path, metadata=state
+                    path=zk_crawler._zk_path.group_state_zookeeper_path, metadata=state
                 )
             except Exception as e:
                 running_flag["_update_state_standby_id"] = False
@@ -787,8 +790,8 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 running_flag["_run_target_test_func"] = True
                 running_exception["_run_target_test_func"] = None
             finally:
-                if self._exist_node(path=zk_crawler.group_state_zookeeper_path):
-                    self._delete_node(path=zk_crawler.group_state_zookeeper_path)
+                if self._exist_node(path=zk_crawler._zk_path.group_state_zookeeper_path):
+                    self._delete_node(path=zk_crawler._zk_path.group_state_zookeeper_path)
 
         run_2_diff_workers(
             func1_ps=(_update_state_standby_id, (), False), func2_ps=(_run_target_test_func, (), False), worker="thread"
