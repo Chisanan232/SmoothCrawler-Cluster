@@ -6,9 +6,11 @@
 SmoothCrawler-Cluster
 =======================
 
-|python-versions| |release-version| |pypi-version| |license| |github-actions build-status| |codecov-coverage| |pylint| |codacy-level|
+|python-versions| |release-version| |pypi-version| |license| |github-actions build-status| |codecov-coverage|
+|coding style| |pylint| |pre-commit build state| |codacy-level| |readthedoc build-status|
 
-*A Python package which is encapsulation of high fault tolerance features for building cluster or distributed crawler system with *SmoothCrawler*.*
+*A Python package which is encapsulation of high fault tolerance features for building cluster or distributed crawler system with
+*SmoothCrawler*.*
 
 
 Overview
@@ -133,14 +135,14 @@ Release information.
     :target: https://opensource.org/licenses/Apache-2.0
 
 
-.. |circle-ci build-status| image:: https://circleci.com/gh/Chisanan232/multirunnable.svg?style=svg
-    :alt: Circle-CI building status
-    :target: https://app.circleci.com/pipelines/github/Chisanan232/multirunnable
-
-
 .. |github-actions build-status| image:: https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml/badge.svg?branch=master
     :alt: GitHub-Actions building status
     :target: https://github.com/Chisanan232/SmoothCrawler-Cluster/actions/workflows/ci-cd.yml
+
+
+.. |readthedoc build-status| image:: https://readthedocs.org/projects/smoothcrawler-cluster/badge/?version=master
+    :alt: ReadTheDoc building status
+    :target: https://smoothcrawler-cluster.readthedocs.io/en/latest/?badge=master
 
 
 .. |codecov-coverage| image:: https://codecov.io/gh/Chisanan232/SmoothCrawler-Cluster/branch/master/graph/badge.svg?token=H34TPZQXYL
@@ -153,13 +155,23 @@ Release information.
     :target: https://coveralls.io/github/Chisanan232/SmoothCrawler-Cluster?branch=develop/ci-cd
 
 
-.. |pylint| image:: https://img.shields.io/badge/linting-pylint-black
-    :alt: Code Quality checking tool with Pylint
+.. |coding style| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :alt: Coding style reformat tool
+    :target: https://github.com/psf/black
+
+
+.. |pylint| image:: https://img.shields.io/badge/linting-pylint-yellowgreen
+    :alt: Code quality checking tool with Pylint
     :target: https://github.com/PyCQA/pylint
 
 
+.. |pre-commit build state| image:: https://results.pre-commit.ci/badge/github/Chisanan232/SmoothCrawler-Cluster/master.svg
+    :alt: Pre-Commit building status
+    :target: https://results.pre-commit.ci/latest/github/Chisanan232/SmoothCrawler-Cluster/master
+
+
 .. |codacy-level| image:: https://app.codacy.com/project/badge/Grade/171272bee2594687964f1f4473628a0f
-    :alt: Code Quality by Codacy
+    :alt: Recording and analysing code quality by Codacy
     :target: https://www.codacy.com/gh/Chisanan232/SmoothCrawler-Cluster/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Chisanan232/SmoothCrawler-Cluster&amp;utm_campaign=Badge_Grade
 
 
