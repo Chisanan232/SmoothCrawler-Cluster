@@ -701,7 +701,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         def _one_current_runner_is_dead(runner_name: str) -> Optional[str]:
             current_runner_heartbeat = self._metadata_util.get_metadata_from_zookeeper(
-                path=f"{self._zk_path.generate_path(runner_name)}/{self._zookeeper_heartbeat_node_path}",
+                path=f"{self._zk_path.generate_parent_node(runner_name)}/{self._zookeeper_heartbeat_node_path}",
                 as_obj=Heartbeat,
             )
 
@@ -736,7 +736,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 # Only handle the first one of dead crawlers (if it has multiple dead crawlers
                 runner_name = dead_current_runner[0]
                 heartbeat = self._metadata_util.get_metadata_from_zookeeper(
-                    path=f"{self._zk_path.generate_path(runner_name)}/{self._zookeeper_heartbeat_node_path}",
+                    path=f"{self._zk_path.generate_parent_node(runner_name)}/{self._zookeeper_heartbeat_node_path}",
                     as_obj=Heartbeat,
                 )
                 task_of_dead_crawler = self.discover(dead_crawler_name=runner_name, heartbeat=heartbeat)
@@ -888,18 +888,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             Task: Meta-data **Task** from dead crawler instance.
 
         """
-        node_state_path = f"{self._zk_path.generate_path(dead_crawler_name)}/{self._zookeeper_node_state_node_path}"
+        node_state_path = (
+            f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_node_state_node_path}"
+        )
         node_state = self._metadata_util.get_metadata_from_zookeeper(path=node_state_path, as_obj=NodeState)
         node_state.role = CrawlerStateRole.DEAD_RUNNER
         self._metadata_util.set_metadata_to_zookeeper(path=node_state_path, metadata=node_state)
 
         task = self._metadata_util.get_metadata_from_zookeeper(
-            path=f"{self._zk_path.generate_path(dead_crawler_name)}/{self._zookeeper_task_node_path}", as_obj=Task
+            path=f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_task_node_path}",
+            as_obj=Task,
         )
         heartbeat.healthy_state = HeartState.ASYSTOLE
         heartbeat.task_state = task.running_status
         self._metadata_util.set_metadata_to_zookeeper(
-            path=f"{self._zk_path.generate_path(dead_crawler_name)}/{self._zookeeper_heartbeat_node_path}",
+            path=f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_heartbeat_node_path}",
             metadata=heartbeat,
         )
 

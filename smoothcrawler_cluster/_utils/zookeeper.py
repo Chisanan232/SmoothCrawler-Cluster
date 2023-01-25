@@ -69,27 +69,27 @@ class ZookeeperPath:
     def group_state(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper."""
-        return f"{self.generate_path(self._group, is_group=True)}/{self._group_state_node}"
+        return f"{self.generate_parent_node(self._group, is_group=True)}/{self._group_state_node}"
 
     @property
     def node_state(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper."""
-        return f"{self.generate_path(self._name)}/{self._node_state_node}"
+        return f"{self.generate_parent_node(self._name)}/{self._node_state_node}"
 
     @property
     def task(self) -> str:
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper."""
-        return f"{self.generate_path(self._name)}/{self._task_node}"
+        return f"{self.generate_parent_node(self._name)}/{self._task_node}"
 
     @property
     def heartbeat(self) -> str:
         # pylint: disable-next=line-too-long
         """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper."""
-        return f"{self.generate_path(self._name)}/{self._heartbeat_node}"
+        return f"{self.generate_parent_node(self._name)}/{self._heartbeat_node}"
 
     @classmethod
-    def generate_path(cls, crawler_name: str, is_group: bool = False) -> str:
+    def generate_parent_node(cls, crawler_name: str, is_group: bool = False) -> str:
         """Generate node path of Zookeeper with fixed format.
 
         Args:
