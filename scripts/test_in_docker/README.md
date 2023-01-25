@@ -1,20 +1,20 @@
 ## Run testing through Docker
 
-In development, we could use the scripts or config here to help us to run testing with each different Python version. *SmoothCrawler-Cluster* 
+In development, we could use the scripts or config here to help us to run testing with each different Python version. *SmoothCrawler-Cluster*
 supports Python version 3.6 to 3.11 as below badges:
 
 [![Supported Versions](https://img.shields.io/pypi/pyversions/SmoothCrawler-Cluster.svg?logo=python&logoColor=FBE072)](
 https://pypi.org/project/SmoothCrawler-Cluster)
 
-So it may have to run testing in different Python version runtime environment. In generally, it has 2 ways to do it: 
+So it may have to run testing in different Python version runtime environment. In generally, it has 2 ways to do it:
 
 * **PyEnv**
 * **Docker**
 
-Both of 2 are good ways to do it. **PyEnv** is more convenience for using in local site and **Docker** is safer and more independent to run 
+Both of 2 are good ways to do it. **PyEnv** is more convenience for using in local site and **Docker** is safer and more independent to run
 testing in a independent runtime environment. This directory provides developers some scripts they would need it when they use **Docker** way.
 
-About shell script *run-pytest.sh*, it is for running in docker container to get all test items by testing type (unit-test or integration-test) 
+About shell script *run-pytest.sh*, it is for running in docker container to get all test items by testing type (unit-test or integration-test)
 and run it. And *pytest_Dockerfile* is for building docker image.
 
 No matter whether you're new in Docker or not, it's very easy to use.
@@ -82,7 +82,7 @@ After ready the docker image, we could start to run testing through Docker with 
 >>> docker run --name sc-cluster_pytest -e TESTING_TYPE=unit-test -d pytest/sc-cluster:v1
 ```
 
-Please don't forget pass the argument ``TESTING_TYPE`` into docker container, it would run the testing by the argument. Finally, you could 
+Please don't forget pass the argument ``TESTING_TYPE`` into docker container, it would run the testing by the argument. Finally, you could
 verify the testing result by checking docker container log:
 
 ```shell

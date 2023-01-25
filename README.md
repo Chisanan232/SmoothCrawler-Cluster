@@ -34,7 +34,7 @@
 </p>
 
 <p align="center">
-  <em>SmoothCrawler-Cluster</em> is a Python framework which is encapsulation of building cluster or decentralized crawler system 
+  <em>SmoothCrawler-Cluster</em> is a Python framework which is encapsulation of building cluster or decentralized crawler system
   humanly with <a href="https://github.com/Chisanan232/smoothcrawler"><em>SmoothCrawler</em></a>.
 </p>
 
@@ -51,7 +51,7 @@ In addiction to the crawler features, it also has the cluster or decentralized s
 
 ## Quickly Demo
 
-For the demonstration, it divides to 2 parts: 
+For the demonstration, it divides to 2 parts:
 
 * [_General crawler feature_](#general-crawler-feature)
 
@@ -79,11 +79,11 @@ zk_crawler.register_factory(http_req_sender=RequestsHTTPRequest(),
 zk_crawler.run()
 ```
 
-It would run as an unlimited loop after calling *run*. If it wants to trigger the crawler instance to run crawling task, 
+It would run as an unlimited loop after calling *run*. If it wants to trigger the crawler instance to run crawling task,
 please assigning task via setting value to Zookeeper node.
 
 > **Note**
-> Please run the above Python code as 2 different processes, e.g., open 2 terminate tabs or windows and run above Python 
+> Please run the above Python code as 2 different processes, e.g., open 2 terminate tabs or windows and run above Python
 > code in each one.
 
 ```python
@@ -111,26 +111,26 @@ After assigning task to crawler instance, it would run the task and save the res
 
 ```shell
 [zk: localhost:2181(CONNECTED) 19] get /smoothcrawler/node/sc-crawler_1/task
-{"running_content": [], "cookie": {}, "authorization": {}, "in_progressing_id": "-1", "running_result": {"success_count": 1, 
-"fail_count": 0}, "running_status": "done", "result_detail": [{"task_id": 0, "state": "done", "status_code": 200, "response": 
+{"running_content": [], "cookie": {}, "authorization": {}, "in_progressing_id": "-1", "running_result": {"success_count": 1,
+"fail_count": 0}, "running_status": "done", "result_detail": [{"task_id": 0, "state": "done", "status_code": 200, "response":
 "Example Domain", "error_msg": null}]}
 ```
 
-From above info, we could get the running result detail in column *result_detail*: 
+From above info, we could get the running result detail in column *result_detail*:
 
 ```json
 [
   {
-    "task_id": 0, 
-    "state": "done", 
-    "status_code": 200, 
-    "response": "Example Domain", 
+    "task_id": 0,
+    "state": "done",
+    "status_code": 200,
+    "response": "Example Domain",
     "error_msg": null
   }
 ]
 ```
 
-Above data means the task which *task_id* is 0 it has done, and the HTTP status code it got is 200. Also it got the parsing 
+Above data means the task which *task_id* is 0 it has done, and the HTTP status code it got is 200. Also it got the parsing
 result: Example Domain.
 
 ### _Cluster feature_
@@ -139,31 +139,31 @@ Now we understand how to use it as web spider, but what does it mean below?
 
 > ... how it runs as a cluster system which is high reliability.
 
-Do you remember we run 2 crawler instances, right? Let's check the info about **GroupState** of these crawler instances: 
+Do you remember we run 2 crawler instances, right? Let's check the info about **GroupState** of these crawler instances:
 
 ```shell
 [zk: localhost:2181(CONNECTED) 10] get /smoothcrawler/group/sc-crawler-cluster/state
-{"total_crawler": 2, "total_runner": 1, "total_backup": 1, "standby_id": "2", "current_crawler": ["sc-crawler_1", "sc-crawler_2"], 
+{"total_crawler": 2, "total_runner": 1, "total_backup": 1, "standby_id": "2", "current_crawler": ["sc-crawler_1", "sc-crawler_2"],
 "current_runner": ["sc-crawler_1"], "current_backup": ["sc-crawler_2"], "fail_crawler": [], "fail_runner": [], "fail_backup": []}
 ```
 
-It shows that it only one instance is **Runner** and would receive tasks to run right now. So let's try to stop or kill the 
+It shows that it only one instance is **Runner** and would receive tasks to run right now. So let's try to stop or kill the
 Runner one and observe the crawler instances behavior.
 
 > **Note**
 > If you opened 2 terminate tabs or windows to run, please select the first one you run and run control + C.
 
-You would observe that the **Backup** one would activate by itself to be **Runner** and the original **Runner** one would 
+You would observe that the **Backup** one would activate by itself to be **Runner** and the original **Runner** one would
 be recorded at column *fail_crawler* and *fail_runner*.
 
 ```shell
 [zk: localhost:2181(CONNECTED) 11] get /smoothcrawler/group/sc-crawler-cluster/state
-{"total_crawler": 2, "total_runner": 1, "total_backup": 0, "standby_id": "3", "current_crawler": ["sc-crawler_2"], "current_runner": 
+{"total_crawler": 2, "total_runner": 1, "total_backup": 0, "standby_id": "3", "current_crawler": ["sc-crawler_2"], "current_runner":
 ["sc-crawler_2"], "current_backup": [], "fail_crawler": ["sc-crawler_1"], "fail_runner": ["sc-crawler_1"], "fail_backup": []}
 ```
 
-The crawler instance *sc-crawler_2* would be the new **Runner** one to wait for task and run. And you also could test its 
+The crawler instance *sc-crawler_2* would be the new **Runner** one to wait for task and run. And you also could test its
 crawling feature as [_General crawler feature_](#general-crawler-feature).
 
-So far, it demonstrates it besides helps developers to build web crawler as a clean software architecture, it also has cluster 
+So far, it demonstrates it besides helps developers to build web crawler as a clean software architecture, it also has cluster
 feature to let it be a high reliability crawler.

@@ -1,16 +1,20 @@
-from multirunnable.persistence.database.strategy import get_connection_pool, BaseSingleConnection, BaseConnectionPool
+import time
+from typing import Any, Tuple, Union
+
+import mysql.connector
 from multirunnable.persistence.database.operator import DatabaseOperator
+from multirunnable.persistence.database.strategy import (
+    BaseConnectionPool,
+    BaseSingleConnection,
+    get_connection_pool,
+)
 from mysql.connector.connection import MySQLConnection
 from mysql.connector.cursor import MySQLCursor
 from mysql.connector.errors import PoolError
 from mysql.connector.pooling import MySQLConnectionPool, PooledMySQLConnection
-from typing import Any, Tuple, Union
-import mysql.connector
-import time
 
 
 class MySQLSingleConnection(BaseSingleConnection):
-
     def _connect_database(self, **kwargs) -> MySQLConnection:
         _connection = mysql.connector.connect(**kwargs)
         return _connection
@@ -27,7 +31,6 @@ class MySQLSingleConnection(BaseSingleConnection):
 
 
 class MySQLDriverConnectionPool(BaseConnectionPool):
-
     def connect_database(self, **kwargs) -> MySQLConnectionPool:
         connection_pool = MySQLConnectionPool(**kwargs)
         return connection_pool
@@ -42,8 +45,10 @@ class MySQLDriverConnectionPool(BaseConnectionPool):
                 raise e
             except AttributeError as ae:
                 if "'NoneType' object has no attribute 'get_connection'" in str(ae):
-                    raise ConnectionError(f"Cannot get the one connection instance from connection pool because it "
-                                          f"doesn't exist the connection pool with the name '{pool_name}'.") from ae
+                    raise ConnectionError(
+                        f"Cannot get the one connection instance from connection pool because it "
+                        f"doesn't exist the connection pool with the name '{pool_name}'."
+                    ) from ae
                 else:
                     raise ae
 
@@ -60,7 +65,6 @@ class MySQLDriverConnectionPool(BaseConnectionPool):
 
 
 class MySQLOperator(DatabaseOperator):
-
     def __init__(self, conn_strategy: Union[BaseSingleConnection, BaseConnectionPool], db_config={}):
         super().__init__(conn_strategy=conn_strategy, db_config=db_config)
 
@@ -95,4 +99,3 @@ class MySQLOperator(DatabaseOperator):
 
     def close_cursor(self) -> None:
         self._cursor.close()
-

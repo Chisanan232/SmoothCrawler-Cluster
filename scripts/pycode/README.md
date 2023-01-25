@@ -1,9 +1,9 @@
 ## Example of *SmoothCrawler-CLuster*
 
-In this directory, it has some demonstrations for how to use *SmoothCrawler-Cluster* and an example Dockerfile and docker-compose to 
+In this directory, it has some demonstrations for how to use *SmoothCrawler-Cluster* and an example Dockerfile and docker-compose to
 help you set up a crawler cluster to more understand how it works.
 
-It could divide the examples to 3 parts: 
+It could divide the examples to 3 parts:
 
 * Task assigner
 * Task runner (it includes *SmoothCrawler* components and crawler main body)
@@ -11,8 +11,8 @@ It could divide the examples to 3 parts:
 
 ### Task assigner
 
-It is for assigning task for task runner. Currently, *SmoothCrawler-CLuster* only supports one crawler --- **ZookeeperCrawler**, so it 
-must communicate with each other by Zookeeper. And this is responsible for passing the task to Zookeeper to let task runner could 
+It is for assigning task for task runner. Currently, *SmoothCrawler-CLuster* only supports one crawler --- **ZookeeperCrawler**, so it
+must communicate with each other by Zookeeper. And this is responsible for passing the task to Zookeeper to let task runner could
 receive the task to process.
 
 So we could run the Python scripty *assign_task.py* and verify its running result in Zookeeper:
@@ -35,7 +35,7 @@ In Zookeeper, demonstrate with one of node's property **Task**:
 
 ### Task runner
 
-The main body of sample crawler, and this sample be as *crawler_main.py*. For let it supports run as standalone, so it has 5 environment 
+The main body of sample crawler, and this sample be as *crawler_main.py*. For let it supports run as standalone, so it has 5 environment
 variables could use:
 
 * CLUSTER_RUNNER: The instance amount for running task. Default is ``2``.
@@ -53,12 +53,12 @@ Example Domain
 
 ### Docker configurations
 
-This part is the most important of this example because it would demonstrate the value of package *SmoothCrawler-CLuster*. It needs to 
-set up and run multiple crawler instances if we want to know its value. However, running multiple instances in the same time is a little 
-bother developers. So this example provides configurations of docker and docker-compose to run multiple crawler instances and set up 
+This part is the most important of this example because it would demonstrate the value of package *SmoothCrawler-CLuster*. It needs to
+set up and run multiple crawler instances if we want to know its value. However, running multiple instances in the same time is a little
+bother developers. So this example provides configurations of docker and docker-compose to run multiple crawler instances and set up
 crawler cluster so that developers could be lazy as possible.
 
-File *sc-crawler_Dockerfile* for building the image of running crawler, and it has the above arguments could use. And for the YAML format 
+File *sc-crawler_Dockerfile* for building the image of running crawler, and it has the above arguments could use. And for the YAML format
 file *sc-cluster_docker-compose.yaml*, it could run multiple crawler instances and set up crawler cluster.
 
 Let's demonstrate how to quickly start with these examples!

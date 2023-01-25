@@ -1,7 +1,13 @@
 from smoothcrawler_cluster.__pkg_info__ import (
-    __title__, __version__, __description__, __url__, __license__, __author__, __author_email__, __copyright__
+    __author__,
+    __author_email__,
+    __copyright__,
+    __description__,
+    __license__,
+    __title__,
+    __url__,
+    __version__,
 )
-
 
 _Expected_Title: str = "SmoothCrawler-Cluster"
 _Expected_Description: str = "Develop and build web spider cluster humanly."

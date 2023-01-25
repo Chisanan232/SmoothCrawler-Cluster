@@ -1,11 +1,11 @@
-from smoothcrawler_cluster._utils.zookeeper import ZookeeperNode
 import pytest
+
+from smoothcrawler_cluster._utils.zookeeper import ZookeeperNode
 
 from ..._values import Test_Zookeeper_Path, Test_Zookeeper_String_Value
 
 
 class TestZookeeperPath:
-
     @pytest.fixture(scope="function")
     def zk_path(self) -> ZookeeperNode:
         return ZookeeperNode()
