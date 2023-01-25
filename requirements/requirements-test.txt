@@ -1,5 +1,7 @@
 ###### SmoothCrawler-Cluster Development (or Testing) Dependencies Requirements ######
 ## For running pytest ##
+pre-commit >= 3.0.0
+pylint >= 2.15.8
 pytest >= 7.0.0
 pytest-cov >= 3.0.0
 pytest-html >= 3.1.1
