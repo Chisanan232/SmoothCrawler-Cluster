@@ -61,7 +61,7 @@ class ZookeeperPath:
     _task_node: str = "task"
     _heartbeat_node: str = "heartbeat"
 
-    def __init__(self, name: str = None, group: str = None):
+    def __init__(self, name: str, group: str):
         self._name = name
         self._group = group
 
