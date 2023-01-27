@@ -581,6 +581,12 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 updated_task = Update.task(task, running_content=_Task_Running_Content_Value)
                 updated_task_str = json.dumps(updated_task.to_readable_object())
                 self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(updated_task_str, "utf-8"))
+
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.RUNNER)
+                node_state_str = json.dumps(node_state.to_readable_object())
+                self._set_value_to_node(
+                    path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
+                )
             except Exception as e:
                 running_flag["_assign_task"] = False
                 running_exception["_assign_task"] = e
@@ -597,6 +603,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 initial=False,
                 zk_hosts=Zookeeper_Hosts,
             )
+            zk_crawler.register_node_state()
             zk_crawler.register_task()
 
             try:
