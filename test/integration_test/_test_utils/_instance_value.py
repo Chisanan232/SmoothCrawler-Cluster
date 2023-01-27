@@ -1,12 +1,12 @@
 import json
 from typing import List
 
-from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from smoothcrawler_cluster._utils.zookeeper import ZookeeperPath
 from smoothcrawler_cluster.model import GroupState, Heartbeat, NodeState, Task
 
 from ..._values import (
-    _Backup_Crawler_Value,
-    _Runner_Crawler_Value,
+    _Crawler_Group_Name_Value,
+    _Crawler_Name_Value,
     setup_group_state,
     setup_heartbeat,
     setup_node_state,
@@ -39,40 +39,38 @@ class _TestValue:
         return cls._test_value_instance
 
     def __init__(self):
-        self._zk_client_inst = ZookeeperCrawler(
-            runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False
-        )
+        self._zk_path = ZookeeperPath(name=_Crawler_Name_Value, group=_Crawler_Group_Name_Value)
 
     @property
     def name(self):
-        return self._zk_client_inst.name
+        return _Crawler_Name_Value
 
     @property
     def group(self):
-        return self._zk_client_inst.group
+        return _Crawler_Group_Name_Value
 
     @property
     def group_state_zookeeper_path(self) -> str:
         if self._group_state_zk_path == "":
-            self._group_state_zk_path = self._zk_client_inst.group_state_zookeeper_path
+            self._group_state_zk_path = self._zk_path.group_state
         return self._group_state_zk_path
 
     @property
     def node_state_zookeeper_path(self) -> str:
         if self._node_state_zk_path == "":
-            self._node_state_zk_path = self._zk_client_inst.node_state_zookeeper_path
+            self._node_state_zk_path = self._zk_path.node_state
         return self._node_state_zk_path
 
     @property
     def task_zookeeper_path(self) -> str:
         if self._task_zk_path == "":
-            self._task_zk_path = self._zk_client_inst.task_zookeeper_path
+            self._task_zk_path = self._zk_path.task
         return self._task_zk_path
 
     @property
     def heartbeat_zookeeper_path(self) -> str:
         if self._heartbeat_zk_path == "":
-            self._heartbeat_zk_path = self._zk_client_inst.heartbeat_zookeeper_path
+            self._heartbeat_zk_path = self._zk_path.heartbeat
         return self._heartbeat_zk_path
 
     @property

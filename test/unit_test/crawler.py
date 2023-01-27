@@ -44,34 +44,6 @@ class TestZookeeperCrawler:
             target=zookeeper_hosts, regex="(localhost|[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}):[0-9]{1,6}"
         )
 
-    def test_property_group_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
-        # Get value by target method for testing
-        path = zk_crawler.group_state_zookeeper_path
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
-
-    def test_property_node_state_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
-        # Get value by target method for testing
-        path = zk_crawler.node_state_zookeeper_path
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
-
-    def test_property_task_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
-        # Get value by target method for testing
-        path = zk_crawler.task_zookeeper_path
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
-
-    def test_property_heartbeat_zookeeper_path(self, zk_crawler: ZookeeperCrawler):
-        # Get value by target method for testing
-        path = zk_crawler.heartbeat_zookeeper_path
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
-
     def test_property_ensure_register(self, zk_crawler: ZookeeperCrawler):
         # Test getter
         ensure_register = zk_crawler.ensure_register

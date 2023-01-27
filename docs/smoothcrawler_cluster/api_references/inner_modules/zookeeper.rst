@@ -7,6 +7,14 @@ Utils - Zookeeper
 .. automodule:: smoothcrawler_cluster._utils.zookeeper
 
 
+ZookeeperPath
+--------------
+
+.. autoclass:: smoothcrawler_cluster._utils.zookeeper.ZookeeperPath
+    :members:
+
+
+
 ZookeeperNode
 --------------
 

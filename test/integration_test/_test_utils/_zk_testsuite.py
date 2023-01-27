@@ -133,11 +133,12 @@ class ZK:
 
     @classmethod
     def _initial_zk_opt_inst(cls, uit_object):
-        if not isinstance(uit_object, ZookeeperCrawler):
-            inst = _TestValue()
-        else:
-            inst = uit_object
-        return inst
+        # if not isinstance(uit_object, ZookeeperCrawler):
+        #     inst = _TestValue()
+        # else:
+        #     inst = uit_object
+        # return inst
+        return _TestValue()
 
     @classmethod
     def _paths_to_list(cls, path: Union[ZKNode, List[ZKNode]]) -> List[ZKNode]:

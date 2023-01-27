@@ -16,6 +16,7 @@ from .converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
 from .zookeeper import (
     ZookeeperClient,
     ZookeeperNode,
+    ZookeeperPath,
     ZookeeperRecipe,
     _BaseZookeeperClient,
     _BaseZookeeperNode,

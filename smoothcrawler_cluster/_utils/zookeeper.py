@@ -49,6 +49,63 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
         pass
 
 
+class ZookeeperPath:
+    """*All paths of Zookeeper*
+
+    In Zookeeper, it would save data under specific path as node. This object provides all paths of Zookeeper which
+    saves meta-data for *SmoothCrawler-Cluster*.
+    """
+
+    _group_state_node: str = "state"
+    _node_state_node: str = "state"
+    _task_node: str = "task"
+    _heartbeat_node: str = "heartbeat"
+
+    def __init__(self, name: str, group: str):
+        self._name = name
+        self._group = group
+
+    @property
+    def group_state(self) -> str:
+        # pylint: disable-next=line-too-long
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper."""
+        return f"{self.generate_parent_node(self._group, is_group=True)}/{self._group_state_node}"
+
+    @property
+    def node_state(self) -> str:
+        # pylint: disable-next=line-too-long
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper."""
+        return f"{self.generate_parent_node(self._name)}/{self._node_state_node}"
+
+    @property
+    def task(self) -> str:
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper."""
+        return f"{self.generate_parent_node(self._name)}/{self._task_node}"
+
+    @property
+    def heartbeat(self) -> str:
+        # pylint: disable-next=line-too-long
+        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper."""
+        return f"{self.generate_parent_node(self._name)}/{self._heartbeat_node}"
+
+    @classmethod
+    def generate_parent_node(cls, crawler_name: str, is_group: bool = False) -> str:
+        """Generate node path of Zookeeper with fixed format.
+
+        Args:
+            crawler_name (str): The crawler name.
+            is_group (bool): If it's True, generate node path for _group_ type meta-data.
+
+        Returns:
+            str: A Zookeeper node path.
+
+        """
+        if is_group:
+            return f"smoothcrawler/group/{crawler_name}"
+        else:
+            return f"smoothcrawler/node/{crawler_name}"
+
+
 class ZookeeperNode(_BaseZookeeperNode):
     """*Zookeeper node object*
 
