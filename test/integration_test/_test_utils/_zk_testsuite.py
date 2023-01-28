@@ -64,7 +64,7 @@ class ZK:
                 # Add new node with value in Zookeeper
                 def _get_enum_key_from_value(p):
                     for zk_node in ZKNode:
-                        inst = self._initial_zk_opt_inst(uit_object)
+                        inst = self._initial_zk_opt_inst()
                         if getattr(inst, str(zk_node.value)) == p:
                             return zk_node
                     else:
@@ -109,7 +109,7 @@ class ZK:
     ) -> None:
         paths = self._paths_to_list(path)
         for p in paths:
-            inst = self._initial_zk_opt_inst(zk_crawler)
+            inst = self._initial_zk_opt_inst()
             path_str = getattr(inst, str(p.value))
             zk_function(path_str)
         test_item(self, zk_crawler)
@@ -132,12 +132,7 @@ class ZK:
         return _
 
     @classmethod
-    def _initial_zk_opt_inst(cls, uit_object):
-        # if not isinstance(uit_object, ZookeeperCrawler):
-        #     inst = _TestValue()
-        # else:
-        #     inst = uit_object
-        # return inst
+    def _initial_zk_opt_inst(cls):
         return _TestValue()
 
     @classmethod
