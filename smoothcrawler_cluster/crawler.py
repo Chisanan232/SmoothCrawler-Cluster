@@ -668,7 +668,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 path=self._zk_path.task, as_obj=Task, must_has_data=False
             )
 
-            if node_state.role is CrawlerStateRole.DEAD_RUNNER:
+            if node_state.role == CrawlerStateRole.DEAD_RUNNER.value:
                 self.stop_update_heartbeat()
                 break
 
