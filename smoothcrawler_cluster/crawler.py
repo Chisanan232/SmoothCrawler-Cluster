@@ -7,7 +7,7 @@ It integrates the features of **SmoothCrawler** into all the cluster crawler. So
 import re
 import threading
 import time
-from abc import ABCMeta, abstractmethod
+from abc import ABC, ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 
@@ -53,10 +53,18 @@ class BaseClusterCrawler(BaseDistributedCrawler):
     TODO: Add docstring, consider and define abstract functions
     """
 
-    pass
+    @abstractmethod
+    def _get_metadata(
+        self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True
+    ) -> Generic[_BaseMetaDataType]:
+        pass
+
+    @abstractmethod
+    def _set_metadata(self, path: str, metadata: Generic[_BaseMetaDataType], create_node: bool = False) -> None:
+        pass
 
 
-class BaseDecentralizedCrawler(BaseClusterCrawler):
+class BaseDecentralizedCrawler(BaseClusterCrawler, ABC):
     """*Base class for decentralized cluster crawler*
 
     TODO: Add docstring, consider and define abstract functions
