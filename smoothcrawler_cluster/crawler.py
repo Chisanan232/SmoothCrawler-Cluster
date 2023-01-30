@@ -964,7 +964,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if task.running_status == TaskResult.PROCESSING.value:
             # Run the tasks from the start index
             self._metadata_util.set_metadata_to_zookeeper(path=self._zk_path.task, metadata=task)
-        elif task.running_status in [TaskResult.NOTHING.value, TaskResult.ERROR.value]:
+        elif task.running_status == TaskResult.ERROR.value:
             # Reset some specific attributes
             updated_task = Update.task(
                 task,
