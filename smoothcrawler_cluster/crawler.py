@@ -7,7 +7,7 @@ It integrates the features of **SmoothCrawler** into all the cluster crawler. So
 import re
 import threading
 import time
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 
@@ -47,8 +47,17 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
     pass
 
 
-class BaseDecentralizedCrawler(BaseDistributedCrawler):
-    """*Base class for decentralized crawler*
+class BaseClusterCrawler(BaseDistributedCrawler):
+    """*Base class for cluster crawler*
+
+    TODO: Add docstring, consider and define abstract functions
+    """
+
+    pass
+
+
+class BaseDecentralizedCrawler(BaseClusterCrawler):
+    """*Base class for decentralized cluster crawler*
 
     TODO: Add docstring, consider and define abstract functions
     """
@@ -287,6 +296,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self.register_metadata()
         if self._updating_stop_signal is False:
             self._run_updating_heartbeat_thread()
+        # TODO: It's possible that it needs to parameterize this election running workflow
         if self.is_ready_for_election(interval=0.5, timeout=-1):
             if self.elect() is ElectionResult.WINNER:
                 self._crawler_role = CrawlerStateRole.RUNNER
