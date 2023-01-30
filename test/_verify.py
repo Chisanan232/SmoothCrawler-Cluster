@@ -2,7 +2,7 @@ import re
 import traceback
 from datetime import datetime
 from multiprocessing.managers import DictProxy
-from typing import Dict, Type, Union
+from typing import Dict, List, Type, Union
 
 from kazoo.client import KazooClient
 
@@ -351,23 +351,61 @@ class VerifyMetaData:
                 task.running_result == running_result
             ), f"The attribute 'running_result' should be '{running_result}'."
         if result_detail_len is not None:
-            assert len(task.result_detail) == result_detail_len, f"The authorization should be '{authorization}'."
+            assert (
+                len(task.result_detail) == result_detail_len
+            ), f"The size of attribute 'result_detail' should be '{authorization}'."
 
-    def all_task_detail(self, runner: int, backup: int, expected_task_result: dict, start_index: int = 1) -> None:
+    def all_task_detail(
+        self,
+        runner: int,
+        backup: int,
+        expected_task_result: Dict[str, Union[str, List[str]]],
+        start_index: int = 1,
+    ) -> None:
         task_paths = _ZKNodePathUtils.all_task(size=runner + backup, start_index=start_index)
         for path in list(task_paths):
             data, state = self._client.get(path=path)
             print(f"[DEBUG in testing] _task_path: {path}, _task: {data}")
             self.one_task_result_detail(data, task_path=path, expected_task_result=expected_task_result)
 
-    def one_task_result_detail(self, task: Union[str, bytes, Task], task_path: str, expected_task_result: dict) -> None:
+    def one_task_result_detail(
+        self,
+        task: Union[str, bytes, Task],
+        task_path: str,
+        expected_task_result: Dict[str, Union[str, List[str]]],
+    ) -> None:
+        def _print_traced_exception(e: List[Exception]) -> str:
+            print(f"[DEBUG in Verify] _e: {e}")
+            for one_e in e:
+                print(
+                    f"=================================================================\n"
+                    f"{''.join(traceback.format_exception(one_e))}"
+                    f"=================================================================\n"
+                )
+
         task = self._generate_task_data_opt(task)
 
         assert task is not None, ""
         chksum = re.search(r"[0-9]{1,3}", task_path)
         if chksum is not None:
-            chk_detail_assert = getattr(self, f"_chk_{expected_task_result[chksum.group(0)]}_task_detail")
-            chk_detail_assert(task)
+            verify_func = expected_task_result[chksum.group(0)]
+            if isinstance(verify_func, str):
+                chk_detail_assert = getattr(self, f"_chk_{verify_func}_task_detail")
+                chk_detail_assert(task)
+            elif isinstance(verify_func, list):
+                assert_fail_results = []
+                for one_verify_func in verify_func:
+                    try:
+                        chk_detail_assert = getattr(self, f"_chk_{one_verify_func}_task_detail")
+                        chk_detail_assert(task)
+                    except AssertionError as e:
+                        assert_fail_results.append(e)
+                    else:
+                        assert_fail_results.append(True)
+                if True not in assert_fail_results:
+                    assert False, f"It has exception(s): {_print_traced_exception(assert_fail_results)}"
+            else:
+                raise TypeError("The data type of value in argument *expected_task_result* should be str or List[str].")
         else:
             assert False, ""
 
@@ -446,14 +484,6 @@ class VerifyMetaData:
         }, "The detail should be completely same as above."
 
     @classmethod
-    def _chk_nothing_task_detail(cls, one_detail: TaskData) -> None:
-        assert len(one_detail.running_content) == 0, ""
-        assert one_detail.in_progressing_id == "0", ""
-        assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert one_detail.running_status == TaskResult.NOTHING.value, ""
-        assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
-
-    @classmethod
     def _chk_processing_task_detail(cls, one_detail: TaskData) -> None:
         assert len(one_detail.running_content) == 1, ""
         assert one_detail.in_progressing_id == "0", ""
@@ -464,6 +494,14 @@ class VerifyMetaData:
     @classmethod
     def _chk_backup_task_detail(cls, one_detail: TaskData) -> None:
         assert len(one_detail.running_content) == 0, ""
+        assert one_detail.in_progressing_id == "-1", ""
+        assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
+        assert one_detail.running_status == TaskResult.NOTHING.value, ""
+        assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
+
+    @classmethod
+    def _chk_dead_task_detail(cls, one_detail: TaskData) -> None:
+        assert len(one_detail.running_content) == 1, ""
         assert one_detail.in_progressing_id == "-1", ""
         assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
         assert one_detail.running_status == TaskResult.NOTHING.value, ""
