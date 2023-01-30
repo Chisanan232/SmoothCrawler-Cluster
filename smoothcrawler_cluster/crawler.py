@@ -661,9 +661,17 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         #        Keep wait for tasks
         #    }
         while True:
+            node_state = self._metadata_util.get_metadata_from_zookeeper(
+                path=self._zk_path.node_state, as_obj=NodeState, must_has_data=False
+            )
             task = self._metadata_util.get_metadata_from_zookeeper(
                 path=self._zk_path.task, as_obj=Task, must_has_data=False
             )
+
+            if node_state.role == CrawlerStateRole.DEAD_RUNNER.value:
+                self.stop_update_heartbeat()
+                break
+
             if task.running_content:
                 # Start to run tasks ...
                 self.run_task(task=task)
@@ -956,7 +964,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if task.running_status == TaskResult.PROCESSING.value:
             # Run the tasks from the start index
             self._metadata_util.set_metadata_to_zookeeper(path=self._zk_path.task, metadata=task)
-        elif task.running_status in [TaskResult.NOTHING.value, TaskResult.ERROR.value]:
+        elif task.running_status == TaskResult.ERROR.value:
             # Reset some specific attributes
             updated_task = Update.task(
                 task,
