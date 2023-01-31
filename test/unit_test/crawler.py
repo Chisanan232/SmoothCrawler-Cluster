@@ -4,7 +4,7 @@ import pytest
 from kazoo.client import KazooClient
 
 from smoothcrawler_cluster._utils import MetaDataUtil
-from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
 from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
 
 from .._assertion import ValueFormatAssertion

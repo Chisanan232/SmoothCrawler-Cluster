@@ -14,11 +14,11 @@ from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 
-from ._utils import MetaDataUtil, parse_timer
-from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
-from ._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
-from .election import BaseElection, ElectionResult, IndexElection
-from .model import (
+from .._utils import MetaDataUtil, parse_timer
+from .._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
+from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
+from ..election import BaseElection, ElectionResult, IndexElection
+from ..model import (
     CrawlerStateRole,
     GroupState,
     Heartbeat,
@@ -32,7 +32,7 @@ from .model import (
     TaskResult,
     Update,
 )
-from .model.metadata import _BaseMetaData
+from ..model.metadata import _BaseMetaData
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
