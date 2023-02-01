@@ -9,8 +9,8 @@ from typing import Callable
 class CrawlerName:
     """*Data about crawler's name*"""
 
-    _name: str = ""
-    _index_sep: str = ""
+    _name: str = None
+    _index_sep: str = None
 
     @property
     def name(self) -> str:
@@ -21,7 +21,7 @@ class CrawlerName:
 
     @name.setter
     def name(self, _name: str) -> None:
-        self._name = _name
+        self._name = str(_name)
 
     @property
     def index_sep(self) -> str:
@@ -32,7 +32,7 @@ class CrawlerName:
 
     @index_sep.setter
     def index_sep(self, _index_sep: str) -> None:
-        self._index_sep = _index_sep
+        self._index_sep = str(_index_sep)
 
 
 class TimeInterval:
@@ -51,7 +51,7 @@ class TimeInterval:
 
     @check_task.setter
     def check_task(self, _wait: float) -> None:
-        self._check_task = _wait
+        self._check_task = float(_wait)
 
     @property
     def check_crawler_state(self) -> float:
@@ -62,7 +62,7 @@ class TimeInterval:
 
     @check_crawler_state.setter
     def check_crawler_state(self, _wait: float) -> None:
-        self._check_crawler_state = _wait
+        self._check_crawler_state = float(_wait)
 
     @property
     def check_standby_id(self) -> float:
@@ -73,7 +73,7 @@ class TimeInterval:
 
     @check_standby_id.setter
     def check_standby_id(self, _wait: float) -> None:
-        self._check_standby_id = _wait
+        self._check_standby_id = float(_wait)
 
 
 class TimerThreshold:
@@ -90,7 +90,7 @@ class TimerThreshold:
 
     @reset_timeout.setter
     def reset_timeout(self, _reset_timeout: int) -> None:
-        self._reset_timeout = _reset_timeout
+        self._reset_timeout = int(_reset_timeout)
 
 
 class CrawlerTimer:
@@ -108,6 +108,8 @@ class CrawlerTimer:
 
     @time_interval.setter
     def time_interval(self, _interval: TimeInterval) -> None:
+        if not isinstance(_interval, TimeInterval):
+            raise TypeError("Property *time_interval* only support *TimeInterval* type object.")
         self._interval = _interval
 
     @property
@@ -119,6 +121,8 @@ class CrawlerTimer:
 
     @threshold.setter
     def threshold(self, _threshold: TimerThreshold) -> None:
+        if not isinstance(_threshold, TimerThreshold):
+            raise TypeError("Property *time_interval* only support *TimeInterval* type object.")
         self._threshold = _threshold
 
 
@@ -137,6 +141,8 @@ class MetaDataOpt:
 
     @get_callback.setter
     def get_callback(self, _callback: Callable) -> None:
+        if not isinstance(_callback, Callable):
+            raise TypeError("Property *get_callback* only support callable object.")
         self._get_callback = _callback
 
     @property
@@ -148,4 +154,6 @@ class MetaDataOpt:
 
     @set_callback.setter
     def set_callback(self, _callback: Callable) -> None:
+        if not isinstance(_callback, Callable):
+            raise TypeError("Property *set_callback* only support callable object.")
         self._set_callback = _callback
