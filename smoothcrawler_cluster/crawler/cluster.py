@@ -7,18 +7,18 @@ It integrates the features of **SmoothCrawler** into all the cluster crawler. So
 import re
 import threading
 import time
-from abc import ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from datetime import datetime
 from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
 
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 
-from ._utils import MetaDataUtil, parse_timer
-from ._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
-from ._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
-from .election import BaseElection, ElectionResult, IndexElection
-from .model import (
+from .._utils import MetaDataUtil, parse_timer
+from .._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
+from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
+from ..election import BaseElection, ElectionResult, IndexElection
+from ..model import (
     CrawlerStateRole,
     GroupState,
     Heartbeat,
@@ -32,7 +32,7 @@ from .model import (
     TaskResult,
     Update,
 )
-from .model.metadata import _BaseMetaData
+from ..model.metadata import _BaseMetaData
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
@@ -47,8 +47,25 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
     pass
 
 
-class BaseDecentralizedCrawler(BaseDistributedCrawler):
-    """*Base class for decentralized crawler*
+class BaseClusterCrawler(BaseDistributedCrawler):
+    """*Base class for cluster crawler*
+
+    TODO: Add docstring, consider and define abstract functions
+    """
+
+    @abstractmethod
+    def _get_metadata(
+        self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True
+    ) -> Generic[_BaseMetaDataType]:
+        pass
+
+    @abstractmethod
+    def _set_metadata(self, path: str, metadata: Generic[_BaseMetaDataType], create_node: bool = False) -> None:
+        pass
+
+
+class BaseDecentralizedCrawler(BaseClusterCrawler, ABC):
+    """*Base class for decentralized cluster crawler*
 
     TODO: Add docstring, consider and define abstract functions
     """
@@ -287,6 +304,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self.register_metadata()
         if self._updating_stop_signal is False:
             self._run_updating_heartbeat_thread()
+        # TODO: It's possible that it needs to parameterize this election running workflow
         if self.is_ready_for_election(interval=0.5, timeout=-1):
             if self.elect() is ElectionResult.WINNER:
                 self._crawler_role = CrawlerStateRole.RUNNER

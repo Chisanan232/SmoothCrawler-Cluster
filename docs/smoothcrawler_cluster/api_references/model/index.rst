@@ -21,3 +21,11 @@ Below are the details of 2 sub-packages: meta-data objects and the enum objects 
 
    metadata/index
    metadata_enum/index
+
+Here is the data objects for inner usage:
+
+.. toctree::
+   :maxdepth: 1
+   :titlesonly:
+
+   data
