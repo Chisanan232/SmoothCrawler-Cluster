@@ -20,8 +20,8 @@ class CrawlerName:
         return self._name
 
     @name.setter
-    def name(self, _name: str) -> None:
-        self._name = str(_name)
+    def name(self, name: str) -> None:
+        self._name = str(name)
 
     @property
     def index_sep(self) -> str:
@@ -31,8 +31,8 @@ class CrawlerName:
         return self._index_sep
 
     @index_sep.setter
-    def index_sep(self, _index_sep: str) -> None:
-        self._index_sep = str(_index_sep)
+    def index_sep(self, index_sep: str) -> None:
+        self._index_sep = str(index_sep)
 
 
 class TimeInterval:
@@ -50,8 +50,8 @@ class TimeInterval:
         return self._check_task
 
     @check_task.setter
-    def check_task(self, _wait: float) -> None:
-        self._check_task = float(_wait)
+    def check_task(self, wait: float) -> None:
+        self._check_task = float(wait)
 
     @property
     def check_crawler_state(self) -> float:
@@ -61,8 +61,8 @@ class TimeInterval:
         return self._check_crawler_state
 
     @check_crawler_state.setter
-    def check_crawler_state(self, _wait: float) -> None:
-        self._check_crawler_state = float(_wait)
+    def check_crawler_state(self, wait: float) -> None:
+        self._check_crawler_state = float(wait)
 
     @property
     def check_standby_id(self) -> float:
@@ -72,8 +72,8 @@ class TimeInterval:
         return self._check_standby_id
 
     @check_standby_id.setter
-    def check_standby_id(self, _wait: float) -> None:
-        self._check_standby_id = float(_wait)
+    def check_standby_id(self, wait: float) -> None:
+        self._check_standby_id = float(wait)
 
 
 class TimerThreshold:
@@ -89,8 +89,8 @@ class TimerThreshold:
         return self._reset_timeout
 
     @reset_timeout.setter
-    def reset_timeout(self, _reset_timeout: int) -> None:
-        self._reset_timeout = int(_reset_timeout)
+    def reset_timeout(self, reset_timeout: int) -> None:
+        self._reset_timeout = int(reset_timeout)
 
 
 class CrawlerTimer:
@@ -107,10 +107,10 @@ class CrawlerTimer:
         return self._interval
 
     @time_interval.setter
-    def time_interval(self, _interval: TimeInterval) -> None:
-        if not isinstance(_interval, TimeInterval):
+    def time_interval(self, interval: TimeInterval) -> None:
+        if not isinstance(interval, TimeInterval):
             raise TypeError("Property *time_interval* only support *TimeInterval* type object.")
-        self._interval = _interval
+        self._interval = interval
 
     @property
     def threshold(self) -> TimerThreshold:
@@ -120,10 +120,10 @@ class CrawlerTimer:
         return self._threshold
 
     @threshold.setter
-    def threshold(self, _threshold: TimerThreshold) -> None:
-        if not isinstance(_threshold, TimerThreshold):
+    def threshold(self, threshold: TimerThreshold) -> None:
+        if not isinstance(threshold, TimerThreshold):
             raise TypeError("Property *time_interval* only support *TimeInterval* type object.")
-        self._threshold = _threshold
+        self._threshold = threshold
 
 
 class MetaDataOpt:
@@ -140,10 +140,10 @@ class MetaDataOpt:
         return self._get_callback
 
     @get_callback.setter
-    def get_callback(self, _callback: Callable) -> None:
-        if not isinstance(_callback, Callable):
+    def get_callback(self, callback: Callable) -> None:
+        if not isinstance(callback, Callable):
             raise TypeError("Property *get_callback* only support callable object.")
-        self._get_callback = _callback
+        self._get_callback = callback
 
     @property
     def set_callback(self) -> Callable:
@@ -153,7 +153,7 @@ class MetaDataOpt:
         return self._set_callback
 
     @set_callback.setter
-    def set_callback(self, _callback: Callable) -> None:
-        if not isinstance(_callback, Callable):
+    def set_callback(self, callback: Callable) -> None:
+        if not isinstance(callback, Callable):
             raise TypeError("Property *set_callback* only support callable object.")
-        self._set_callback = _callback
+        self._set_callback = callback
