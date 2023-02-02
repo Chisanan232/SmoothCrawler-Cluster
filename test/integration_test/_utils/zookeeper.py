@@ -5,11 +5,7 @@ import pytest
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError, NoNodeError
 
-from smoothcrawler_cluster._utils.zookeeper import (
-    ZookeeperClient,
-    _BaseZookeeperClient,
-    _BaseZookeeperNode,
-)
+from smoothcrawler_cluster._utils.zookeeper import ZookeeperClient, _BaseZookeeperClient
 
 from ..._config import Zookeeper_Hosts
 from ..._values import (
@@ -19,7 +15,6 @@ from ..._values import (
     Test_Zookeeper_String_Value,
 )
 
-_BaseZookeeperPathType = TypeVar("_BaseZookeeperPathType", bound=_BaseZookeeperNode)
 _BaseZookeeperClientType = TypeVar("_BaseZookeeperClientType", bound=_BaseZookeeperClient)
 
 
