@@ -1,6 +1,10 @@
 import pytest
 
-from smoothcrawler_cluster._utils.zookeeper import ZookeeperNode, ZookeeperPath
+from smoothcrawler_cluster._utils.zookeeper import (
+    MetaDataPath,
+    ZookeeperNode,
+    ZookeeperPath,
+)
 
 from ..._assertion import ValueFormatAssertion
 from ..._values import (
@@ -9,6 +13,51 @@ from ..._values import (
     _Crawler_Group_Name_Value,
     _Crawler_Name_Value,
 )
+
+
+class TestMetaDataPath:
+    @pytest.fixture(scope="function")
+    def metadata_path(self) -> MetaDataPath:
+        return MetaDataPath(name=_Crawler_Name_Value, group=_Crawler_Group_Name_Value)
+
+    def test_property_group_state(self, metadata_path: MetaDataPath):
+        # Get value by target method for testing
+        path = metadata_path.group_state
+
+        # Verify values
+        ValueFormatAssertion(target=path, regex=r"group/[\w\-_]{1,64}/state")
+
+    def test_property_node_state(self, metadata_path: MetaDataPath):
+        # Get value by target method for testing
+        path = metadata_path.node_state
+
+        # Verify values
+        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
+
+    def test_property_task(self, metadata_path: MetaDataPath):
+        # Get value by target method for testing
+        path = metadata_path.task
+
+        # Verify values
+        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
+
+    def test_property_heartbeat(self, metadata_path: MetaDataPath):
+        # Get value by target method for testing
+        path = metadata_path.heartbeat
+
+        # Verify values
+        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
+
+    @pytest.mark.parametrize("is_group", [True, False])
+    def test_generate_parent_node(self, metadata_path: MetaDataPath, is_group: bool):
+        # Get value by target method for testing
+        path = metadata_path.generate_parent_node(parent_name=_Crawler_Name_Value, is_group=is_group)
+
+        # Verify values
+        if is_group:
+            ValueFormatAssertion(target=path, regex=r"group/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
+        else:
+            ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
 
 
 class TestZookeeperPath:
