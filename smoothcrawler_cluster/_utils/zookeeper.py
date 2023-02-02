@@ -13,87 +13,22 @@ from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError
 from kazoo.recipe.lock import ReadLock, Semaphore, WriteLock
 
-from .converter import BaseConverter
-
-BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
+from ..model._data import BaseNode, MetaDataPath
 
 
-class _BaseZookeeperNode(metaclass=ABCMeta):
-    """*Framework module to define some attributes of node in Zookeeper*
-
-    A node of Zookeeper.
-    """
-
-    @property
-    @abstractmethod
-    def path(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter for the path of node in Zookeeper."""
-        pass
-
-    @path.setter
-    @abstractmethod
-    def path(self, val: str) -> None:
-        pass
-
-    @property
-    @abstractmethod
-    def value(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter for the value of the path. It may need to deserialize
-        the data if it needs.
-        """
-        pass
-
-    @value.setter
-    @abstractmethod
-    def value(self, val: str) -> None:
-        pass
-
-
-class ZookeeperPath:
+class ZookeeperPath(MetaDataPath):
     """*All paths of Zookeeper*
 
     In Zookeeper, it would save data under specific path as node. This object provides all paths of Zookeeper which
     saves meta-data for *SmoothCrawler-Cluster*.
     """
 
-    _group_state_node: str = "state"
-    _node_state_node: str = "state"
-    _task_node: str = "task"
-    _heartbeat_node: str = "heartbeat"
-
-    def __init__(self, name: str, group: str):
-        self._name = name
-        self._group = group
-
-    @property
-    def group_state(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper."""
-        return f"{self.generate_parent_node(self._group, is_group=True)}/{self._group_state_node}"
-
-    @property
-    def node_state(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._node_state_node}"
-
-    @property
-    def task(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._task_node}"
-
-    @property
-    def heartbeat(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._heartbeat_node}"
-
     @classmethod
-    def generate_parent_node(cls, crawler_name: str, is_group: bool = False) -> str:
+    def generate_parent_node(cls, parent_name: str, is_group: bool = False) -> str:
         """Generate node path of Zookeeper with fixed format.
 
         Args:
-            crawler_name (str): The crawler name.
+            parent_name (str): The crawler name.
             is_group (bool): If it's True, generate node path for _group_ type meta-data.
 
         Returns:
@@ -101,12 +36,12 @@ class ZookeeperPath:
 
         """
         if is_group:
-            return f"smoothcrawler/group/{crawler_name}"
+            return f"smoothcrawler/group/{parent_name}"
         else:
-            return f"smoothcrawler/node/{crawler_name}"
+            return f"smoothcrawler/node/{parent_name}"
 
 
-class ZookeeperNode(_BaseZookeeperNode):
+class ZookeeperNode(BaseNode):
     """*Zookeeper node object*
 
     All data be got from Zookeeper would be converted to this object in all util functions for getting value.
@@ -132,7 +67,7 @@ class ZookeeperNode(_BaseZookeeperNode):
         self._value = val
 
 
-_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
+_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=BaseNode)
 
 
 class ZookeeperRecipe(Enum):

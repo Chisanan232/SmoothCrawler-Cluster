@@ -19,7 +19,6 @@ from .zookeeper import (
     ZookeeperPath,
     ZookeeperRecipe,
     _BaseZookeeperClient,
-    _BaseZookeeperNode,
 )
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
