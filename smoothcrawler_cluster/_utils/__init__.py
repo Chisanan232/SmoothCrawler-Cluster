@@ -14,7 +14,6 @@ from ..model import Empty, GroupState, Heartbeat, NodeState, Task
 from ..model.metadata import _BaseMetaData
 from .converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
 from .zookeeper import (
-    BaseNode,
     ZookeeperClient,
     ZookeeperNode,
     ZookeeperPath,
