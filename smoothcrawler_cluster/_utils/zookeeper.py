@@ -14,9 +14,6 @@ from kazoo.exceptions import NodeExistsError
 from kazoo.recipe.lock import ReadLock, Semaphore, WriteLock
 
 from ..model._data import BaseNode, MetaDataPath
-from .converter import BaseConverter
-
-BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
 
 class ZookeeperPath(MetaDataPath):
