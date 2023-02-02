@@ -1,6 +1,10 @@
+import re
+from abc import ABCMeta, abstractmethod
+
 import pytest
 
 from smoothcrawler_cluster._utils.zookeeper import (
+    BasePath,
     MetaDataPath,
     ZookeeperNode,
     ZookeeperPath,
@@ -15,94 +19,99 @@ from ..._values import (
 )
 
 
-class TestMetaDataPath:
+class BasePathTestSpec(metaclass=ABCMeta):
     @pytest.fixture(scope="function")
-    def metadata_path(self) -> MetaDataPath:
+    @abstractmethod
+    def ut_path(self) -> BasePath:
+        pass
+
+    @property
+    @abstractmethod
+    def group_parent_path(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def node_parent_path(self) -> str:
+        pass
+
+    def test_property_group_state(self, ut_path: BasePath):
+        # Get value by target method for testing
+        path = ut_path.group_state
+
+        # Verify values
+        ValueFormatAssertion(target=path, regex=re.escape(self.group_parent_path) + r"/[\w\-_]{1,64}/state")
+
+    def test_property_node_state(self, ut_path: BasePath):
+        # Get value by target method for testing
+        path = ut_path.node_state
+
+        # Verify values
+        ValueFormatAssertion(
+            target=path, regex=re.escape(self.node_parent_path) + r"/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state"
+        )
+
+    def test_property_task(self, ut_path: BasePath):
+        # Get value by target method for testing
+        path = ut_path.task
+
+        # Verify values
+        ValueFormatAssertion(
+            target=path, regex=re.escape(self.node_parent_path) + r"/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task"
+        )
+
+    def test_property_heartbeat(self, ut_path: BasePath):
+        # Get value by target method for testing
+        path = ut_path.heartbeat
+
+        # Verify values
+        ValueFormatAssertion(
+            target=path, regex=re.escape(self.node_parent_path) + r"/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat"
+        )
+
+    @pytest.mark.parametrize("is_group", [True, False])
+    def test_generate_parent_node(self, ut_path: BasePath, is_group: bool):
+        if isinstance(ut_path, MetaDataPath):
+            # Get value by target method for testing
+            path = ut_path.generate_parent_node(parent_name=_Crawler_Name_Value, is_group=is_group)
+
+            # Verify values
+            if is_group:
+                ValueFormatAssertion(
+                    target=path, regex=re.escape(self.group_parent_path) + r"/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}"
+                )
+            else:
+                ValueFormatAssertion(
+                    target=path, regex=re.escape(self.node_parent_path) + r"/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}"
+                )
+
+
+class TestMetaDataPath(BasePathTestSpec):
+    @pytest.fixture(scope="function")
+    def ut_path(self) -> MetaDataPath:
         return MetaDataPath(name=_Crawler_Name_Value, group=_Crawler_Group_Name_Value)
 
-    def test_property_group_state(self, metadata_path: MetaDataPath):
-        # Get value by target method for testing
-        path = metadata_path.group_state
+    @property
+    def group_parent_path(self) -> str:
+        return "group"
 
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"group/[\w\-_]{1,64}/state")
-
-    def test_property_node_state(self, metadata_path: MetaDataPath):
-        # Get value by target method for testing
-        path = metadata_path.node_state
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
-
-    def test_property_task(self, metadata_path: MetaDataPath):
-        # Get value by target method for testing
-        path = metadata_path.task
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
-
-    def test_property_heartbeat(self, metadata_path: MetaDataPath):
-        # Get value by target method for testing
-        path = metadata_path.heartbeat
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
-
-    @pytest.mark.parametrize("is_group", [True, False])
-    def test_generate_parent_node(self, metadata_path: MetaDataPath, is_group: bool):
-        # Get value by target method for testing
-        path = metadata_path.generate_parent_node(parent_name=_Crawler_Name_Value, is_group=is_group)
-
-        # Verify values
-        if is_group:
-            ValueFormatAssertion(target=path, regex=r"group/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
-        else:
-            ValueFormatAssertion(target=path, regex=r"node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
+    @property
+    def node_parent_path(self) -> str:
+        return "node"
 
 
-class TestZookeeperPath:
+class TestZookeeperPath(BasePathTestSpec):
     @pytest.fixture(scope="function")
-    def zk_path(self) -> ZookeeperPath:
+    def ut_path(self) -> ZookeeperPath:
         return ZookeeperPath(name=_Crawler_Name_Value, group=_Crawler_Group_Name_Value)
 
-    def test_property_group_state(self, zk_path: ZookeeperPath):
-        # Get value by target method for testing
-        path = zk_path.group_state
+    @property
+    def group_parent_path(self) -> str:
+        return "smoothcrawler/group"
 
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/group/[\w\-_]{1,64}/state")
-
-    def test_property_node_state(self, zk_path: ZookeeperPath):
-        # Get value by target method for testing
-        path = zk_path.node_state
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/state")
-
-    def test_property_task(self, zk_path: ZookeeperPath):
-        # Get value by target method for testing
-        path = zk_path.task
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/task")
-
-    def test_property_heartbeat(self, zk_path: ZookeeperPath):
-        # Get value by target method for testing
-        path = zk_path.heartbeat
-
-        # Verify values
-        ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}/heartbeat")
-
-    @pytest.mark.parametrize("is_group", [True, False])
-    def test_generate_parent_node(self, zk_path: ZookeeperPath, is_group: bool):
-        # Get value by target method for testing
-        path = zk_path.generate_parent_node(parent_name=_Crawler_Name_Value, is_group=is_group)
-
-        # Verify values
-        if is_group:
-            ValueFormatAssertion(target=path, regex=r"smoothcrawler/group/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
-        else:
-            ValueFormatAssertion(target=path, regex=r"smoothcrawler/node/[\w\-_]{1,64}[-_]{1}[0-9]{1,10000}")
+    @property
+    def node_parent_path(self) -> str:
+        return "smoothcrawler/node"
 
 
 class TestZookeeperNode:
