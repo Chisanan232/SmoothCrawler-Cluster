@@ -18,7 +18,7 @@ from .converter import BaseConverter
 BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
 
 
-class _BaseZookeeperNode(metaclass=ABCMeta):
+class BaseNode(metaclass=ABCMeta):
     """*Framework module to define some attributes of node in Zookeeper*
 
     A node of Zookeeper.
@@ -174,7 +174,7 @@ class ZookeeperPath(MetaDataPath):
             return f"smoothcrawler/node/{parent_name}"
 
 
-class ZookeeperNode(_BaseZookeeperNode):
+class ZookeeperNode(BaseNode):
     """*Zookeeper node object*
 
     All data be got from Zookeeper would be converted to this object in all util functions for getting value.
@@ -200,7 +200,7 @@ class ZookeeperNode(_BaseZookeeperNode):
         self._value = val
 
 
-_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
+_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=BaseNode)
 
 
 class ZookeeperRecipe(Enum):
