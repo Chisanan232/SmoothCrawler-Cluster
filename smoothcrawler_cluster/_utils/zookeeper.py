@@ -49,51 +49,94 @@ class _BaseZookeeperNode(metaclass=ABCMeta):
         pass
 
 
-class ZookeeperPath:
-    """*All paths of Zookeeper*
+class BasePath(metaclass=ABCMeta):
+    """*Base class to define all meta-data paths*
 
-    In Zookeeper, it would save data under specific path as node. This object provides all paths of Zookeeper which
-    saves meta-data for *SmoothCrawler-Cluster*.
+    All the path properties of meta-data objects.
     """
 
-    _group_state_node: str = "state"
-    _node_state_node: str = "state"
-    _task_node: str = "task"
-    _heartbeat_node: str = "heartbeat"
-
     def __init__(self, name: str, group: str):
+        """
+
+        Args:
+            name (str): The name of current crawler instance.
+            group (str): The group what current crawler instance is in.
+        """
         self._name = name
         self._group = group
 
     @property
+    def state_node_str(self) -> str:
+        """:obj:`str`: Property with only getter. The node naming of meta-data **GroupState** and **NodeState** path."""
+        return "state"
+
+    @property
+    @abstractmethod
     def group_state(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **GroupState** in Zookeeper."""
-        return f"{self.generate_parent_node(self._group, is_group=True)}/{self._group_state_node}"
+        """:obj:`str`: Property with only getter. The path of meta-data **GroupState**."""
+        pass
+
+    @property
+    @abstractmethod
+    def node_state(self) -> str:
+        """:obj:`str`: Property with only getter. The path of meta-data **NodeState**."""
+        pass
+
+    @property
+    def task_node_str(self) -> str:
+        """:obj:`str`: Property with only getter. The node naming of meta-data **Task** path."""
+        return "task"
+
+    @property
+    @abstractmethod
+    def task(self) -> str:
+        """:obj:`str`: Property with only getter. The path of meta-data **Task**."""
+        pass
+
+    @property
+    def heartbeat_node_str(self) -> str:
+        """:obj:`str`: Property with only getter. The node naming of meta-data **Heartbeat** path."""
+        return "heartbeat"
+
+    @property
+    @abstractmethod
+    def heartbeat(self) -> str:
+        """:obj:`str`: Property with only getter. The path of meta-data **Heartbeat**."""
+        pass
+
+
+class MetaDataPath(BasePath):
+    """*Base class to define all meta-data paths*
+
+    All the path properties of meta-data objects.
+    """
+
+    @property
+    def group_state(self) -> str:
+        """:obj:`str`: Property with only getter. The path of meta-data **GroupState**."""
+        return f"{self.generate_parent_node(self._group, is_group=True)}/{self.state_node_str}"
 
     @property
     def node_state(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **NodeState** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._node_state_node}"
+        """:obj:`str`: Property with only getter. The path of meta-data **NodeState**."""
+        return f"{self.generate_parent_node(self._name)}/{self.state_node_str}"
 
     @property
     def task(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Task** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._task_node}"
+        """:obj:`str`: Property with only getter. The path of meta-data **Task**."""
+        return f"{self.generate_parent_node(self._name)}/{self.task_node_str}"
 
     @property
     def heartbeat(self) -> str:
-        # pylint: disable-next=line-too-long
-        """:obj:`str`: Properties with both a getter and setter. The node path of meta-data **Heartbeat** in Zookeeper."""
-        return f"{self.generate_parent_node(self._name)}/{self._heartbeat_node}"
+        """:obj:`str`: Property with only getter. The path of meta-data **Heartbeat**."""
+        return f"{self.generate_parent_node(self._name)}/{self.heartbeat_node_str}"
 
     @classmethod
-    def generate_parent_node(cls, crawler_name: str, is_group: bool = False) -> str:
+    def generate_parent_node(cls, parent_name: str, is_group: bool = False) -> str:
         """Generate node path of Zookeeper with fixed format.
 
         Args:
-            crawler_name (str): The crawler name.
+            parent_name (str): The crawler name.
             is_group (bool): If it's True, generate node path for _group_ type meta-data.
 
         Returns:
@@ -101,9 +144,34 @@ class ZookeeperPath:
 
         """
         if is_group:
-            return f"smoothcrawler/group/{crawler_name}"
+            return f"group/{parent_name}"
         else:
-            return f"smoothcrawler/node/{crawler_name}"
+            return f"node/{parent_name}"
+
+
+class ZookeeperPath(MetaDataPath):
+    """*All paths of Zookeeper*
+
+    In Zookeeper, it would save data under specific path as node. This object provides all paths of Zookeeper which
+    saves meta-data for *SmoothCrawler-Cluster*.
+    """
+
+    @classmethod
+    def generate_parent_node(cls, parent_name: str, is_group: bool = False) -> str:
+        """Generate node path of Zookeeper with fixed format.
+
+        Args:
+            parent_name (str): The crawler name.
+            is_group (bool): If it's True, generate node path for _group_ type meta-data.
+
+        Returns:
+            str: A Zookeeper node path.
+
+        """
+        if is_group:
+            return f"smoothcrawler/group/{parent_name}"
+        else:
+            return f"smoothcrawler/node/{parent_name}"
 
 
 class ZookeeperNode(_BaseZookeeperNode):
