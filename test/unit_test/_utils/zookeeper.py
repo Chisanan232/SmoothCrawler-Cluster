@@ -47,7 +47,7 @@ class TestZookeeperPath:
     @pytest.mark.parametrize("is_group", [True, False])
     def test_generate_parent_node(self, zk_path: ZookeeperPath, is_group: bool):
         # Get value by target method for testing
-        path = zk_path.generate_parent_node(crawler_name=_Crawler_Name_Value, is_group=is_group)
+        path = zk_path.generate_parent_node(parent_name=_Crawler_Name_Value, is_group=is_group)
 
         # Verify values
         if is_group:
