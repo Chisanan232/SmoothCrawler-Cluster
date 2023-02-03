@@ -1,9 +1,10 @@
-.toctree-wrapper > p.caption {
-  display: none;
-}
-
+section#smoothcrawler-cluster > h1,
 section#smoothcrawler-cluster > p {
   text-align: center;
+}
+
+.toctree-wrapper > p.caption {
+  display: none;
 }
 
 div.admonition-todo {

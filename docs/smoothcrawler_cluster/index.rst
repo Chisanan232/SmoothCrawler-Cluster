@@ -9,8 +9,8 @@ SmoothCrawler-Cluster
 |python-versions| |release-version| |pypi-version| |license| |github-actions build-status| |codecov-coverage|
 |coding style| |pylint| |pre-commit build state| |codacy-level| |readthedoc build-status|
 
-*A Python package which is encapsulation of high fault tolerance features for building cluster or distributed crawler system with
-*SmoothCrawler*.*
+*A Python package which is encapsulation of high fault tolerance features for building cluster or distributed crawler system with*
+**SmoothCrawler**.
 
 
 Overview
