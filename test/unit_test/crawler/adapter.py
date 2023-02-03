@@ -16,6 +16,23 @@ def _reset_flags() -> None:
     _EXIST_FLAG = False
 
 
+def _reset_flags_in_test(function):
+    def _(*args, **kwargs):
+        _reset_flags()
+        try:
+            # Prevent to the flags doesn't be reset finely.
+            global _ENTER_FLAG, _EXIST_FLAG
+            assert _ENTER_FLAG is False, "Before run function, initialed flag '_ENTER_FLAG' should be False."
+            assert _EXIST_FLAG is False, "Before run function, initialed flag '_EXIT_FLAG' should be False."
+
+            # Truly run the testing
+            function(*args, **kwargs)
+        finally:
+            _reset_flags()
+
+    return _
+
+
 _NO_ARGS_RETURN_VALUE = "No argument"
 
 
@@ -49,23 +66,6 @@ class _MockNoWithObj:
 
 
 class DistributedLockTestSpec(metaclass=ABCMeta):
-    @staticmethod
-    def _reset_flags(function):
-        def _(self, *args, **kwargs):
-            _reset_flags()
-            try:
-                # Prevent to the flags doesn't be reset finely.
-                global _ENTER_FLAG, _EXIST_FLAG
-                assert _ENTER_FLAG is False, "Before run function, initialed flag '_ENTER_FLAG' should be False."
-                assert _EXIST_FLAG is False, "Before run function, initialed flag '_EXIT_FLAG' should be False."
-
-                # Truly run the testing
-                function(self, *args, **kwargs)
-            finally:
-                _reset_flags()
-
-        return _
-
     @pytest.fixture(scope="function")
     @abstractmethod
     def lock(self) -> DistributedLock:
@@ -100,7 +100,7 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
         self._test_run_with_lock_by_function_with_args(ut_lock)
         self._test_run_with_lock_by_function_with_kwargs(ut_lock)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def template_testing_has_enter_and_exit(self, ut_lock: DistributedLock) -> None:
         has_with = ut_lock.has_enter_or_exist()
         if self.under_test_obj_has_special_methods:
@@ -112,24 +112,24 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
                 has_with is False
             ), f"The check result should be False if under test object {ut_lock} doesn't have special methods."
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_by_function_without_args(self, lock: DistributedLock) -> None:
         return_val = lock.run(function=_test_func)
         self._verify(return_val, _NO_ARGS_RETURN_VALUE)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_by_function_with_args(self, lock: DistributedLock) -> None:
         args = ("func_test",)
         return_val = lock.run(_test_func, *args)
         self._verify(return_val, args)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_by_function_with_kwargs(self, lock: DistributedLock) -> None:
         kwargs = {"func_test": "func_test_val"}
         return_val = lock.run(_test_func, **kwargs)
         self._verify(return_val, kwargs)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_with_lock_by_function_without_args(self, lock: DistributedLock) -> None:
         try:
             return_val = lock.run_in_lock(function=_test_func)
@@ -141,7 +141,7 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
         else:
             self._verify(return_val, _NO_ARGS_RETURN_VALUE)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_with_lock_by_function_with_args(self, lock: DistributedLock) -> None:
         args = ("func_test",)
         try:
@@ -154,7 +154,7 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
         else:
             self._verify(return_val, args)
 
-    @_reset_flags
+    @_reset_flags_in_test
     def _test_run_with_lock_by_function_with_kwargs(self, lock: DistributedLock) -> None:
         kwargs = {"func_test": "func_test_val"}
         try:
