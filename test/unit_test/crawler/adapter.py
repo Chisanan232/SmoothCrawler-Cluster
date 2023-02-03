@@ -1,6 +1,6 @@
 import traceback
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Callable, Union
 
 import pytest
 
@@ -162,20 +162,30 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
         ), "It should raise *NotImplementedError* if lock function doesn't have special methods *__enter__* and *__exit__*."
 
 
-class TestDistributedLockByWithObj(DistributedLockTestSpec):
+class BaseDistributedLockTest(DistributedLockTestSpec):
     @pytest.fixture(scope="function")
+    @abstractmethod
     def lock(self) -> DistributedLock:
-        return DistributedLock(lock=_MockWithObj)
+        pass
 
     @pytest.fixture(scope="function")
+    @abstractmethod
     def lock_with_args(self) -> DistributedLock:
-        args = ("test",)
-        return DistributedLock(_MockWithObj, *args)
+        pass
 
     @pytest.fixture(scope="function")
+    @abstractmethod
     def lock_with_kwargs(self) -> DistributedLock:
-        kwargs = {"test": "test_val"}
-        return DistributedLock(lock=_MockWithObj, **kwargs)
+        pass
+
+    @property
+    @abstractmethod
+    def mock_lock(self) -> Callable:
+        pass
+
+    @property
+    def under_test_obj_has_special_methods(self) -> bool:
+        return hasattr(self.mock_lock, "__enter__") or hasattr(self.mock_lock, "__exit__")
 
     def test_run_by_lock(self, lock: DistributedLock):
         self.template_testing_run(lock)
@@ -184,7 +194,9 @@ class TestDistributedLockByWithObj(DistributedLockTestSpec):
         self.template_testing_run_with_lock(lock)
 
     def test_has_enter_or_exist_by_lock(self, lock: DistributedLock):
-        self.template_testing_has_enter_and_exit(ut_lock=lock, test_obj_has_special_method=True)
+        self.template_testing_has_enter_and_exit(
+            ut_lock=lock, test_obj_has_special_method=self.under_test_obj_has_special_methods
+        )
 
     def test_run_by_lock_with_args(self, lock_with_args: DistributedLock):
         self.template_testing_run(lock_with_args)
@@ -193,7 +205,9 @@ class TestDistributedLockByWithObj(DistributedLockTestSpec):
         self.template_testing_run_with_lock(lock_with_args)
 
     def test_has_enter_or_exist_by_lock_with_args(self, lock_with_args: DistributedLock):
-        self.template_testing_has_enter_and_exit(ut_lock=lock_with_args, test_obj_has_special_method=True)
+        self.template_testing_has_enter_and_exit(
+            ut_lock=lock_with_args, test_obj_has_special_method=self.under_test_obj_has_special_methods
+        )
 
     def test_run_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
         self.template_testing_run(lock_with_kwargs)
@@ -202,4 +216,26 @@ class TestDistributedLockByWithObj(DistributedLockTestSpec):
         self.template_testing_run_with_lock(lock_with_kwargs)
 
     def test_has_enter_or_exist_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
-        self.template_testing_has_enter_and_exit(ut_lock=lock_with_kwargs, test_obj_has_special_method=True)
+        self.template_testing_has_enter_and_exit(
+            ut_lock=lock_with_kwargs, test_obj_has_special_method=self.under_test_obj_has_special_methods
+        )
+
+
+class TestDistributedLockByWithObj(BaseDistributedLockTest):
+    @pytest.fixture(scope="function")
+    def lock(self) -> DistributedLock:
+        return DistributedLock(lock=self.mock_lock)
+
+    @pytest.fixture(scope="function")
+    def lock_with_args(self) -> DistributedLock:
+        args = ("test",)
+        return DistributedLock(self.mock_lock, *args)
+
+    @pytest.fixture(scope="function")
+    def lock_with_kwargs(self) -> DistributedLock:
+        kwargs = {"test": "test_val"}
+        return DistributedLock(lock=self.mock_lock, **kwargs)
+
+    @property
+    def mock_lock(self) -> Callable:
+        return _MockWithObj
