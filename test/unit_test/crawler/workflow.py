@@ -57,3 +57,25 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
     @property
     def _expected_role(self) -> CrawlerStateRole:
         return CrawlerStateRole.RUNNER
+
+
+class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
+    @pytest.fixture(scope="function")
+    def workflow(self) -> PrimaryBackupRunnerWorkflow:
+        workflow_args = _get_workflow_arguments()
+        return PrimaryBackupRunnerWorkflow(**workflow_args)
+
+    @property
+    def _expected_role(self) -> CrawlerStateRole:
+        return CrawlerStateRole.BACKUP_RUNNER
+
+
+class TestSecondaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
+    @pytest.fixture(scope="function")
+    def workflow(self) -> SecondaryBackupRunnerWorkflow:
+        workflow_args = _get_workflow_arguments()
+        return SecondaryBackupRunnerWorkflow(**workflow_args)
+
+    @property
+    def _expected_role(self) -> CrawlerStateRole:
+        return CrawlerStateRole.BACKUP_RUNNER
