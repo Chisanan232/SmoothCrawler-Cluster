@@ -48,7 +48,7 @@ class BaseRoleWorkflowTestSpec(metaclass=ABCMeta):
         ), f"It should be crawler role {self._expected_role.value}, but it is {workflow.role}."
 
 
-class TestRunnerWorkflow:
+class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
     @pytest.fixture(scope="function")
     def workflow(self) -> RunnerWorkflow:
         workflow_args = _get_workflow_arguments()
@@ -57,8 +57,3 @@ class TestRunnerWorkflow:
     @property
     def _expected_role(self) -> CrawlerStateRole:
         return CrawlerStateRole.RUNNER
-
-    def test_role(self, workflow: RunnerWorkflow):
-        assert (
-            workflow.role is self._expected_role
-        ), f"It should be crawler role {self._expected_role.value}, but it is {workflow.role}."
