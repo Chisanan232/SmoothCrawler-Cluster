@@ -562,6 +562,20 @@ class VerifyMetaData:
         }, "The detail should be completely same as above."
 
     @classmethod
+    def _chk_error_task_detail(cls, one_detail: TaskData) -> None:
+        assert len(one_detail.running_content) == 0, ""
+        assert one_detail.in_progressing_id == "-1", ""
+        assert one_detail.running_result == {"success_count": 0, "fail_count": 1}, ""
+        assert one_detail.running_status == TaskResult.DONE.value, ""
+        assert one_detail.result_detail[0] == {
+            "task_id": _Task_Running_Content_Value[0]["task_id"],
+            "state": TaskResult.ERROR.value,
+            "status_code": 500,
+            "response": None,
+            "error_msg": "For test by PyTest.",
+        }, "The detail should be completely same as above."
+
+    @classmethod
     def _chk_processing_task_detail(cls, one_detail: TaskData) -> None:
         assert len(one_detail.running_content) == 1, ""
         assert one_detail.in_progressing_id == "0", ""
