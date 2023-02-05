@@ -1,6 +1,7 @@
 import json
 import multiprocessing as mp
 import time
+import traceback
 from typing import Dict, Optional
 
 from smoothcrawler_cluster._utils.zookeeper import ZookeeperRecipe
@@ -28,11 +29,21 @@ from ..._values import (
 )
 from ..._verify import VerifyMetaData
 from .._test_utils._instance_value import _TestValue, _ZKNodePathUtils
-from .._test_utils._multirunner import run_2_diff_workers
+from .._test_utils._multirunner import run_2_diff_workers, run_multi_diff_workers
 from ._spec import MultiCrawlerTestSuite
 
 _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
+
+
+def _get_base_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
+    return {
+        "crawler_name": zk_crawler.name,
+        "index_sep": zk_crawler._index_sep,
+        "path": zk_crawler._zk_path,
+        "get_metadata": zk_crawler._get_metadata,
+        "set_metadata": zk_crawler._set_metadata,
+    }
 
 
 def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
@@ -42,14 +53,10 @@ def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
         "identifier": zk_crawler._state_identifier,
     }
     workflow_args = {
-        "crawler_name": zk_crawler.name,
-        "index_sep": zk_crawler._index_sep,
-        "path": zk_crawler._zk_path,
-        "get_metadata": zk_crawler._get_metadata,
-        "set_metadata": zk_crawler._set_metadata,
         "opt_metadata_with_lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
         "crawler_process_callback": _mock_crawler_processing_func,
     }
+    workflow_args.update(_get_base_workflow_arguments(zk_crawler))
     return workflow_args
 
 
@@ -430,6 +437,8 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
 
     @MultiCrawlerTestSuite._clean_environment
     def test_run(self):
+        running_exception: Exception = None
+
         # Instantiate a ZookeeperCrawler for testing
         zk_crawler = ZookeeperCrawler(
             runner=_Runner_Crawler_Value,
@@ -441,28 +450,39 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
         zk_crawler.register_task()
         zk_crawler.register_heartbeat()
 
-        workflow_args = _get_role_workflow_arguments(zk_crawler)
+        workflow_args = _get_base_workflow_arguments(zk_crawler)
         workflow = HeartbeatUpdatingWorkflow(**workflow_args)
 
-        def _stop_updating():
-            time.sleep(5)
-            workflow.stop_heartbeat = False
+        def _stop_updating() -> None:
+            time.sleep(3)
+            workflow.stop_heartbeat = True
 
-        def _run_updating_heartbeat():
+        def _run_updating_heartbeat() -> None:
             workflow.run()
 
-        run_2_diff_workers(
-            func1_ps=(_stop_updating, (), False), func2_ps=(_run_updating_heartbeat, (), False), worker="thread"
+        def _verify_result() -> None:
+            test_time = 0
+            try:
+                for _ in range(4):
+                    if not workflow.stop_heartbeat:
+                        self._verify_metadata.one_heartbeat_content_updating_state(stop_updating=False)
+                        if test_time > 3:
+                            assert (
+                                False
+                            ), "The heartbeat updating workflow should be already stopped. Please check the testing."
+                    else:
+                        self._verify_metadata.one_heartbeat_content_updating_state(stop_updating=True)
+                        break
+                    test_time += 1
+                    time.sleep(2)
+            except Exception as e:
+                nonlocal running_exception
+                running_exception = e
+
+        run_multi_diff_workers(
+            funcs=[(_stop_updating, (), False), (_run_updating_heartbeat, (), False), (_verify_result, (), False)],
+            worker="thread",
         )
 
-        test_time = 0
-        while True:
-            if not workflow.stop_heartbeat:
-                self._verify_metadata.one_heartbeat_content_has_changed()
-                if test_time > 7:
-                    assert False, ""
-            else:
-                self._verify_metadata.one_heartbeat_content_not_changed()
-                break
-            test_time += 1
-            time.sleep(1)
+        if running_exception:
+            assert False, traceback.format_exception(running_exception)
