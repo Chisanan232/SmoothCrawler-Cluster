@@ -80,6 +80,11 @@ class Verify:
 
 
 class VerifyMetaData:
+
+    _previous_heartbeat_info: HeartbeatData = None
+    _first_time_checking_updating_heartbeat: bool = None
+    _first_time_checking_stop_updating_heartbeat: bool = True
+
     def __init__(self):
         self._client = None
 
@@ -453,6 +458,79 @@ class VerifyMetaData:
         assert heartbeat.healthy_state == HeartState.HEALTHY.value, ""
         assert heartbeat.task_state == TaskResult.NOTHING.value, ""
 
+    def one_heartbeat_content_updating_state(self, stop_updating: bool) -> None:
+        heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=1, start_index=1)
+        assert (
+            len(heartbeat_paths) == 1
+        ), "In the test item for checking updating heartbeat workflow, it won't have more than 1 results."
+
+        heartbeat, state = self._client.get(path=heartbeat_paths[0])
+        print(f"[DEBUG] _path: {heartbeat_paths[0]}, heartbeat: {heartbeat}")
+        heartbeat = self._generate_heartbeat_data_opt(heartbeat)
+        if self._previous_heartbeat_info is None:
+            print(f"[DEBUG in testing] First time to checking and it doesn't have previous record yet.")
+            self._first_time_checking_updating_heartbeat = True
+            self._previous_heartbeat_info = heartbeat
+            return
+        else:
+            print(f"[DEBUG] _path: {heartbeat_paths[0]}, previous heartbeat: {self._previous_heartbeat_info}")
+
+            if stop_updating:
+                print(f"[DEBUG] Checking stopping updating heartbeat result.")
+                if not self._first_time_checking_stop_updating_heartbeat:
+                    self._chk_updated_heartbeat_info(heartbeat, stop_updating=stop_updating)
+                    self._chk_heartbeat_fixed_props(heartbeat)
+                self._first_time_checking_stop_updating_heartbeat = False
+            else:
+                print(f"[DEBUG] Checking keep updating heartbeat result.")
+                self._chk_updated_heartbeat_info(heartbeat, stop_updating=stop_updating)
+                self._chk_heartbeat_fixed_props(heartbeat)
+
+            self._previous_heartbeat_info = heartbeat
+            self._first_time_checking_updating_heartbeat = False
+
+    def _chk_updated_heartbeat_info(self, heartbeat: HeartbeatData, stop_updating: bool) -> None:
+        if stop_updating:
+            assert (
+                heartbeat.heart_rhythm_time == self._previous_heartbeat_info.heart_rhythm_time
+            ), f"Attribute 'heart_rhythm_time' should be the same with previous one because of stopping updating."
+            assert heartbeat.healthy_state == HeartState.APPARENT_DEATH.value, (
+                f"Attribute 'healthy_state' of current **Heartbeat** should be the same as {HeartState.APPARENT_DEATH},"
+                f" but it got {heartbeat.healthy_state}."
+            )
+            return
+        else:
+            assert (
+                heartbeat.heart_rhythm_time != self._previous_heartbeat_info.heart_rhythm_time
+            ), f"Attribute 'heart_rhythm_time' must be different in every {heartbeat.update_time} seconds."
+            assert heartbeat.healthy_state == HeartState.HEALTHY.value, (
+                f"Attribute 'healthy_state' of current **Heartbeat** should be the same as {HeartState.HEALTHY}, but it"
+                f" got {heartbeat.healthy_state}."
+            )
+
+        if self._first_time_checking_updating_heartbeat in (True, None):
+            expected_healthy_state = HeartState.NEWBORN.value
+        else:
+            expected_healthy_state = HeartState.HEALTHY.value
+        assert self._previous_heartbeat_info.healthy_state == expected_healthy_state, (
+            f"Attribute 'healthy_state' of previous **Heartbeat** should be the same as {expected_healthy_state}, but "
+            f"it got {self._previous_heartbeat_info.healthy_state}."
+        )
+
+    def _chk_heartbeat_fixed_props(self, heartbeat: HeartbeatData) -> None:
+        assert (
+            heartbeat.time_format == self._previous_heartbeat_info.time_format
+        ), "Attribute 'time_format' should be the same."
+        assert (
+            heartbeat.update_time == self._previous_heartbeat_info.update_time
+        ), "Attribute 'time_format' should be the same."
+        assert (
+            heartbeat.update_timeout == self._previous_heartbeat_info.update_timeout
+        ), "Attribute 'update_timeout' should be the same."
+        assert (
+            heartbeat.heart_rhythm_timeout == self._previous_heartbeat_info.heart_rhythm_timeout
+        ), "Attribute 'heart_rhythm_timeout' should be the same."
+
     def _generate_heartbeat_data_opt(self, heartbeat: Union[str, bytes, Heartbeat] = None) -> HeartbeatData:
         return self.__get_metadata_opts(
             heartbeat,
@@ -481,6 +559,20 @@ class VerifyMetaData:
             "status_code": 200,
             "response": "Example Domain",
             "error_msg": None,
+        }, "The detail should be completely same as above."
+
+    @classmethod
+    def _chk_error_task_detail(cls, one_detail: TaskData) -> None:
+        assert len(one_detail.running_content) == 0, ""
+        assert one_detail.in_progressing_id == "-1", ""
+        assert one_detail.running_result == {"success_count": 0, "fail_count": 1}, ""
+        assert one_detail.running_status == TaskResult.DONE.value, ""
+        assert one_detail.result_detail[0] == {
+            "task_id": _Task_Running_Content_Value[0]["task_id"],
+            "state": TaskResult.ERROR.value,
+            "status_code": 500,
+            "response": None,
+            "error_msg": "For test by PyTest.",
         }, "The detail should be completely same as above."
 
     @classmethod
