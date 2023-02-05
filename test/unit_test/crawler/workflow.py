@@ -58,6 +58,10 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
     def _expected_role(self) -> CrawlerStateRole:
         return CrawlerStateRole.RUNNER
 
+    def test_run_task(self):
+        # TODO: Test the exception parts
+        pass
+
 
 class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
     @pytest.fixture(scope="function")
@@ -68,6 +72,10 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
     @property
     def _expected_role(self) -> CrawlerStateRole:
         return CrawlerStateRole.BACKUP_RUNNER
+
+    def test_hand_over_task(self):
+        # TODO: test it hand over tasks by different status
+        pass
 
 
 class TestSecondaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
