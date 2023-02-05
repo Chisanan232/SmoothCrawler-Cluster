@@ -1,5 +1,6 @@
 import re
 from abc import ABCMeta, abstractmethod
+from typing import Generic, Type, TypeVar
 from unittest.mock import MagicMock, Mock, PropertyMock, call, patch
 
 import pytest
@@ -26,6 +27,8 @@ from ..._values import (
     _Task_Running_Content_Value,
     _Task_Running_Result,
 )
+
+BaseRoleWorkflowType = TypeVar("BaseRoleWorkflowType", bound=BaseRoleWorkflow)
 
 
 def _mock_callable(*args, **kwargs):
@@ -142,28 +145,12 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
 
     def test_hand_over_task_with_processing(self):
         # Mock function what it needs
-        mock_task = Mock(Task())
-        mock_task.running_status = TaskResult.PROCESSING.value
-
-        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
-        prop_task = PropertyMock(return_value="test_task_path")
-        type(mock_metadata_path).task = prop_task
-
-        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
-
-        workflow_args = {
-            "crawler_name": "test_name",
-            "index_sep": "test_index_sep",
-            "path": mock_metadata_path,
-            "get_metadata": _mock_callable,
-            "set_metadata": _mock_callable,
-            "opt_metadata_with_lock": mock_distributed_lock,
-            "crawler_process_callback": _mock_callable,
-        }
-        workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
-        workflow._set_metadata = MagicMock(return_value=None)
+        mock_task = self._mock_task(TaskResult.PROCESSING)
+        mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
+        mock_distributed_lock = self._mock_distributed_lock()
 
         # Run the target function to test
+        workflow = self._init_workflow_and_mock_set_metadata_func(mock_metadata_path, mock_distributed_lock)
         workflow.hand_over_task(mock_task)
 
         # Verify the target function running result
@@ -172,26 +159,11 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
 
     def test_hand_over_task_with_error(self):
         # Mock function what it needs
-        mock_task = Mock(Task())
-        mock_task.running_status = TaskResult.ERROR.value
+        mock_task = self._mock_task(TaskResult.ERROR)
+        mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
+        mock_distributed_lock = self._mock_distributed_lock()
 
-        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
-        prop_task = PropertyMock(return_value="test_task_path")
-        type(mock_metadata_path).task = prop_task
-
-        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
-
-        workflow_args = {
-            "crawler_name": "test_name",
-            "index_sep": "test_index_sep",
-            "path": mock_metadata_path,
-            "get_metadata": _mock_callable,
-            "set_metadata": _mock_callable,
-            "opt_metadata_with_lock": mock_distributed_lock,
-            "crawler_process_callback": _mock_callable,
-        }
-        workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
-        workflow._set_metadata = MagicMock(return_value=None)
+        workflow = self._init_workflow_and_mock_set_metadata_func(mock_metadata_path, mock_distributed_lock)
 
         with patch.object(Update, "task", return_value=mock_task) as mock_update_task:
             # Run the target function to test
@@ -210,33 +182,47 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
     @pytest.mark.parametrize("task_state", [TaskResult.NOTHING, TaskResult.TERMINATE, TaskResult.DONE])
     def test_hand_over_task_with_other_status(self, task_state: TaskResult):
         # Mock function what it needs
-        mock_task = Mock(Task())
-        mock_task.running_status = task_state.value
-
-        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
-        prop_task = PropertyMock(return_value="test_task_path")
-        type(mock_metadata_path).task = prop_task
-
-        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
-
-        workflow_args = {
-            "crawler_name": "test_name",
-            "index_sep": "test_index_sep",
-            "path": mock_metadata_path,
-            "get_metadata": _mock_callable,
-            "set_metadata": _mock_callable,
-            "opt_metadata_with_lock": mock_distributed_lock,
-            "crawler_process_callback": _mock_callable,
-        }
-        workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
-        workflow._set_metadata = MagicMock(return_value=None)
+        mock_task = self._mock_task(task_state)
+        mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
+        mock_distributed_lock = self._mock_distributed_lock()
 
         # Run the target function to test
+        workflow = self._init_workflow_and_mock_set_metadata_func(mock_metadata_path, mock_distributed_lock)
         workflow.hand_over_task(mock_task)
 
         # Verify the target function running result
         prop_task.assert_not_called()
         workflow._set_metadata.assert_not_called()
+
+    def _mock_task(self, task_state: TaskResult) -> Mock:
+        mock_task = Mock(Task())
+        mock_task.running_status = task_state.value
+        return mock_task
+
+    def _mock_prop_metadata_task_path(self) -> (MagicMock, PropertyMock):
+        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
+        prop_task = PropertyMock(return_value="test_task_path")
+        type(mock_metadata_path).task = prop_task
+        return mock_metadata_path, prop_task
+
+    def _mock_distributed_lock(self) -> Mock:
+        return Mock(DistributedLock(lock=Mock()))
+
+    def _init_workflow_and_mock_set_metadata_func(
+        self, metadata_path: Mock, adapter_lock: Mock
+    ) -> PrimaryBackupRunnerWorkflow:
+        workflow_args = {
+            "crawler_name": "test_name",
+            "index_sep": "test_index_sep",
+            "path": metadata_path,
+            "get_metadata": _mock_callable,
+            "set_metadata": _mock_callable,
+            "opt_metadata_with_lock": adapter_lock,
+            "crawler_process_callback": _mock_callable,
+        }
+        role_workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
+        role_workflow._set_metadata = MagicMock(return_value=None)
+        return role_workflow
 
 
 class TestSecondaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
