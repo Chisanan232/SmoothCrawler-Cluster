@@ -80,6 +80,9 @@ class Verify:
 
 
 class VerifyMetaData:
+
+    _previous_heartbeat_info: HeartbeatData = None
+
     def __init__(self):
         self._client = None
 
@@ -452,6 +455,59 @@ class VerifyMetaData:
         ), ""
         assert heartbeat.healthy_state == HeartState.HEALTHY.value, ""
         assert heartbeat.task_state == TaskResult.NOTHING.value, ""
+
+    def one_heartbeat_content_has_changed(self) -> None:
+        heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=1, start_index=1)
+        assert len(heartbeat_paths) == 1, ""
+
+        heartbeat, state = self._client.get(path=heartbeat_paths[0])
+        print(f"[DEBUG] _path: {heartbeat_paths[0]}, _task: {heartbeat}")
+        heartbeat = self._generate_heartbeat_data_opt(heartbeat)
+        if self._previous_heartbeat_info is None:
+            self._previous_heartbeat_info = heartbeat
+            return
+        else:
+            assert (
+                heartbeat.heart_rhythm_time != self._previous_heartbeat_info.heart_rhythm_time
+            ), f"Attribute 'heart_rhythm_time' must be different in every {heartbeat.update_time} seconds."
+            self._not_change_heartbeat_props(heartbeat)
+
+    def one_heartbeat_content_not_changed(self) -> None:
+        heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=1, start_index=1)
+        assert len(heartbeat_paths) == 1, ""
+
+        heartbeat, state = self._client.get(path=heartbeat_paths[0])
+        print(f"[DEBUG] _path: {heartbeat_paths[0]}, _task: {heartbeat}")
+        heartbeat = self._generate_heartbeat_data_opt(heartbeat)
+        if self._previous_heartbeat_info is None:
+            self._previous_heartbeat_info = heartbeat
+            return
+        else:
+            assert (
+                heartbeat.heart_rhythm_time == self._previous_heartbeat_info.heart_rhythm_time
+            ), f"Attribute 'heart_rhythm_time' should be the same with previous one because of stopping updating."
+            self._not_change_heartbeat_props(heartbeat)
+
+    def _not_change_heartbeat_props(self, heartbeat: HeartbeatData) -> None:
+        assert (
+            heartbeat.healthy_state == HeartState.HEALTHY.value
+        ), "Attribute 'healthy_state' of current **Heartbeat** should be the same."
+        assert (
+            self._previous_heartbeat_info.healthy_state == HeartState.HEALTHY.value
+        ), "Attribute 'healthy_state' of previous **Heartbeat** should be the same."
+
+        assert (
+            heartbeat.time_format == self._previous_heartbeat_info.time_format
+        ), "Attribute 'time_format' should be the same."
+        assert (
+            heartbeat.update_time == self._previous_heartbeat_info.update_time
+        ), "Attribute 'time_format' should be the same."
+        assert (
+            heartbeat.update_timeout == self._previous_heartbeat_info.update_timeout
+        ), "Attribute 'update_timeout' should be the same."
+        assert (
+            heartbeat.heart_rhythm_timeout == self._previous_heartbeat_info.heart_rhythm_timeout
+        ), "Attribute 'heart_rhythm_timeout' should be the same."
 
     def _generate_heartbeat_data_opt(self, heartbeat: Union[str, bytes, Heartbeat] = None) -> HeartbeatData:
         return self.__get_metadata_opts(
