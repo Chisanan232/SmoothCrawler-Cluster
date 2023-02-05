@@ -1,5 +1,6 @@
+import re
 from abc import ABCMeta, abstractmethod
-from unittest.mock import MagicMock, Mock, PropertyMock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock, call, patch
 
 import pytest
 
@@ -18,6 +19,13 @@ from smoothcrawler_cluster.model import (
     Update,
 )
 from smoothcrawler_cluster.model._data import MetaDataPath
+
+from ..._values import (
+    _One_Running_Content_As_Object,
+    _Task_In_Progressing_Id_Value,
+    _Task_Running_Content_Value,
+    _Task_Running_Result,
+)
 
 
 def _mock_callable(*args, **kwargs):
@@ -66,9 +74,60 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
     def _expected_role(self) -> CrawlerStateRole:
         return CrawlerStateRole.RUNNER
 
-    def test_run_task(self):
-        # TODO: Test the exception parts
-        pass
+    def test_run_task_not_implemented_error(self):
+        # Mock function what it needs
+        def _raise_error_process(*args, **kwargs) -> None:
+            raise NotImplementedError("NotImplementedError by PyTest")
+
+        mock_task = Mock(Task())
+        mock_task.running_status = TaskResult.PROCESSING.value
+        mock_task.running_content = _Task_Running_Content_Value
+        mock_task.in_progressing_id = int(_Task_In_Progressing_Id_Value)
+        mock_task.running_result = _Task_Running_Result
+
+        mock_metadata_path = MagicMock(MetaDataPath(name="test_name_1", group="test_group"))
+        prop_task = PropertyMock(return_value="test_task_path")
+        type(mock_metadata_path).task = prop_task
+
+        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
+
+        workflow_args = {
+            "crawler_name": "test_name",
+            "index_sep": "test_index_sep",
+            "path": mock_metadata_path,
+            "get_metadata": _mock_callable,
+            "set_metadata": _mock_callable,
+            "opt_metadata_with_lock": mock_distributed_lock,
+            "crawler_process_callback": _raise_error_process,
+        }
+        workflow = RunnerWorkflow(**workflow_args)
+        workflow._get_metadata = MagicMock(return_value=mock_task)
+        workflow._set_metadata = MagicMock(return_value=None)
+
+        # Run the target function to test
+        try:
+            with patch.object(re, "search", return_value="1") as mock_re_search:
+                with patch.object(Update, "task", return_value=mock_task) as mock_update_task:
+                    workflow.run_task(mock_task)
+        except NotImplementedError as e:
+            assert (
+                str(e) == "NotImplementedError by PyTest"
+            ), "It should raise an NotImplementedError and content is 'NotImplementedError by PyTest'."
+        else:
+            assert False, "It should raise an NotImplementedError."
+
+        # Verify the target function running result
+        mock_re_search.assert_called_once_with(
+            r"[0-9]{1,32}", mock_task.running_content[mock_task.in_progressing_id]["task_id"]
+        )
+        mock_update_task.assert_called_once_with(
+            task=mock_task,
+            in_progressing_id=_One_Running_Content_As_Object.task_id,
+            running_status=TaskResult.PROCESSING,
+        )
+        prop_task.assert_has_calls([call for _ in range(2)])
+        workflow._get_metadata.assert_called_once_with(path=type(mock_metadata_path).task, as_obj=Task)
+        workflow._set_metadata.assert_called_once_with(path=type(mock_metadata_path).task, metadata=mock_task)
 
 
 class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
