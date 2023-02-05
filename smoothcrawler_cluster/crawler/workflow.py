@@ -183,9 +183,6 @@ class RunnerWorkflow(BaseRoleWorkflow):
             task = self._get_metadata(path=self._path.task, as_obj=Task, must_has_data=False)
 
             if node_state.role == CrawlerStateRole.DEAD_RUNNER.value:
-                # TODO: Modify to raise an exception to outside and let outside to handle the process about stopping updating heartbeat
-                # self.stop_update_heartbeat()
-                # break
                 raise StopUpdateHeartbeat
 
             if task.running_content:
@@ -229,11 +226,9 @@ class RunnerWorkflow(BaseRoleWorkflow):
             self._set_metadata(path=self._path.task, metadata=current_task)
 
             # Run the task and update the meta data Task
-            data = None
             try:
                 # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage
-                #  in cient site
-                # data = self._run_crawling_processing(content)
+                #  in client site
                 data = self._crawler_process_callback(content)
             except NotImplementedError as e:
                 raise e
@@ -447,25 +442,6 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
         self._set_metadata(path=self._path.node_state, metadata=node_state)
 
         self._opt_metadata_with_lock.run(function=_update_group_state)
-
-        # with self._zookeeper_client.restrict(
-        #     path=self._path.group_state,
-        #     restrict=ZookeeperRecipe.WRITE_LOCK,
-        #     identifier=self._state_identifier,
-        # ):
-        #     _update_group_state()
-        #     # state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-        #     #
-        #     # state.total_backup = state.total_backup - 1
-        #     # state.current_crawler.remove(dead_crawler_name)
-        #     # state.current_runner.remove(dead_crawler_name)
-        #     # state.current_runner.append(self._crawler_name)
-        #     # state.current_backup.remove(self._crawler_name)
-        #     # state.fail_crawler.append(dead_crawler_name)
-        #     # state.fail_runner.append(dead_crawler_name)
-        #     # state.standby_id = str(int(state.standby_id) + 1)
-        #     #
-        #     # self._set_metadata(path=self._path.group_state, metadata=state)
 
     def hand_over_task(self, task: Task) -> None:
         """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
