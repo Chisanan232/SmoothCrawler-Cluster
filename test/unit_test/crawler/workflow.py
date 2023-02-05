@@ -1,8 +1,10 @@
+from abc import ABCMeta, abstractmethod
 from unittest.mock import patch
 
 import pytest
 
 from smoothcrawler_cluster.crawler.workflow import (
+    BaseRoleWorkflow,
     PrimaryBackupRunnerWorkflow,
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
@@ -27,6 +29,23 @@ def _get_workflow_arguments(mock_metadata_path, mock_adapter_lock) -> dict:
         "crawler_process_callback": _mock_callable,
     }
     return workflow_args
+
+
+class BaseRoleWorkflowTestSpec(metaclass=ABCMeta):
+    @pytest.fixture(scope="function")
+    @abstractmethod
+    def workflow(self) -> BaseRoleWorkflow:
+        pass
+
+    @property
+    @abstractmethod
+    def _expected_role(self) -> CrawlerStateRole:
+        pass
+
+    def test_role(self, workflow: BaseRoleWorkflow):
+        assert (
+            workflow.role is self._expected_role
+        ), f"It should be crawler role {self._expected_role.value}, but it is {workflow.role}."
 
 
 class TestRunnerWorkflow:
