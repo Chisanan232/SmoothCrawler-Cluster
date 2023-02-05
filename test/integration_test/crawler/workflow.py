@@ -35,7 +35,7 @@ _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
 
 
-def _get_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
+def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
     restrict_args = {
         "path": zk_crawler._zk_path.group_state,
         "restrict": ZookeeperRecipe.WRITE_LOCK,
@@ -113,7 +113,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
             zk_crawler.register_node_state()
             zk_crawler.register_task()
 
-            workflow_args = _get_workflow_arguments(zk_crawler)
+            workflow_args = _get_role_workflow_arguments(zk_crawler)
             workflow = RunnerWorkflow(**workflow_args)
 
             try:
@@ -198,7 +198,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
             zk_crawler.register_node_state()
             zk_crawler.register_task()
 
-            workflow_args = _get_workflow_arguments(zk_crawler)
+            workflow_args = _get_role_workflow_arguments(zk_crawler)
             workflow = RunnerWorkflow(**workflow_args)
 
             try:
@@ -310,7 +310,7 @@ class TestPrimaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
         for heartbeat_path in all_heartbeat_paths:
             _initial_heartbeat(heartbeat_path)
 
-        workflow_args = _get_workflow_arguments(zk_crawler)
+        workflow_args = _get_role_workflow_arguments(zk_crawler)
         workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
 
         if zk_crawler.is_ready_for_run(timeout=5):
@@ -397,7 +397,7 @@ class TestSecondaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
                 start.value = time.time()
 
                 # # Run target function
-                workflow_args = _get_workflow_arguments(zk_crawler)
+                workflow_args = _get_role_workflow_arguments(zk_crawler)
                 workflow = SecondaryBackupRunnerWorkflow(**workflow_args)
                 result.value = workflow.run(timer=_get_run_arguments())
 
@@ -441,7 +441,7 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
         zk_crawler.register_task()
         zk_crawler.register_heartbeat()
 
-        workflow_args = _get_workflow_arguments(zk_crawler)
+        workflow_args = _get_role_workflow_arguments(zk_crawler)
         workflow = HeartbeatUpdatingWorkflow(**workflow_args)
 
         def _stop_updating():
