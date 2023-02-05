@@ -7,6 +7,7 @@ from smoothcrawler_cluster._utils.zookeeper import ZookeeperRecipe
 from smoothcrawler_cluster.crawler.adapter import DistributedLock
 from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
 from smoothcrawler_cluster.crawler.workflow import (
+    HeartbeatUpdatingWorkflow,
     PrimaryBackupRunnerWorkflow,
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
@@ -421,3 +422,47 @@ class TestSecondaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
 
         assert result.value is True, "It should be True after it detect the stand ID to be '2'."
         assert 5 < int(end.value - start.value) <= 6, "It should NOT run more than 6 seconds."
+
+
+class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
+
+    _verify_metadata = VerifyMetaData()
+
+    @MultiCrawlerTestSuite._clean_environment
+    def test_run(self):
+        # Instantiate a ZookeeperCrawler for testing
+        zk_crawler = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value,
+            backup=_Backup_Crawler_Value,
+            name="sc-crawler_1",
+            initial=False,
+            zk_hosts=Zookeeper_Hosts,
+        )
+        zk_crawler.register_task()
+        zk_crawler.register_heartbeat()
+
+        workflow_args = _get_workflow_arguments(zk_crawler)
+        workflow = HeartbeatUpdatingWorkflow(**workflow_args)
+
+        def _stop_updating():
+            time.sleep(5)
+            workflow.stop_heartbeat = False
+
+        def _run_updating_heartbeat():
+            workflow.run()
+
+        run_2_diff_workers(
+            func1_ps=(_stop_updating, (), False), func2_ps=(_run_updating_heartbeat, (), False), worker="thread"
+        )
+
+        test_time = 0
+        while True:
+            if not workflow.stop_heartbeat:
+                self._verify_metadata.one_heartbeat_content_has_changed()
+                if test_time > 7:
+                    assert False, ""
+            else:
+                self._verify_metadata.one_heartbeat_content_not_changed()
+                break
+            test_time += 1
+            time.sleep(1)
