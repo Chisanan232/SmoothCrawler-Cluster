@@ -2,7 +2,7 @@ import json
 import multiprocessing as mp
 import time
 import traceback
-from typing import Dict, Optional
+from typing import Callable, Dict, Optional
 
 from smoothcrawler_cluster._utils.zookeeper import ZookeeperRecipe
 from smoothcrawler_cluster.crawler.adapter import DistributedLock
@@ -36,30 +36,6 @@ _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
 
 
-def _get_base_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
-    return {
-        "crawler_name": zk_crawler.name,
-        "index_sep": zk_crawler._index_sep,
-        "path": zk_crawler._zk_path,
-        "get_metadata": zk_crawler._get_metadata,
-        "set_metadata": zk_crawler._set_metadata,
-    }
-
-
-def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
-    restrict_args = {
-        "path": zk_crawler._zk_path.group_state,
-        "restrict": ZookeeperRecipe.WRITE_LOCK,
-        "identifier": zk_crawler._state_identifier,
-    }
-    workflow_args = {
-        "opt_metadata_with_lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
-        "crawler_process_callback": _mock_crawler_processing_func,
-    }
-    workflow_args.update(_get_base_workflow_arguments(zk_crawler))
-    return workflow_args
-
-
 def _get_run_arguments() -> CrawlerTimer:
     interval = TimeInterval()
     interval.check_task = 2
@@ -77,6 +53,30 @@ def _get_run_arguments() -> CrawlerTimer:
 
 def _mock_crawler_processing_func(*args, **kwargs) -> str:
     return "Example Domain"
+
+
+def _get_base_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
+    return {
+        "crawler_name": zk_crawler.name,
+        "index_sep": zk_crawler._index_sep,
+        "path": zk_crawler._zk_path,
+        "get_metadata": zk_crawler._get_metadata,
+        "set_metadata": zk_crawler._set_metadata,
+    }
+
+
+def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler, crawling_callback: Callable = None) -> dict:
+    restrict_args = {
+        "path": zk_crawler._zk_path.group_state,
+        "restrict": ZookeeperRecipe.WRITE_LOCK,
+        "identifier": zk_crawler._state_identifier,
+    }
+    workflow_args = {
+        "opt_metadata_with_lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
+        "crawler_process_callback": (crawling_callback or _mock_crawler_processing_func),
+    }
+    workflow_args.update(_get_base_workflow_arguments(zk_crawler))
+    return workflow_args
 
 
 class TestRunnerWorkflow(MultiCrawlerTestSuite):
@@ -251,6 +251,85 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
         )
         self._verify_metadata.one_task_result_detail(
             task_data, task_path=_Testing_Value.task_zookeeper_path, expected_task_result={"1": "dead"}
+        )
+
+    @MultiCrawlerTestSuite._clean_environment
+    def test_run_task_exception(self):
+        running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
+        running_flag: Dict[str, bool] = _Manager.dict()
+
+        def _assign_task() -> None:
+            try:
+                time.sleep(2)
+                task = Initial.task()
+                updated_task = Update.task(task, running_content=_Task_Running_Content_Value)
+                updated_task_str = json.dumps(updated_task.to_readable_object())
+                self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(updated_task_str, "utf-8"))
+
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.RUNNER)
+                node_state_str = json.dumps(node_state.to_readable_object())
+                self._set_value_to_node(
+                    path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
+                )
+            except Exception as e:
+                running_flag["_assign_task"] = False
+                running_exception["_assign_task"] = e
+            else:
+                running_flag["_assign_task"] = True
+                running_exception["_assign_task"] = None
+
+        def _mock_crawling_processing(*args, **kwargs) -> None:
+            raise Exception("For test by PyTest.")
+
+        def _wait_for_task() -> None:
+            # Instantiate ZookeeperCrawler
+            zk_crawler = ZookeeperCrawler(
+                name=_Testing_Value.name,
+                runner=_Runner_Crawler_Value,
+                backup=_Backup_Crawler_Value,
+                initial=False,
+                zk_hosts=Zookeeper_Hosts,
+            )
+            zk_crawler.register_node_state()
+            zk_crawler.register_task()
+
+            workflow_args = _get_role_workflow_arguments(zk_crawler, crawling_callback=_mock_crawling_processing)
+            workflow = RunnerWorkflow(**workflow_args)
+
+            try:
+                zk_crawler.register_factory(
+                    http_req_sender=RequestsHTTPRequest(),
+                    http_resp_parser=RequestsHTTPResponseParser(),
+                    data_process=ExampleWebDataHandler(),
+                )
+                workflow.run(timer=_get_run_arguments())
+            except Exception as e:
+                running_flag["_wait_for_task"] = False
+                running_exception["_wait_for_task"] = e
+            else:
+                running_flag["_wait_for_task"] = True
+                running_exception["_wait_for_task"] = None
+
+        run_2_diff_workers(func1_ps=(_assign_task, (), False), func2_ps=(_wait_for_task, (), True), worker="thread")
+
+        time.sleep(3)
+
+        self._verify.exception(running_exception)
+        self._verify.running_status(running_flag)
+
+        # Verify the running result
+        task_data, state = self._get_value_from_node(path=_Testing_Value.task_zookeeper_path)
+        print(f"[DEBUG in testing] _Testing_Value.task_zookeeper_path: {_Testing_Value.task_zookeeper_path}")
+        print(f"[DEBUG in testing] task_data: {task_data}")
+        self._verify_metadata.one_task_info(
+            task_data,
+            in_progressing_id="-1",
+            running_result={"success_count": 0, "fail_count": 1},
+            running_status=TaskResult.DONE.value,
+            result_detail_len=1,
+        )
+        self._verify_metadata.one_task_result_detail(
+            task_data, task_path=_Testing_Value.task_zookeeper_path, expected_task_result={"1": "error"}
         )
 
 
