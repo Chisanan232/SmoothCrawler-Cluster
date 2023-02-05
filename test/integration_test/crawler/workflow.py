@@ -462,8 +462,9 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
 
         def _verify_result() -> None:
             test_time = 0
+            _first_chk = True
             try:
-                for _ in range(4):
+                for _ in range(6):
                     if not workflow.stop_heartbeat:
                         self._verify_metadata.one_heartbeat_content_updating_state(stop_updating=False)
                         if test_time > 3:
@@ -472,7 +473,9 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
                             ), "The heartbeat updating workflow should be already stopped. Please check the testing."
                     else:
                         self._verify_metadata.one_heartbeat_content_updating_state(stop_updating=True)
-                        break
+                        if not _first_chk:
+                            break
+                        _first_chk = False
                     test_time += 1
                     time.sleep(2)
             except Exception as e:
@@ -486,3 +489,30 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
 
         if running_exception:
             assert False, traceback.format_exception(running_exception)
+
+    @MultiCrawlerTestSuite._clean_environment
+    def test_run_with_exception(self):
+        # Instantiate a ZookeeperCrawler for testing
+        zk_crawler = ZookeeperCrawler(
+            runner=_Runner_Crawler_Value,
+            backup=_Backup_Crawler_Value,
+            name="sc-crawler_1",
+            initial=False,
+            zk_hosts=Zookeeper_Hosts,
+        )
+        zk_crawler.register_task()
+        zk_crawler.register_heartbeat()
+
+        workflow_args = _get_base_workflow_arguments(zk_crawler)
+        workflow = HeartbeatUpdatingWorkflow(**workflow_args)
+        setattr(workflow, "_updating_exception", Exception("PyTest for exception in updating heartbeat workflow."))
+        workflow.stop_heartbeat = True
+
+        try:
+            workflow.run()
+        except Exception as e:
+            assert (
+                str(e) == "PyTest for exception in updating heartbeat workflow."
+            ), "The exception should be same as PyTest set."
+        else:
+            assert False, "It should raise an exception which be set by PyTest."
