@@ -10,7 +10,13 @@ from smoothcrawler_cluster.crawler.workflow import (
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
 )
-from smoothcrawler_cluster.model import CrawlerStateRole, Task, TaskResult, Update
+from smoothcrawler_cluster.model import (
+    CrawlerStateRole,
+    RunningResult,
+    Task,
+    TaskResult,
+    Update,
+)
 from smoothcrawler_cluster.model._data import MetaDataPath
 
 
@@ -104,6 +110,74 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
         # Verify the target function running result
         prop_task.assert_called_once()
         workflow._set_metadata.assert_called_once_with(path=type(mock_metadata_path).task, metadata=mock_task)
+
+    def test_hand_over_task_with_error(self):
+        # Mock function what it needs
+        mock_task = Mock(Task())
+        mock_task.running_status = TaskResult.ERROR.value
+
+        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
+        prop_task = PropertyMock(return_value="test_task_path")
+        type(mock_metadata_path).task = prop_task
+
+        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
+
+        workflow_args = {
+            "crawler_name": "test_name",
+            "index_sep": "test_index_sep",
+            "path": mock_metadata_path,
+            "get_metadata": _mock_callable,
+            "set_metadata": _mock_callable,
+            "opt_metadata_with_lock": mock_distributed_lock,
+            "crawler_process_callback": _mock_callable,
+        }
+        workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
+        workflow._set_metadata = MagicMock(return_value=None)
+
+        with patch.object(Update, "task", return_value=mock_task) as mock_update_task:
+            # Run the target function to test
+            workflow.hand_over_task(mock_task)
+
+            # Verify the target function running result
+            mock_update_task.assert_called_once_with(
+                mock_task,
+                in_progressing_id="0",
+                running_result=RunningResult(success_count=0, fail_count=0),
+                result_detail=[],
+            )
+            prop_task.assert_called_once()
+            workflow._set_metadata.assert_called_once_with(path=type(mock_metadata_path).task, metadata=mock_task)
+
+    @pytest.mark.parametrize("task_state", [TaskResult.NOTHING, TaskResult.TERMINATE, TaskResult.DONE])
+    def test_hand_over_task_with_other_status(self, task_state: TaskResult):
+        # Mock function what it needs
+        mock_task = Mock(Task())
+        mock_task.running_status = task_state.value
+
+        mock_metadata_path = MagicMock(MetaDataPath(name="test_name", group="test_group"))
+        prop_task = PropertyMock(return_value="test_task_path")
+        type(mock_metadata_path).task = prop_task
+
+        mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
+
+        workflow_args = {
+            "crawler_name": "test_name",
+            "index_sep": "test_index_sep",
+            "path": mock_metadata_path,
+            "get_metadata": _mock_callable,
+            "set_metadata": _mock_callable,
+            "opt_metadata_with_lock": mock_distributed_lock,
+            "crawler_process_callback": _mock_callable,
+        }
+        workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
+        workflow._set_metadata = MagicMock(return_value=None)
+
+        # Run the target function to test
+        workflow.hand_over_task(mock_task)
+
+        # Verify the target function running result
+        prop_task.assert_not_called()
+        workflow._set_metadata.assert_not_called()
 
 
 class TestSecondaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
