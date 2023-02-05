@@ -476,12 +476,14 @@ class VerifyMetaData:
             print(f"[DEBUG] _path: {heartbeat_paths[0]}, previous heartbeat: {self._previous_heartbeat_info}")
 
             if stop_updating:
+                print(f"[DEBUG] Checking stopping updating heartbeat result.")
                 if not self._first_time_checking_stop_updating_heartbeat:
-                    self._chk_updated_heartbeat_info(heartbeat, stop_updating=True)
+                    self._chk_updated_heartbeat_info(heartbeat, stop_updating=stop_updating)
                     self._chk_heartbeat_fixed_props(heartbeat)
-                    self._first_time_checking_stop_updating_heartbeat = False
+                self._first_time_checking_stop_updating_heartbeat = False
             else:
-                self._chk_updated_heartbeat_info(heartbeat, stop_updating=False)
+                print(f"[DEBUG] Checking keep updating heartbeat result.")
+                self._chk_updated_heartbeat_info(heartbeat, stop_updating=stop_updating)
                 self._chk_heartbeat_fixed_props(heartbeat)
 
             self._previous_heartbeat_info = heartbeat
@@ -492,15 +494,19 @@ class VerifyMetaData:
             assert (
                 heartbeat.heart_rhythm_time == self._previous_heartbeat_info.heart_rhythm_time
             ), f"Attribute 'heart_rhythm_time' should be the same with previous one because of stopping updating."
+            assert heartbeat.healthy_state == HeartState.APPARENT_DEATH.value, (
+                f"Attribute 'healthy_state' of current **Heartbeat** should be the same as {HeartState.APPARENT_DEATH},"
+                f" but it got {heartbeat.healthy_state}."
+            )
+            return
         else:
             assert (
                 heartbeat.heart_rhythm_time != self._previous_heartbeat_info.heart_rhythm_time
             ), f"Attribute 'heart_rhythm_time' must be different in every {heartbeat.update_time} seconds."
-
-        assert heartbeat.healthy_state == HeartState.HEALTHY.value, (
-            f"Attribute 'healthy_state' of current **Heartbeat** should be the same as {HeartState.HEALTHY}, but it got"
-            f" {heartbeat.healthy_state}."
-        )
+            assert heartbeat.healthy_state == HeartState.HEALTHY.value, (
+                f"Attribute 'healthy_state' of current **Heartbeat** should be the same as {HeartState.HEALTHY}, but it"
+                f" got {heartbeat.healthy_state}."
+            )
 
         if self._first_time_checking_updating_heartbeat in (True, None):
             expected_healthy_state = HeartState.NEWBORN.value
