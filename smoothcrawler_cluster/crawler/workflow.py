@@ -210,7 +210,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
         current_task: Task = task
         start_task_id = task.in_progressing_id
 
-        assert re.search(r"[0-9]{1,32}]", start_task_id) is None, "The task index must be integer format value."
+        assert re.search(r"[0-9]{1,32}", start_task_id) is not None, "The task index must be integer format value."
 
         for index, content in enumerate(running_content[int(start_task_id) :]):
             content = TaskContentDataUtils.convert_to_running_content(content)
