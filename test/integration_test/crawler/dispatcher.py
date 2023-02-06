@@ -14,6 +14,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
 )
+from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
 from smoothcrawler_cluster.model import CrawlerStateRole
 
 from ..._config import Zookeeper_Hosts
@@ -44,6 +45,7 @@ class TestWorkflowDispatcher(ZK):
 
         return WorkflowDispatcher(
             crawler_name=zk_crawler.name,
+            group=_Testing_Value.group,
             index_sep=zk_crawler._index_sep,
             path=zk_crawler._zk_path,
             get_metadata_callback=zk_crawler._get_metadata,
@@ -90,8 +92,15 @@ class TestWorkflowDispatcher(ZK):
 
     @pytest.mark.parametrize("role", [CrawlerStateRole.DEAD_RUNNER, CrawlerStateRole.DEAD_BACKUP_RUNNER])
     def test_dispatcher_with_dead_role(self, uit_object: WorkflowDispatcher, role: CrawlerStateRole):
-        workflow = uit_object.dispatch(role=role)
-        assert workflow is None, "It should be None if it is dead role."
+        try:
+            uit_object.dispatch(role=role)
+        except CrawlerIsDeadError as e:
+            expected_error_msg = (
+                f"Current crawler instance '{_Testing_Value.name}' in group '{_Testing_Value.group}' is dead."
+            )
+            assert str(e) == expected_error_msg, f"The error message should be same as '{expected_error_msg}'."
+        else:
+            assert False, "It should raise an error 'CrawlerIsDeadError'."
 
     def test_dispatcher_with_invalid_role(self, uit_object: WorkflowDispatcher):
         under_test_role = "TestRole"
