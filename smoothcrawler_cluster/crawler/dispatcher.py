@@ -26,6 +26,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
 )
+from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
 from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
 from smoothcrawler_cluster.model._data import MetaDataPath
 
@@ -42,6 +43,7 @@ class WorkflowDispatcher:
     def __init__(
         self,
         crawler_name: str,
+        group: str,
         index_sep: str,
         path: MetaDataPath,
         get_metadata_callback: Callable,
@@ -61,6 +63,7 @@ class WorkflowDispatcher:
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         self._crawler_name = crawler_name
+        self._group = group
         self._index_sep = index_sep
         self._path = path
         self._get_metadata = get_metadata_callback
@@ -89,7 +92,8 @@ class WorkflowDispatcher:
             +-----------------------------+-----------------------------------------+
 
         Raises:
-            NotImplementedError: The role is not **CrawlerStateRole** type.
+            * NotImplementedError: The role is not **CrawlerStateRole** type.
+            * CrawlerIsDeadError: The current crawler instance is dead.
 
         """
         role_workflow_args = {
@@ -109,9 +113,9 @@ class WorkflowDispatcher:
             else:
                 return SecondaryBackupRunnerWorkflow(**role_workflow_args)
         else:
-            if not (
-                self._is(role, CrawlerStateRole.DEAD_RUNNER) or self._is(role, CrawlerStateRole.DEAD_BACKUP_RUNNER)
-            ):
+            if self._is(role, CrawlerStateRole.DEAD_RUNNER) or self._is(role, CrawlerStateRole.DEAD_BACKUP_RUNNER):
+                raise CrawlerIsDeadError(crawler_name=self._crawler_name, group=self._group)
+            else:
                 raise NotImplementedError(f"It doesn't support crawler role {role} in *SmoothCrawler-Cluster*.")
 
     def heartbeat(self) -> BaseWorkflow:
