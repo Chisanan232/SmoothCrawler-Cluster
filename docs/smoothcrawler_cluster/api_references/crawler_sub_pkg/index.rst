@@ -1,8 +1,8 @@
 .. _CrawlerAPIRef:
 
-========
-Crawler
-========
+====================
+Crawler Sub-Package
+====================
 
 .. automodule:: smoothcrawler_cluster.crawler
 
@@ -13,3 +13,6 @@ Please refer below to get more details of crawler module.
 
    abstract_crawler
    zookeeper_crawler
+   adapter
+   dispatcher
+   workflow
