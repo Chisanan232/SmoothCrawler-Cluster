@@ -5,7 +5,7 @@ import pytest
 from kazoo.client import KazooClient
 
 from smoothcrawler_cluster.crawler.adapter import DistributedLock
-from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
+from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
 from smoothcrawler_cluster.crawler.dispatcher import WorkflowDispatcher
 from smoothcrawler_cluster.crawler.workflow import (
     BaseRoleWorkflow,

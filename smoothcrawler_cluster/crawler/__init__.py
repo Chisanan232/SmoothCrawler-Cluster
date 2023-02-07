@@ -1,1 +1,1 @@
-from .cluster import ZookeeperCrawler
+from .crawlers import ZookeeperCrawler

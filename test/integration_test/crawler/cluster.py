@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union
 import pytest
 from kazoo.client import KazooClient
 
-from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
+from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.model import (
     CrawlerStateRole,
