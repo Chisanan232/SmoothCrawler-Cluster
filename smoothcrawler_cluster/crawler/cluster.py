@@ -4,35 +4,32 @@ It integrates the features of **SmoothCrawler** into all the cluster crawler. So
 **SmoothCrawler**, and it also could extend the features to run in a cluster right now!
 """
 
-import re
 import threading
 import time
 from abc import ABC, ABCMeta, abstractmethod
-from datetime import datetime
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Callable, Generic, List, Optional, Type, TypeVar, Union
 
 from smoothcrawler.crawler import BaseCrawler
 from smoothcrawler.factory import BaseFactory
 
-from .._utils import MetaDataUtil, parse_timer
-from .._utils.converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
+from .._utils import MetaDataUtil
+from .._utils.converter import BaseConverter, JsonStrConverter
 from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
 from ..election import BaseElection, ElectionResult, IndexElection
+from ..exceptions import StopUpdateHeartbeat
 from ..model import (
     CrawlerStateRole,
     GroupState,
-    Heartbeat,
-    HeartState,
     Initial,
     NodeState,
-    ResultDetail,
     RunningContent,
-    RunningResult,
-    Task,
-    TaskResult,
     Update,
 )
+from ..model._data import CrawlerTimer, TimeInterval, TimerThreshold
 from ..model.metadata import _BaseMetaData
+from .adapter import DistributedLock
+from .dispatcher import WorkflowDispatcher
+from .workflow import HeartbeatUpdatingWorkflow
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
@@ -41,7 +38,10 @@ BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 class BaseDistributedCrawler(metaclass=ABCMeta):
     """*Base class for distributed crawler*
 
-    TODO: Add docstring, consider and define abstract functions
+    The base class about distributed crawler definitions. Distributed system has many practices, i.e., using application
+    integration concern to design to handle complex business logic in a large system; using cluster concern to build
+    a crawler system which has high fault tolerance to support each other's feature, etc. Therefore, this is the
+    most basically class for defining a distributed crawler.
     """
 
     pass
@@ -50,7 +50,16 @@ class BaseDistributedCrawler(metaclass=ABCMeta):
 class BaseClusterCrawler(BaseDistributedCrawler):
     """*Base class for cluster crawler*
 
-    TODO: Add docstring, consider and define abstract functions
+    The base class about cluster crawler definitions. This is the most basically class for the cluster crawler which has
+    high fault tolerance feature.
+
+    In cluster realm, it could roughly divide to 2 types: **Centralized** and **Decentralized**. The further one has
+    leader role member(s) and the letter one doesn't. So it has one more sub-abstract classes of this one are
+    **BaseCentralizedCrawler** and **BaseDecentralizedCrawler**.
+
+    In generally, each of single instance in cluster all are a single one which could be standby for each other and hand
+    over other's jobs if it needs. The consideration is: how could it work? what roles or jobs it need? We will have
+    discussion of it with the 2 abstract classes: **BaseCentralizedCrawler** and **BaseDecentralizedCrawler**.
     """
 
     @abstractmethod
@@ -64,10 +73,25 @@ class BaseClusterCrawler(BaseDistributedCrawler):
         pass
 
 
+class BaseCentralizedCrawler(BaseClusterCrawler, ABC):
+    """*Base class for centralized cluster crawler*
+
+    The base class about centralized crawler definitions. For centralized system, it has leader (or be called as master
+    or something else like that) role in it.
+
+    Please refer to :ref:`Has_Leader_usage_guide` to get more details.
+    """
+
+    pass
+
+
 class BaseDecentralizedCrawler(BaseClusterCrawler, ABC):
     """*Base class for decentralized cluster crawler*
 
-    TODO: Add docstring, consider and define abstract functions
+    The base class about decentralized crawler definitions. For decentralized system, it doesn't have leader, master or
+    something else like that role in it.
+
+    Please refer to :ref:`No_Leader_usage_guide` to get more details.
     """
 
     pass
@@ -91,8 +115,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     _initial_standby_id: str = "0"
 
-    _updating_stop_signal: bool = False
-    _updating_exception = None
+    _workflow_dispatcher: WorkflowDispatcher = None
+    _heartbeat_workflow: HeartbeatUpdatingWorkflow = None
 
     def __init__(
         self,
@@ -208,6 +232,24 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._heartbeat_update_timeout = heartbeat_update_timeout
         self._heartbeat_dead_threshold = heartbeat_dead_threshold
 
+        restrict_args = {
+            "path": self._zk_path.group_state,
+            "restrict": ZookeeperRecipe.WRITE_LOCK,
+            "identifier": self._state_identifier,
+        }
+        self._workflow_dispatcher = WorkflowDispatcher(
+            crawler_name=self._crawler_name,
+            group=self._crawler_group,
+            index_sep=self._index_sep,
+            path=self._zk_path,
+            get_metadata_callback=self._get_metadata,
+            set_metadata_callback=self._set_metadata,
+            opt_metadata_with_lock=DistributedLock(lock=self._zookeeper_client.restrict, **restrict_args),
+            crawler_process_callback=self._run_crawling_processing,
+        )
+
+        self._heartbeat_workflow = self._workflow_dispatcher.heartbeat()
+
         if initial:
             self.initial()
 
@@ -302,7 +344,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         """
         self.register_metadata()
-        if self._updating_stop_signal is False:
+        if self._heartbeat_workflow.stop_heartbeat is False:
             self._run_updating_heartbeat_thread()
         # TODO: It's possible that it needs to parameterize this election running workflow
         if self.is_ready_for_election(interval=0.5, timeout=-1):
@@ -457,7 +499,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             None
 
         """
-        self._updating_stop_signal = True
+        self._heartbeat_workflow.stop_heartbeat = True
 
     def is_ready_for_election(self, interval: float = 0.5, timeout: float = -1) -> bool:
         """Check whether it is ready to run next processing for function **elect**.
@@ -551,6 +593,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         standby_wait_time: float = 0.5,
         wait_to_be_standby_time: float = 2,
         reset_timeout_threshold: int = 10,
+        unlimited: bool = True,
     ) -> None:
         """The major function of the cluster. It has a simple workflow cycle:
 
@@ -567,24 +610,35 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 wait a second for next checking GroupState.standby_id. The unit is seconds and default value is 2.
             reset_timeout_threshold (int): The threshold of how many straight times it doesn't occur, then it would
                 reset the timeout record.
+            unlimited (bool): If it is *True*, this function would keep running as unlimited loop, nor it would only run
+                once time.
 
         Returns:
             None
+
+        Raises:
+            CrawlerIsDeadError: The current crawler instance is dead.
 
         """
         if self.is_ready_for_run(interval=interval, timeout=timeout):
             while True:
                 self.pre_running()
                 try:
+                    node_state = self._get_metadata(
+                        path=self._zk_path.node_state, as_obj=NodeState, must_has_data=False
+                    )
                     self.running_as_role(
-                        role=self._crawler_role,
+                        role=node_state.role,
                         wait_task_time=wait_task_time,
                         standby_wait_time=standby_wait_time,
                         wait_to_be_standby_time=wait_to_be_standby_time,
                         reset_timeout_threshold=reset_timeout_threshold,
                     )
+                    if unlimited is False:
+                        break
                 except Exception as e:  # pylint: disable=broad-except
                     self.before_dead(e)
+                    break
         else:
             raise TimeoutError("Timeout to wait for crawler be ready for running crawler cluster.")
 
@@ -599,12 +653,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     def running_as_role(
         self,
-        role: CrawlerStateRole,
+        role: Union[str, CrawlerStateRole],
         wait_task_time: float = 2,
         standby_wait_time: float = 0.5,
         wait_to_be_standby_time: float = 2,
         reset_timeout_threshold: int = 10,
-    ) -> None:
+    ) -> Optional[bool]:
         """Running the crawler instance's own job by what role it is.
 
         * _CrawlerStateRole.Runner_ ->
@@ -629,15 +683,27 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         Returns:
             None
 
+        Raises:
+            CrawlerIsDeadError: The current crawler instance is dead.
+
         """
-        if role is CrawlerStateRole.RUNNER:
-            self.wait_for_task(wait_time=wait_task_time)
-        elif role is CrawlerStateRole.BACKUP_RUNNER:
-            group_state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
-                self.wait_and_standby(wait_time=standby_wait_time, reset_timeout_threshold=reset_timeout_threshold)
-            else:
-                self.wait_for_to_be_standby(wait_time=wait_to_be_standby_time)
+        interval = TimeInterval()
+        interval.check_task = wait_task_time
+        interval.check_crawler_state = standby_wait_time
+        interval.check_standby_id = wait_to_be_standby_time
+
+        threshold = TimerThreshold()
+        threshold.reset_timeout = reset_timeout_threshold
+
+        timer = CrawlerTimer()
+        timer.time_interval = interval
+        timer.threshold = threshold
+
+        try:
+            role = role.value if isinstance(role, CrawlerStateRole) else role
+            return self._workflow_dispatcher.dispatch(role=role).run(timer=timer)
+        except StopUpdateHeartbeat:
+            self.stop_update_heartbeat()
 
     def before_dead(self, exception: Exception) -> None:
         """Do something when it gets an exception. The default implementation is raising the exception to outside.
@@ -650,221 +716,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         """
         raise exception
-
-    def wait_for_task(self, wait_time: float = 2) -> None:
-        """Keep waiting for tasks coming and run it.
-
-        Args:
-            wait_time (float): For a Runner, how long does the crawler instance wait a second for next task. The unit is
-                seconds and default value is 2.
-
-        Returns:
-            None
-
-        """
-        # 1. Try to get data from the target mode path of Zookeeper
-        # 2. if (step 1 has data and it's valid) {
-        #        Start to run tasks from the data
-        #    } else {
-        #        Keep wait for tasks
-        #    }
-        while True:
-            node_state = self._get_metadata(path=self._zk_path.node_state, as_obj=NodeState, must_has_data=False)
-            task = self._get_metadata(path=self._zk_path.task, as_obj=Task, must_has_data=False)
-
-            if node_state.role == CrawlerStateRole.DEAD_RUNNER.value:
-                self.stop_update_heartbeat()
-                break
-
-            if task.running_content:
-                # Start to run tasks ...
-                self.run_task(task=task)
-            else:
-                # Keep waiting
-                time.sleep(wait_time)
-
-    def wait_and_standby(self, wait_time: float = 0.5, reset_timeout_threshold: int = 10) -> None:
-        """Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers
-        anyone is dead.
-
-        It would record 2 types checking result as dict type value and the data structure like below:
-            * timeout records: {<crawler_name>: <timeout times>}
-            * not timeout records: {<crawler_name>: <not timeout times>}
-
-        It would record the timeout times into the value, and it would get each types timeout threshold from meta-data
-        **Heartbeat**. So it would base on them to run the checking process.
-
-        Prevent from the times be counted by unstable network environment and cause the crawler instance be marked as
-        *Dead*, it won't count the times by accumulation, it would reset the timeout value if the record be counted long
-        time ago. Currently, it would reset the timeout value if it was counted 10 times ago.
-
-        Args:
-            wait_time (float): For a Backup, how long does the crawler instance wait a second for next checking
-                heartbeat. The unit is seconds and default value is 0.5.
-            reset_timeout_threshold (int): The threshold of how many straight times it doesn't occur, then it would
-                reset the timeout record.
-
-        Returns:
-            None
-
-        """
-        timeout_records: Dict[str, int] = {}
-        no_timeout_records: Dict[str, int] = {}
-
-        def _one_current_runner_is_dead(runner_name: str) -> Optional[str]:
-            current_runner_heartbeat = self._get_metadata(
-                path=f"{self._zk_path.generate_parent_node(runner_name)}/{self._zookeeper_heartbeat_node_path}",
-                as_obj=Heartbeat,
-            )
-
-            heart_rhythm_time = current_runner_heartbeat.heart_rhythm_time
-            time_format = current_runner_heartbeat.time_format
-            update_timeout = current_runner_heartbeat.update_timeout
-            heart_rhythm_timeout = current_runner_heartbeat.heart_rhythm_timeout
-
-            diff_datetime = datetime.now() - datetime.strptime(heart_rhythm_time, time_format)
-            if diff_datetime.total_seconds() >= parse_timer(update_timeout):
-                # It should start to pay attention on it
-                timeout_records[runner_name] = timeout_records.get(runner_name, 0) + 1
-                no_timeout_records[runner_name] = 0
-                if timeout_records[runner_name] >= int(heart_rhythm_timeout):
-                    return runner_name
-            else:
-                no_timeout_records[runner_name] = no_timeout_records.get(runner_name, 0) + 1
-                if no_timeout_records[runner_name] >= reset_timeout_threshold:
-                    timeout_records[runner_name] = 0
-            return None
-
-        while True:
-            group_state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-            chk_current_runners_is_dead = map(_one_current_runner_is_dead, group_state.current_runner)
-            dead_current_runner_iter = filter(
-                lambda _dead_runner: _dead_runner is not None, list(chk_current_runners_is_dead)
-            )
-            dead_current_runner = list(dead_current_runner_iter)
-            if dead_current_runner:
-                # Only handle the first one of dead crawlers (if it has multiple dead crawlers
-                runner_name = dead_current_runner[0]
-                heartbeat = self._get_metadata(
-                    path=f"{self._zk_path.generate_parent_node(runner_name)}/{self._zookeeper_heartbeat_node_path}",
-                    as_obj=Heartbeat,
-                )
-                task_of_dead_crawler = self.discover(dead_crawler_name=runner_name, heartbeat=heartbeat)
-                self.activate(dead_crawler_name=runner_name)
-                self.hand_over_task(task=task_of_dead_crawler)
-                break
-
-            time.sleep(wait_time)
-
-    def wait_for_to_be_standby(self, wait_time: float = 2) -> bool:
-        """Keep waiting to be the primary backup crawler instance.
-
-        Args:
-            wait_time (float): For a Backup but isn't the primary one, how long does the crawler instance wait a second
-                for next checking GroupState.standby_id. The unit is seconds and default value is 2.
-
-        Returns:
-            bool: It's True if it directs the standby ID attribute value is equal to its index of name.
-
-        """
-        while True:
-            group_state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
-                # Start to do wait_and_standby
-                return True
-            time.sleep(wait_time)
-
-    def run_task(self, task: Task) -> None:
-        """Run the task it directs. It runs the task by meta-data *Task.running_content* and records the running result
-        back to meta-data *Task.running_result* and *Task.result_detail*.
-
-        The core implementation of how it works web spider job in protected function *_run_crawling_processing* (and
-        *processing_crawling_task*).
-
-        Args:
-            task (Task): The task it directs.
-
-        Returns:
-            None
-
-        """
-        running_content = task.running_content
-        current_task: Task = task
-        start_task_id = task.in_progressing_id
-
-        assert re.search(r"[0-9]{1,32}]", start_task_id) is None, "The task index must be integer format value."
-
-        for index, content in enumerate(running_content[int(start_task_id) :]):
-            content = TaskContentDataUtils.convert_to_running_content(content)
-
-            # Update the ongoing task ID
-            original_task = self._get_metadata(path=self._zk_path.task, as_obj=Task)
-            if index == 0:
-                current_task = Update.task(
-                    task=original_task, in_progressing_id=content.task_id, running_status=TaskResult.PROCESSING
-                )
-            else:
-                current_task = Update.task(task=original_task, in_progressing_id=content.task_id)
-            self._set_metadata(path=self._zk_path.task, metadata=current_task)
-
-            # Run the task and update the meta data Task
-            data = None
-            try:
-                # TODO: Consider of here usage about how to implement to let it be more clear and convenience in usage
-                #  in cient site
-                data = self._run_crawling_processing(content)
-            except NotImplementedError as e:
-                raise e
-            except Exception as e:  # pylint: disable=broad-except
-                # Update attributes with fail result
-                running_result = TaskContentDataUtils.convert_to_running_result(original_task.running_result)
-                updated_running_result = RunningResult(
-                    success_count=running_result.success_count, fail_count=running_result.fail_count + 1
-                )
-
-                result_detail = original_task.result_detail
-                # TODO: If it gets fail, how to record the result?
-                result_detail.append(
-                    ResultDetail(
-                        task_id=content.task_id,
-                        state=TaskResult.ERROR.value,
-                        status_code=500,
-                        response=None,
-                        error_msg=f"{e}",
-                    )
-                )
-            else:
-                # Update attributes with successful result
-                running_result = TaskContentDataUtils.convert_to_running_result(original_task.running_result)
-                updated_running_result = RunningResult(
-                    success_count=running_result.success_count + 1, fail_count=running_result.fail_count
-                )
-
-                result_detail = original_task.result_detail
-                # TODO: Some information like HTTP status code of response should be get from response object.
-                result_detail.append(
-                    ResultDetail(
-                        task_id=content.task_id,
-                        state=TaskResult.DONE.value,
-                        status_code=200,
-                        response=data,
-                        error_msg=None,
-                    )
-                )
-
-            current_task = Update.task(
-                task=original_task,
-                in_progressing_id=content.task_id,
-                running_result=updated_running_result,
-                result_detail=result_detail,
-            )
-            self._set_metadata(path=self._zk_path.task, metadata=current_task)
-
-        # Finish all tasks, record the running result and reset the content ...
-        current_task = Update.task(
-            task=current_task, running_content=[], in_progressing_id="-1", running_status=TaskResult.DONE
-        )
-        self._set_metadata(path=self._zk_path.task, metadata=current_task)
 
     def processing_crawling_task(self, content: RunningContent) -> Any:
         """The core of web spider implementation. All running functions it used are developers are familiar with ---
@@ -882,101 +733,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         data = self.data_process(parsed_response)
         # self.persist(data=_data)
         return data
-
-    def discover(self, dead_crawler_name: str, heartbeat: Heartbeat) -> Task:
-        """When backup role crawler instance discover anyone is dead, it would mark the target one as *Dead*
-        (*HeartState.Asystole*) and update its meta-data **Heartbeat**. In the same time, it would try to get
-        its **Task** and take over it.
-
-        Args:
-            dead_crawler_name (str): The crawler name which be under checking.
-            heartbeat (Heartbeat): The meta-data **Heartbeat** of crawler be under checking.
-
-        Returns:
-            Task: Meta-data **Task** from dead crawler instance.
-
-        """
-        node_state_path = (
-            f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_node_state_node_path}"
-        )
-        node_state = self._get_metadata(path=node_state_path, as_obj=NodeState)
-        node_state.role = CrawlerStateRole.DEAD_RUNNER
-        self._set_metadata(path=node_state_path, metadata=node_state)
-
-        task = self._get_metadata(
-            path=f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_task_node_path}",
-            as_obj=Task,
-        )
-        heartbeat.healthy_state = HeartState.ASYSTOLE
-        heartbeat.task_state = task.running_status
-        self._set_metadata(
-            path=f"{self._zk_path.generate_parent_node(dead_crawler_name)}/{self._zookeeper_heartbeat_node_path}",
-            metadata=heartbeat,
-        )
-
-        return task
-
-    def activate(self, dead_crawler_name: str) -> None:
-        """After backup role crawler instance marks target as *Dead*, it would start to activate to be running by itself
-        and run the runner's job.
-
-        Args:
-            dead_crawler_name (str): The crawler name which be under checking.
-
-        Returns:
-            None
-
-        """
-        node_state = self._get_metadata(path=self._zk_path.node_state, as_obj=NodeState)
-        self._crawler_role = CrawlerStateRole.RUNNER
-        node_state.role = self._crawler_role
-        self._set_metadata(path=self._zk_path.node_state, metadata=node_state)
-
-        with self._zookeeper_client.restrict(
-            path=self._zk_path.group_state,
-            restrict=ZookeeperRecipe.WRITE_LOCK,
-            identifier=self._state_identifier,
-        ):
-            state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-
-            state.total_backup = state.total_backup - 1
-            state.current_crawler.remove(dead_crawler_name)
-            state.current_runner.remove(dead_crawler_name)
-            state.current_runner.append(self._crawler_name)
-            state.current_backup.remove(self._crawler_name)
-            state.fail_crawler.append(dead_crawler_name)
-            state.fail_runner.append(dead_crawler_name)
-            state.standby_id = str(int(state.standby_id) + 1)
-
-            self._set_metadata(path=self._zk_path.group_state, metadata=state)
-
-    def hand_over_task(self, task: Task) -> None:
-        """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
-        write it to this crawler's meta-data **Task**.
-
-        Args:
-            task (Task): The meta-data **Task** of crawler be under checking.
-
-        Returns:
-            None
-
-        """
-        if task.running_status == TaskResult.PROCESSING.value:
-            # Run the tasks from the start index
-            self._set_metadata(path=self._zk_path.task, metadata=task)
-        elif task.running_status == TaskResult.ERROR.value:
-            # Reset some specific attributes
-            updated_task = Update.task(
-                task,
-                in_progressing_id="0",
-                running_result=RunningResult(success_count=0, fail_count=0),
-                result_detail=[],
-            )
-            # Reruns all tasks
-            self._set_metadata(path=self._zk_path.task, metadata=updated_task)
-        else:
-            # Ignore and don't do anything if the task state is nothing or done.
-            pass
 
     def _update_crawler_role(self, role: CrawlerStateRole) -> None:
         """Update to be what role current crawler instance is in crawler cluster.
@@ -1023,54 +779,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             None
 
         """
-        updating_heartbeat_thread = threading.Thread(target=self._update_heartbeat)
+        updating_heartbeat_thread = threading.Thread(target=self._heartbeat_workflow.run)
         updating_heartbeat_thread.daemon = True
         updating_heartbeat_thread.start()
-
-    def _update_heartbeat(self) -> None:
-        """The main function of updating **Heartbeat** info.
-
-        .. note::
-            It has a flag *_Updating_Exception*. If it's True, it would stop updating **Heartbeat**.
-
-        Returns:
-            None
-
-        """
-        while True:
-            if not self._updating_stop_signal:
-                try:
-                    # Get *Task* and *Heartbeat* info
-                    task = self._get_metadata(path=self._zk_path.task, as_obj=Task)
-                    heartbeat = self._get_metadata(path=self._zk_path.heartbeat, as_obj=Heartbeat)
-
-                    # Update the values
-                    heartbeat = Update.heartbeat(
-                        heartbeat,
-                        heart_rhythm_time=datetime.now(),
-                        healthy_state=HeartState.HEALTHY,
-                        task_state=task.running_status,
-                    )
-                    self._set_metadata(path=self._zk_path.heartbeat, metadata=heartbeat)
-
-                    # Sleep ...
-                    time.sleep(parse_timer(heartbeat.update_time))
-                except Exception as e:  # pylint: disable=broad-except
-                    self._updating_exception = e
-                    break
-            else:
-                task = self._get_metadata(path=self._zk_path.task, as_obj=Task)
-                heartbeat = self._get_metadata(path=self._zk_path.heartbeat, as_obj=Heartbeat)
-                heartbeat = Update.heartbeat(
-                    heartbeat,
-                    heart_rhythm_time=datetime.now(),
-                    healthy_state=HeartState.APPARENT_DEATH,
-                    task_state=task.running_status,
-                )
-                self._set_metadata(path=self._zk_path.heartbeat, metadata=heartbeat)
-                break
-        if self._updating_exception:
-            raise self._updating_exception
 
     def _get_metadata(
         self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True
