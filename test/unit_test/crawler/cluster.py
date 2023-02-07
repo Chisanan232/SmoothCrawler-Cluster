@@ -1,14 +1,36 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from kazoo.client import KazooClient
 
-from smoothcrawler_cluster._utils import MetaDataUtil
 from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
-from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
+from smoothcrawler_cluster.crawler.workflow import (
+    BaseRoleWorkflow,
+    PrimaryBackupRunnerWorkflow,
+    RunnerWorkflow,
+    SecondaryBackupRunnerWorkflow,
+)
+from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
+from smoothcrawler_cluster.model import CrawlerStateRole, NodeState
 
 from ..._assertion import ValueFormatAssertion
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
+from ...integration_test._test_utils._instance_value import _TestValue
+
+_Testing_Value: _TestValue = _TestValue()
+
+
+def _get_workflow_arguments() -> dict:
+    workflow_args = {
+        "crawler_name": "test_name",
+        "index_sep": "test_index_sep",
+        "path": Mock(),
+        "get_metadata": Mock(),
+        "set_metadata": Mock(),
+        "opt_metadata_with_lock": Mock(),
+        "crawler_process_callback": Mock(),
+    }
+    return workflow_args
 
 
 class TestZookeeperCrawler:
@@ -80,45 +102,96 @@ class TestZookeeperCrawler:
         ensure_register = zk_crawler.ensure_wait
         assert ensure_register == 2, "Property 'ensure_wait' should be True as it assigning."
 
-    def test_run_as_role_Runner(self, zk_crawler: ZookeeperCrawler):
-        zk_crawler.wait_for_task = MagicMock(return_value=None)
-        zk_crawler.wait_and_standby = MagicMock(return_value=None)
-        zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
+    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
+    def test_run_finely(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+        # Mock functions or objects
+        mock_node_state = Mock(NodeState())
+        mock_node_state.role = role.value
 
-        with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=GroupState()) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.RUNNER)
-            metadata_util.assert_not_called()
-            zk_crawler.wait_for_task.assert_called_with(wait_time=2)
-            zk_crawler.wait_and_standby.assert_not_called()
-            zk_crawler.wait_for_to_be_standby.assert_not_called()
+        zk_crawler.is_ready_for_run = MagicMock(return_value=True)
+        zk_crawler.pre_running = MagicMock(return_value=None)
+        zk_crawler._get_metadata = MagicMock(return_value=mock_node_state)
+        zk_crawler.running_as_role = MagicMock(return_value=None)
+        zk_crawler.before_dead = MagicMock(return_value=None)
 
-    def test_run_as_role_Backup_Runner(self, zk_crawler: ZookeeperCrawler):
-        zk_crawler.wait_for_task = MagicMock(return_value=None)
-        zk_crawler.wait_and_standby = MagicMock(return_value=None)
-        zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
+        # Run target function for testing
+        zk_crawler.run(unlimited=False)
 
-        group_state = GroupState()
-        group_state.standby_id = "1"
-        with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=group_state) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.BACKUP_RUNNER)
-            metadata_util.assert_called_once()
-            zk_crawler.wait_for_task.assert_not_called()
-            zk_crawler.wait_and_standby.assert_called_with(wait_time=0.5, reset_timeout_threshold=10)
-            zk_crawler.wait_for_to_be_standby.assert_not_called()
+        # Verify running state
+        zk_crawler.is_ready_for_run.assert_called_once_with(interval=0.5, timeout=-1)
+        zk_crawler.pre_running.assert_called_once()
+        zk_crawler._get_metadata.assert_called_once_with(
+            path=_Testing_Value.node_state_zookeeper_path, as_obj=NodeState, must_has_data=False
+        )
+        zk_crawler.running_as_role.assert_called_with(
+            role=mock_node_state.role,
+            wait_task_time=2,
+            standby_wait_time=0.5,
+            wait_to_be_standby_time=2,
+            reset_timeout_threshold=10,
+        )
+        zk_crawler.before_dead.assert_not_called()
 
-    def test_run_as_role_not_primary_Backup_Runner(self, zk_crawler: ZookeeperCrawler):
-        zk_crawler.wait_for_task = MagicMock(return_value=None)
-        zk_crawler.wait_and_standby = MagicMock(return_value=None)
-        zk_crawler.wait_for_to_be_standby = MagicMock(return_value=None)
+    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
+    def test_run_with_exception(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+        # Mock functions or objects
+        mock_node_state = Mock(NodeState())
+        mock_node_state.role = role.value
 
-        group_state = GroupState()
-        group_state.standby_id = "0"
-        with patch.object(MetaDataUtil, "get_metadata_from_zookeeper", return_value=group_state) as metadata_util:
-            zk_crawler.running_as_role(role=CrawlerStateRole.BACKUP_RUNNER)
-            metadata_util.assert_called_once()
-            zk_crawler.wait_for_task.assert_not_called()
-            zk_crawler.wait_and_standby.assert_not_called()
-            zk_crawler.wait_for_to_be_standby.assert_called_with(wait_time=2)
+    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
+    def test_run_timeout(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+        # Mock functions or objects
+        mock_node_state = Mock(NodeState())
+        mock_node_state.role = role.value
+
+    def test_run_as_role_runner(self, zk_crawler: ZookeeperCrawler):
+        wf_args = _get_workflow_arguments()
+        self._test_run_as_role(zk_crawler, role=CrawlerStateRole.RUNNER, workflow=RunnerWorkflow(**wf_args))
+
+    def test_run_as_role_primary_backup(self, zk_crawler: ZookeeperCrawler):
+        wf_args = _get_workflow_arguments()
+        self._test_run_as_role(
+            zk_crawler, role=CrawlerStateRole.BACKUP_RUNNER, workflow=PrimaryBackupRunnerWorkflow(**wf_args)
+        )
+
+    def test_run_as_role_secondary_backup(self, zk_crawler: ZookeeperCrawler):
+        wf_args = _get_workflow_arguments()
+        self._test_run_as_role(
+            zk_crawler, role=CrawlerStateRole.BACKUP_RUNNER, workflow=SecondaryBackupRunnerWorkflow(**wf_args)
+        )
+
+    def _test_run_as_role(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole, workflow: BaseRoleWorkflow):
+        # Mock functions
+        zk_crawler._workflow_dispatcher.dispatch = MagicMock(return_value=workflow)
+        zk_crawler.stop_update_heartbeat = MagicMock(return_value=None)
+
+        with patch.object(workflow, "run", return_value=None) as runner_wf_run:
+            # Run function target to test
+            zk_crawler.running_as_role(role=role)
+
+            # Verify
+            zk_crawler._workflow_dispatcher.dispatch.assert_called_once_with(role=role.value)
+            runner_wf_run.assert_called_once()
+            zk_crawler.stop_update_heartbeat.assert_not_called()
+
+    @pytest.mark.parametrize("role", [CrawlerStateRole.DEAD_RUNNER, CrawlerStateRole.DEAD_BACKUP_RUNNER])
+    def test_run_as_role_dead_runner(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+        # Mock functions
+        wf_args = _get_workflow_arguments()
+        workflow = SecondaryBackupRunnerWorkflow(**wf_args)
+
+        zk_crawler._workflow_dispatcher.dispatch = MagicMock(return_value=workflow)
+        zk_crawler.stop_update_heartbeat = MagicMock(return_value=None)
+
+        with patch.object(workflow, "run", return_value=None) as runner_wf_run:
+            # Run function target to test
+            try:
+                zk_crawler.running_as_role(role=role)
+            except CrawlerIsDeadError:
+                # Verify
+                zk_crawler._workflow_dispatcher.dispatch.assert_called_once_with(role=role.value)
+                runner_wf_run.assert_not_called()
+                zk_crawler.stop_update_heartbeat.assert_called_once()
 
     def test_before_dead(self, zk_crawler: ZookeeperCrawler):
         try:
