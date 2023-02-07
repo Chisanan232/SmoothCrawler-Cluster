@@ -6,7 +6,7 @@ from typing import Callable, Dict, Optional
 
 from smoothcrawler_cluster._utils.zookeeper import ZookeeperRecipe
 from smoothcrawler_cluster.crawler.adapter import DistributedLock
-from smoothcrawler_cluster.crawler.cluster import ZookeeperCrawler
+from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
 from smoothcrawler_cluster.crawler.workflow import (
     HeartbeatUpdatingWorkflow,
     PrimaryBackupRunnerWorkflow,

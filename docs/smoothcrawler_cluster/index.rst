@@ -81,7 +81,7 @@ Detail information about some function, class or method.
    :titlesonly:
    :caption: API Reference:
 
-   api_references/crawler/index
+   api_references/crawler_sub_pkg/index
    api_references/election/index
    api_references/model/index
    api_references/inner_modules/index
