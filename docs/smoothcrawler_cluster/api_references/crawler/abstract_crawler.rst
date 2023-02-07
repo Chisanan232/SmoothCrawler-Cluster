@@ -16,6 +16,13 @@ Base Cluster Crawler
     :members:
 
 
+Base Centralized Crawler
+=========================
+
+.. autoclass:: smoothcrawler_cluster.crawler.cluster.BaseCentralizedCrawler
+    :members:
+
+
 Base Decentralized Crawler
 ============================
 
