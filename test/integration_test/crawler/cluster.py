@@ -35,10 +35,11 @@ from ..._values import (
     _Total_Crawler_Value,
     _Waiting_Time,
 )
-from ..._verify import Verify, VerifyMetaData
+from ..._verify import VerifyMetaData
 from .._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from .._test_utils._multirunner import run_2_diff_workers, run_multi_processes
 from .._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
+from ._spec import MultiCrawlerTestSuite
 
 _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
@@ -357,46 +358,6 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
             ), "It crawling result should be 'Example Domain' (the title of example.com)."
 
 
-class MultiCrawlerTestSuite(ZK):
-
-    _processes: List[mp.Process] = []
-
-    _verify = Verify()
-    _verify_metadata = VerifyMetaData()
-
-    @staticmethod
-    def _clean_environment(function):
-        def _(self):
-            # Initial Zookeeper session
-            self._pytest_zk_client = KazooClient(hosts=Zookeeper_Hosts)
-            self._pytest_zk_client.start()
-
-            self._verify_metadata.initial_zk_session(self._pytest_zk_client)
-
-            # Reset Zookeeper nodes first
-            self._reset_all_metadata(size=_Total_Crawler_Value)
-
-            # Reset workers collection
-            self._processes.clear()
-
-            try:
-                # Run the test item
-                function(self)
-            finally:
-                # Kill all processes
-                for process in self._processes:
-                    if isinstance(process, mp.Process):
-                        process.terminate()
-                # Reset Zookeeper nodes fianlly
-                self._reset_all_metadata(size=_Total_Crawler_Value)
-
-        return _
-
-    def _reset_all_metadata(self, size: int) -> None:
-        all_paths = _ZKNodePathUtils.all(size)
-        self._delete_zk_nodes(all_paths)
-
-
 class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
     @MultiCrawlerTestSuite._clean_environment
     def test_initial(self):
@@ -570,7 +531,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._check_role(role_results, index_sep_char)
 
     @MultiCrawlerTestSuite._clean_environment
-    def test_wait_for_task(self):
+    def test_running_as_role_runner(self):
         running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         running_flag: Dict[str, bool] = _Manager.dict()
 
@@ -607,7 +568,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             zk_crawler.register_task()
 
             try:
-                zk_crawler.wait_for_task()
+                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
             except NotImplementedError:
                 assert True, "It works finely."
             else:
@@ -621,7 +582,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler(),
                 )
-                zk_crawler.wait_for_task()
+                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
             except Exception as e:
                 running_flag["_wait_for_task"] = False
                 running_exception["_wait_for_task"] = e
@@ -689,7 +650,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             zk_crawler.register_task()
 
             try:
-                zk_crawler.wait_for_task()
+                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
             except NotImplementedError:
                 assert True, "It works finely."
             else:
@@ -703,7 +664,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler(),
                 )
-                zk_crawler.wait_for_task()
+                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
             except Exception as e:
                 running_flag["_wait_for_task"] = False
                 running_exception["_wait_for_task"] = e
@@ -734,7 +695,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         )
 
     @MultiCrawlerTestSuite._clean_environment
-    def test_wait_for_standby(self):
+    def test_running_as_role_primary_backup(self):
         # Instantiate ZookeeperCrawler
         zk_crawler = ZookeeperCrawler(runner=1, backup=1, initial=False, zk_hosts=Zookeeper_Hosts)
 
@@ -793,7 +754,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             _initial_heartbeat(heartbeat_path)
 
         if zk_crawler.is_ready_for_run(timeout=5):
-            zk_crawler.wait_and_standby()
+            zk_crawler.running_as_role(CrawlerStateRole.BACKUP_RUNNER)
         else:
             assert False, (
                 "It should be ready to run. Please check the detail implementation or other settings in testing has "
@@ -814,7 +775,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         )
 
     @MultiCrawlerTestSuite._clean_environment
-    def test_wait_for_to_be_standby(self):
+    def test_running_as_role_secondary_backup(self):
         running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         running_flag: Dict[str, bool] = _Manager.dict()
 
@@ -870,7 +831,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 nonlocal result, start, end
                 start.value = time.time()
                 # # Run target function
-                result.value = zk_crawler.wait_for_to_be_standby()
+                result.value = zk_crawler.running_as_role(CrawlerStateRole.BACKUP_RUNNER)
                 end.value = time.time()
             except Exception as e:
                 running_flag["_run_target_test_func"] = False
