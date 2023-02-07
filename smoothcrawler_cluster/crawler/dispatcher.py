@@ -118,7 +118,7 @@ class WorkflowDispatcher:
             else:
                 raise NotImplementedError(f"It doesn't support crawler role {role} in *SmoothCrawler-Cluster*.")
 
-    def heartbeat(self) -> BaseWorkflow:
+    def heartbeat(self) -> HeartbeatUpdatingWorkflow:
         """Dispatch to a workflow updates heartbeat.
 
         Returns:
