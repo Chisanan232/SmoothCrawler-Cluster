@@ -1,3 +1,5 @@
+.. _Has_Leader_usage_guide:
+
 ===========
 Has Leader
 ===========

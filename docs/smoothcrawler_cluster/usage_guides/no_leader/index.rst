@@ -1,3 +1,5 @@
+.. _No_Leader_usage_guide:
+
 ==========
 No Leader
 ==========
