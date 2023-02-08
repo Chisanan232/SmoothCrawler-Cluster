@@ -184,6 +184,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._ensure_wait = ensure_wait
 
         if name == "":
+            # TODO (election): The naming process should be one process of *election* and let it to control.
             name = "sc-crawler_1"
             self._index_sep = "_"
         self._crawler_name = name
@@ -343,10 +344,12 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             None
 
         """
+        # TODO (register): The registering process should be one single process in another object may be call it as
+        #  *register* and let it to manage these processes.
         self.register_metadata()
         if self._heartbeat_workflow.stop_heartbeat is False:
             self._run_updating_heartbeat_thread()
-        # TODO: It's possible that it needs to parameterize this election running workflow
+        # TODO (crawler): It's possible that it needs to parameterize this election running workflow
         if self.is_ready_for_election(interval=0.5, timeout=-1):
             if self.elect() is ElectionResult.WINNER:
                 self._crawler_role = CrawlerStateRole.RUNNER
@@ -369,7 +372,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # save it to Zookeeper.
         # 2. Hardware code: Use the unique hardware code or flag to record it, i.e., the MAC address of host or
         # something ID of container.
+        # TODO (election): The registering meta-data GroupState process should be one process of *election* and let it
+        #  to control.
         self.register_group_state()
+        # TODO (register): Parameterize the initial value of meta-data, default value should be None and let this
+        #  package to help developers set.
         self.register_node_state()
         self.register_task()
         self.register_heartbeat(
@@ -728,7 +735,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             Any: The running result of crawling.
 
         """
-        # TODO: Consider about how to let crawler core implementation to be more scalable and flexible.
+        # TODO (adapter): Consider about how to let crawler core implementation to be more scalable and flexible.
         parsed_response = self.crawl(method=content.method, url=content.url)
         data = self.data_process(parsed_response)
         # self.persist(data=_data)
@@ -786,13 +793,13 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     def _get_metadata(
         self, path: str, as_obj: Type[_BaseMetaDataType], must_has_data: bool = True
     ) -> Generic[_BaseMetaDataType]:
-        # TODO: Let the usage could be followed as bellow python code:
+        # TODO (_utility): Let the usage could be followed as bellow python code:
         # example:
         # self._metadata_util.get(must_has_data=False).from_zookeeper(path=self._zk_path.node_state).to(NodeState)
         return self._metadata_util.get_metadata_from_zookeeper(path=path, as_obj=as_obj, must_has_data=must_has_data)
 
     def _set_metadata(self, path: str, metadata: Generic[_BaseMetaDataType], create_node: bool = False) -> None:
-        # TODO: Let the usage could be followed as bellow python code:
+        # TODO (_utility): Let the usage could be followed as bellow python code:
         # example:
         # self._metadata_util.set(metadata=state, create_node=True).to_zookeeper(path=self._zk_path.group_state)
         self._metadata_util.set_metadata_to_zookeeper(path=path, metadata=metadata, create_node=create_node)
