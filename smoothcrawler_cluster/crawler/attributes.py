@@ -25,11 +25,6 @@ class BaseCrawlerAttribute(metaclass=ABCMeta):
     _default_id_separation: str = "_"
     _has_default: bool = True
 
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-        return cls._instance
-
     @property
     @abstractmethod
     def name(self) -> str:
@@ -68,8 +63,8 @@ class BaseCrawlerAttribute(metaclass=ABCMeta):
 
     @property
     def has_default(self) -> bool:
-        """:obj:`bool`: Properties with both getter and setter. The identity of each one crawler instance. It MUST BE
-        unique.
+        """:obj:`bool`: Properties with both getter and setter. Whether the properties *name* and *id_separation* can
+        have default value or not.
         """
         return self._has_default
 
@@ -105,7 +100,17 @@ class NextableAttribute(BaseCrawlerAttribute):
     @abstractmethod
     def next_id(self) -> str:
         """:obj:`str`: Properties with only getter. The next one identity of crawler instance. This identity MUST be new
-        and unique which doesn't be used before.
+        and unique which doesn't be used before. This function only let you know what next one is. But it won't really
+        iterate to operate.
+        """
+        pass
+
+    @property
+    @abstractmethod
+    def iter_to_next_id(self) -> str:
+        """:obj:`str`: Properties with only getter. The next one identity of crawler instance. This identity MUST be new
+        and unique which doesn't be used before. This function would operate to next one, it means that if you try to
+        get value by property *name*, it would turn to be the value which is equal to the return value of this property.
         """
         pass
 
@@ -124,20 +129,22 @@ class SerialCrawlerAttribute(NextableAttribute):
 
     @property
     def name(self) -> str:
-        if not self.has_default and not self._id_separation:
-            raise ValueError("The property *id_separation* value should NOT be empty when it gets the *name* property.")
-
-        if not self._name:
-            if self.has_default and not self._id_separation:
-                id_separation = self._default_id_separation
-            else:
-                id_separation = self.id_separation
-            self._name = f"{self._default_base_name}{id_separation}{self.current_id}"
+        if self.has_default and not self._name:
+            self.name = ""
         return self._name
 
     @name.setter
     def name(self, name: str) -> None:
-        self._name = str(name)
+        if not name:
+            if not self.id_separation:
+                if not self.has_default:
+                    raise ValueError(
+                        "The property *id_separation* value should NOT be empty when setting the *name* "
+                        "property if it cannot have default value."
+                    )
+            self._name = f"{self._default_base_name}{self.id_separation}{self.current_id}"
+        else:
+            self._name = str(name)
 
     @property
     def id_separation(self) -> str:
@@ -149,31 +156,37 @@ class SerialCrawlerAttribute(NextableAttribute):
     def id_separation(self, sep: Union[str, List[str]]) -> None:
         def _chk_separation(ut_sep) -> bool:
             crawler_name_list = self.name.split(sep=ut_sep)
-            if crawler_name_list:
-                try:
-                    int(crawler_name_list[-1])
-                except ValueError:
-                    return False
-                else:
-                    return True
-            return False
-
-        if not self.has_default and not self.name:
-            raise ValueError("The property *name* value should NOT be empty when it sets *id_separation* property.")
-
-        if self.has_default and not sep:
-            if isinstance(sep, str):
-                if _chk_separation(sep):
-                    self._id_separation = sep
-                    return
-            elif isinstance(sep, list):
-                for one_sep in sep:
-                    if _chk_separation(one_sep):
-                        self._id_separation = one_sep
-                        return
+            try:
+                int(crawler_name_list[-1])
+            except ValueError:
+                return False
             else:
+                return True
+
+        if not sep:
+            if self.has_default:
+                sep = self._default_id_separation
+            else:
+                raise ValueError("Argument cannot be empty when it sets *id_separation* property.")
+
+        if not self._name:
+            if not isinstance(sep, (str, list)):
                 raise TypeError("*id_separation* property setter only accept 'str' or 'list[str]' type value.")
-            raise ValueError(f"This separation(s) '{sep}' cannot parse anything from the crawler name '{self.name}'.")
+            self._id_separation = sep
+            return
+
+        if isinstance(sep, str):
+            if _chk_separation(sep):
+                self._id_separation = sep
+                return
+        elif isinstance(sep, list):
+            for one_sep in sep:
+                if _chk_separation(one_sep):
+                    self._id_separation = one_sep
+                    return
+        else:
+            raise TypeError("*id_separation* property setter only accept 'str' or 'list[str]' type value.")
+        raise ValueError(f"This separation(s) '{sep}' cannot parse anything from the crawler name '{self.name}'.")
 
     @property
     def current_id(self) -> str:
@@ -182,3 +195,8 @@ class SerialCrawlerAttribute(NextableAttribute):
     @property
     def next_id(self) -> str:
         return str(self._id_cnt + 1)
+
+    @property
+    def iter_to_next_id(self) -> str:
+        self._id_cnt = int(self.next_id)
+        return str(self._id_cnt)
