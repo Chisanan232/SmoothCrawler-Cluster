@@ -1,10 +1,13 @@
 """*crawler features*
 
 The crawler feature in *SmoothCrawler-Cluster* is complex. For to be convenience and maintaining to manage it, it
-divides the crawler features into 4 parts as different single modules:
+divides the crawler features into 5 parts as different single modules:
 
 * The essential crawler (*smoothcrawler_cluster.crawler.crawlers*)
     The main body of crawler, so all the object like **XXXCrawler** would be here.
+
+* Basic attributes of crawler (*smoothcrawler_cluster.crawler.attributes*)
+    The basic attributes for crawler, e.g., crawler instance's name, ID separation of crawler instance's name.
 
 * Workflow for crawler with different roles (*smoothcrawler_cluster.crawler.workflow*)
     The details about what process it would do with its crawler role would be implemented in this section. However,
