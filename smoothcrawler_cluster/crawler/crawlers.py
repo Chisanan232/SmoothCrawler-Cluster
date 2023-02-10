@@ -28,6 +28,7 @@ from ..model import (
 from ..model._data import CrawlerTimer, TimeInterval, TimerThreshold
 from ..model.metadata import _BaseMetaData
 from .adapter import DistributedLock
+from .attributes import BaseCrawlerAttribute, SerialCrawlerAttribute
 from .dispatcher import WorkflowDispatcher
 from .workflow import HeartbeatUpdatingWorkflow
 
@@ -134,6 +135,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         heartbeat_dead_threshold: int = 3,
         zk_hosts: Optional[str] = None,
         zk_converter: Optional[Type[BaseConverter]] = None,
+        attribute: Optional[BaseCrawlerAttribute] = None,
         election_strategy: Generic[BaseElectionType] = None,
         factory: Optional[Type[BaseFactory]] = None,
     ):
@@ -169,6 +171,8 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 value is *localhost:2181*.
             zk_converter (Type[BaseConverter]): The converter to parse data content to be an object. It must be a type
                 of **BaseConverter**. Default value is **JsonStrConverter**.
+            attribute (BaseCrawlerAttribute): The attribute type of crawler. Default strategy is
+                **SerialCrawlerAttribute**.
             election_strategy (BaseElection): The strategy of election. Default strategy is **IndexElection**.
             factory (Type[BaseFactory]): The factory which saves SmoothCrawler components.
         """
@@ -183,13 +187,15 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._ensure_timeout = ensure_timeout
         self._ensure_wait = ensure_wait
 
-        if name == "":
-            # TODO (election): The naming process should be one process of *election* and let it to control.
-            name = "sc-crawler_1"
-            self._index_sep = "_"
-        self._crawler_name = name
+        if not attribute:
+            attribute = SerialCrawlerAttribute()
+        self._crawler_attr = attribute
+        self._crawler_attr.init(name=name, id_separation=index_sep)
 
-        if group == "":
+        self._crawler_name = self._crawler_attr.name
+        self._index_sep = self._crawler_attr.id_separation
+
+        if not group:
             group = "sc-crawler-cluster"
         self._crawler_group = group
 
@@ -210,24 +216,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         if not election_strategy:
             election_strategy = IndexElection()
         self._election_strategy = election_strategy
-        if not self._index_sep:
-            for sep in index_sep:
-                crawler_name_list = self._crawler_name.split(sep=sep)
-                if crawler_name_list:
-                    # Checking the separating char is valid
-                    try:
-                        int(crawler_name_list[-1])
-                    except ValueError:
-                        continue
-                    else:
-                        self._index_sep = sep
-                        self._crawler_index = crawler_name_list[-1]
-                        self._election_strategy.identity = self._crawler_index
-                        break
-        else:
-            crawler_name_list = self._crawler_name.split(sep=self._index_sep)
-            self._crawler_index = crawler_name_list[-1]
-            self._election_strategy.identity = self._crawler_index
 
         self._heartbeat_update = heartbeat_update
         self._heartbeat_update_timeout = heartbeat_update_timeout
