@@ -12,6 +12,7 @@ Please refer below to get more details of crawler module.
    :maxdepth: 1
 
    crawler_module/index
+   attributes
    adapter
    dispatcher
    workflow
