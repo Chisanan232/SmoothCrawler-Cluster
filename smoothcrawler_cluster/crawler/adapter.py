@@ -26,9 +26,12 @@ class DistributedLock:
             *args (tuple): The lock function arguments which would be used as **args*.
             **kwargs (dict): The lock function arguments which would be used as ***kwargs*.
         """
-        self._lock = lock
-        self._args = args
-        self._kwargs = kwargs
+        if args:
+            self._lock = lock(*args)
+        elif kwargs:
+            self._lock = lock(**kwargs)
+        else:
+            self._lock = lock()
 
     def run(self, function: Callable, *args, **kwargs) -> Any:
         """Try to run the target function synchronously with lock. If the lock function doesn't have special methods one
@@ -80,15 +83,8 @@ class DistributedLock:
             The return value of the target function.
 
         """
-        if args:
-            with self._lock(*args):
-                return function(*args, **kwargs)
-        elif kwargs:
-            with self._lock(**kwargs):
-                return function(*args, **kwargs)
-        else:
-            with self._lock():
-                return function(*args, **kwargs)
+        with self._lock:
+            return function(*args, **kwargs)
 
     def has_enter_or_exist(self) -> bool:
         """Check the target lock function has special methods *__enter__* and *__exit__*. In generally, the lock
