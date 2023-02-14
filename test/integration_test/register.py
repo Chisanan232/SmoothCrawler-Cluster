@@ -1,4 +1,5 @@
 import multiprocessing as mp
+from unittest.mock import MagicMock, patch
 
 import pytest
 from kazoo.client import KazooClient
@@ -49,35 +50,69 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
     @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE])
     def test_register_group_state_with_not_exist_node(self, uit_object: Register):
-        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=False)
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=False, ensure=False)
 
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
     @ZK.add_node_with_value_first(path_and_value={ZKNode.GROUP_STATE: _Testing_Value.group_state_data_str})
     @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE])
     def test_register_group_state_with_existed_node(self, uit_object: Register):
-        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=True)
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=True, ensure=False)
 
-    def __opt_register_group_state_and_verify_result(self, register: Register, node_exist: bool):
+    @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
+    @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE])
+    def test_ensure_register_group_state_with_not_exist_node(self, uit_object: Register):
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=False, ensure=True)
+
+    @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
+    @ZK.add_node_with_value_first(path_and_value={ZKNode.GROUP_STATE: _Testing_Value.group_state_data_str})
+    @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE])
+    def test_ensure_register_group_state_with_existed_node(self, uit_object: Register):
+        self.__opt_register_group_state_and_verify_result(uit_object, node_exist=True, ensure=True)
+
+    @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
+    @ZK.remove_node_finally(path=[ZKNode.GROUP_STATE])
+    def test_ensure_register_group_state_timeout(self, uit_object: Register):
+        try:
+            # Run the target function to test
+            uit_object.group_state(
+                runner=_Runner_Crawler_Value,
+                backup=_Backup_Crawler_Value,
+                ensure=True,
+                ensure_wait=0.5,
+                ensure_timeout=3,
+            )
+        except TimeoutError as e:
+            expected_err_msg = "It gets timeout of registering meta data *GroupState* to Zookeeper cluster."
+            assert str(e) == expected_err_msg, f"The expected error message should be {expected_err_msg}."
+        else:
+            assert False, ""
+
+    def __opt_register_group_state_and_verify_result(self, register: Register, node_exist: bool, ensure: bool):
         exist_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
         if node_exist is True:
             assert exist_node is not None, ""
         else:
             assert exist_node is None, ""
 
+        if ensure:
+            ut_runner = 1
+            ut_backup = 0
+        else:
+            ut_runner = _Runner_Crawler_Value
+            ut_backup = _Backup_Crawler_Value
+
         # Run the target function to test
         register.group_state(
-            runner=_Runner_Crawler_Value,
-            backup=_Backup_Crawler_Value,
-            ensure=False,
+            runner=ut_runner,
+            backup=ut_backup,
+            ensure=ensure,
             ensure_wait=0.5,
             ensure_timeout=3,
         )
 
         exist_node = self._exist_node(path=_Testing_Value.group_state_zookeeper_path)
         assert exist_node is not None, ""
-        self._verify_metadata.group_state_is_not_empty(
-            runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0"
-        )
+        self._verify_metadata.group_state_is_not_empty(runner=ut_runner, backup=ut_backup, standby_id="0")
 
     @ZK.reset_testing_env(path=[ZKNode.NODE_STATE])
     @ZK.remove_node_finally(path=[ZKNode.NODE_STATE])
