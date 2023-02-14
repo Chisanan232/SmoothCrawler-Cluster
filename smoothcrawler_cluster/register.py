@@ -38,7 +38,8 @@ class Register:
 
         Args:
             crawler_name (str): The current crawler instance's name.
-            crawler_group (str): The group name this crawler instance would belong to it. Default value is *sc-crawler-cluster*.
+            crawler_group (str): The group name this crawler instance would belong to it. Default value is
+                *sc-crawler-cluster*.
             index_sep (str): The index separation of current crawler instance's name.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             get_metadata (Callable): The callback function about getting meta-data as object.
