@@ -461,8 +461,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
         if timeout < -1:
             raise ValueError(
-                "The option *timeout* value is incorrect. Please configure more than -1, and -1 means it "
-                "never timeout."
+                "The option *timeout* value is incorrect. Please configure more than -1, and -1 means it never timeout."
             )
 
         start = time.time()
@@ -670,7 +669,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                         standby_id=self._crawler_name.split(self._index_sep)[-1],
                     )
             else:
-                raise ValueError(f"It doesn't support {role} recently.")
+                raise ValueError(f"It doesn't support '{role}' recently.")
 
             self._set_metadata(path=self._zk_path.group_state, metadata=updated_state)
 
