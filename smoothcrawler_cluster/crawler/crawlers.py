@@ -27,6 +27,7 @@ from ..model import (
 )
 from ..model._data import CrawlerTimer, TimeInterval, TimerThreshold
 from ..model.metadata import _BaseMetaData
+from ..register import Register
 from .adapter import DistributedLock
 from .attributes import BaseCrawlerAttribute, SerialCrawlerAttribute
 from .dispatcher import WorkflowDispatcher
@@ -199,8 +200,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             group = "sc-crawler-cluster"
         self._crawler_group = group
 
-        self._state_identifier = "sc-crawler-cluster_state"
-
         if not zk_hosts:
             zk_hosts = self._default_zookeeper_hosts
         self._zk_hosts = zk_hosts
@@ -213,6 +212,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         self._metadata_util = MetaDataUtil(client=self._zookeeper_client, converter=self._zk_converter)
 
+        self._state_identifier = "sc-crawler-cluster_state"
+        restrict_args = {
+            "path": self._zk_path.group_state,
+            "restrict": ZookeeperRecipe.WRITE_LOCK,
+            "identifier": self._state_identifier,
+        }
+        self.distributed_lock_adapter = DistributedLock(lock=self._zookeeper_client.restrict, **restrict_args)
+
+        self._register = None
+
         if not election_strategy:
             election_strategy = IndexElection()
         self._election_strategy = election_strategy
@@ -221,11 +230,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._heartbeat_update_timeout = heartbeat_update_timeout
         self._heartbeat_dead_threshold = heartbeat_dead_threshold
 
-        restrict_args = {
-            "path": self._zk_path.group_state,
-            "restrict": ZookeeperRecipe.WRITE_LOCK,
-            "identifier": self._state_identifier,
-        }
         self._workflow_dispatcher = WorkflowDispatcher(
             crawler_name=self._crawler_name,
             group=self._crawler_group,
@@ -233,10 +237,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             path=self._zk_path,
             get_metadata_callback=self._get_metadata,
             set_metadata_callback=self._set_metadata,
-            opt_metadata_with_lock=DistributedLock(lock=self._zookeeper_client.restrict, **restrict_args),
+            opt_metadata_with_lock=self.distributed_lock_adapter,
             crawler_process_callback=self._run_crawling_processing,
         )
-
         self._heartbeat_workflow = self._workflow_dispatcher.heartbeat()
 
         if initial:
@@ -300,6 +303,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
     def ensure_wait(self, wait: int) -> None:
         self._ensure_wait = wait
 
+    @property
+    def register(self) -> Register:
+        """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
+        if not self._register:
+            self._register = Register(
+                crawler_name=self._crawler_name,
+                crawler_group=self._crawler_group,
+                index_sep=self._index_sep,
+                path=self._zk_path,
+                get_metadata=self._get_metadata,
+                set_metadata=self._set_metadata,
+                exist_metadata=self._exist_metadata,
+                opt_metadata_with_lock=self.distributed_lock_adapter,
+            )
+        return self._register
+
     def initial(self) -> None:
         """Initial processing of entire cluster running. This processing procedure like below:
 
@@ -332,8 +351,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             None
 
         """
-        # TODO (register): The registering process should be one single process in another object may be call it as
-        #  *register* and let it to manage these processes.
         self.register_metadata()
         if self._heartbeat_workflow.stop_heartbeat is False:
             self._run_updating_heartbeat_thread()
@@ -362,130 +379,20 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # something ID of container.
         # TODO (election): The registering meta-data GroupState process should be one process of *election* and let it
         #  to control.
-        self.register_group_state()
-        # TODO (register): Parameterize the initial value of meta-data, default value should be None and let this
-        #  package to help developers set.
-        self.register_node_state()
-        self.register_task()
-        self.register_heartbeat(
+        self.register.group_state(
+            runner=self._runner,
+            backup=self._backup,
+            ensure=self._ensure_register,
+            ensure_wait=self._ensure_wait,
+            ensure_timeout=self._ensure_timeout,
+        )
+        self.register.node_state()
+        self.register.task()
+        self.register.heartbeat(
             update_time=self._heartbeat_update,
             update_timeout=self._heartbeat_update_timeout,
             heart_rhythm_timeout=self._heartbeat_dead_threshold,
         )
-
-    def register_group_state(self) -> None:
-        """Register meta-data *GroupState* to Zookeeper. This processing is more difficult than others because it's a
-        common meta-data for all crawler instances in cluster to refer. So here processing we need to wait everyone
-        sync their info to it, in other words, it runs synchronously to ensure they won't cover other's values by
-        each others.
-
-        It also has a flag *ensure_register*. If it's True, it would double confirm the meta-data would be reasonable
-        by specific conditions:
-
-        * The size of *GroupState.current_crawler* is equal to the sum of runner and backup.
-        * Current crawler instance's name be included in the list *GroupState.current_crawler*.
-
-        Returns:
-            None
-
-        """
-        for _ in range(self._ensure_timeout):
-            with self._zookeeper_client.restrict(
-                path=self._zk_path.group_state,
-                restrict=ZookeeperRecipe.WRITE_LOCK,
-                identifier=self._state_identifier,
-            ):
-                if not self._zookeeper_client.exist_node(path=self._zk_path.group_state):
-                    state = Initial.group_state(
-                        crawler_name=self._crawler_name,
-                        total_crawler=self._runner + self._backup,
-                        total_runner=self._runner,
-                        total_backup=self._backup,
-                    )
-                    self._set_metadata(path=self._zk_path.group_state, metadata=state, create_node=True)
-                else:
-                    state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-                    if not state.current_crawler or self._crawler_name not in state.current_crawler:
-                        state = Update.group_state(
-                            state,
-                            total_crawler=self._runner + self._backup,
-                            total_runner=self._runner,
-                            total_backup=self._backup,
-                            append_current_crawler=[self._crawler_name],
-                            standby_id=self._initial_standby_id,
-                        )
-                        self._set_metadata(path=self._zk_path.group_state, metadata=state)
-
-            if not self._ensure_register:
-                break
-
-            state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-            assert state, "The meta data *State* should NOT be None."
-            if len(set(state.current_crawler)) == self._total_crawler and self._crawler_name in state.current_crawler:
-                break
-            if self._ensure_wait:
-                time.sleep(self._ensure_wait)
-        else:
-            raise TimeoutError(
-                f"It gets timeout of registering meta data *GroupState* to Zookeeper cluster '{self.zookeeper_hosts}'."
-            )
-
-    def register_node_state(self) -> None:
-        """Register meta-data *NodeState* to Zookeeper.
-
-        Returns:
-            None
-
-        """
-        state = Initial.node_state(group=self._crawler_group)
-        create_node = not self._zookeeper_client.exist_node(path=self._zk_path.node_state)
-        self._set_metadata(path=self._zk_path.node_state, metadata=state, create_node=create_node)
-
-    def register_task(self) -> None:
-        """Register meta-data *Task* to Zookeeper.
-
-        Returns:
-            None
-
-        """
-        task = Initial.task()
-        create_node = not self._zookeeper_client.exist_node(path=self._zk_path.task)
-        self._set_metadata(path=self._zk_path.task, metadata=task, create_node=create_node)
-
-    def register_heartbeat(
-        self,
-        update_time: float = None,
-        update_timeout: float = None,
-        heart_rhythm_timeout: int = None,
-        time_format: str = None,
-    ) -> None:
-        """Register meta-data *Heartbeat* to Zookeeper.
-
-        Args:
-            update_time (float): The time frequency to update heartbeat info, i.g., if value is '2', it would update
-                heartbeat info every 2 seconds. The unit is seconds.
-            update_timeout (float): The timeout value of updating, i.g., if value is '3', it is time out if it doesn't
-                to update heartbeat info exceeds 3 seconds. The unit is seconds.
-            heart_rhythm_timeout (int): The threshold of timeout times to judge it is dead, i.g., if value is '3' and
-                the updating timeout exceeds 3 times, it would be marked as 'Dead_<Role>' (like 'Dead_Runner' or
-                'Dead_Backup').
-            time_format (str): The time format. This format rule is same as 'datetime'.
-
-        Returns:
-            None
-
-        """
-        update_time = f"{update_time}s" if update_time else None
-        update_timeout = f"{update_timeout}s" if update_timeout else None
-        heart_rhythm_timeout = f"{heart_rhythm_timeout}" if heart_rhythm_timeout else None
-        heartbeat = Initial.heartbeat(
-            update_time=update_time,
-            update_timeout=update_timeout,
-            heart_rhythm_timeout=heart_rhythm_timeout,
-            time_format=time_format,
-        )
-        create_node = not self._zookeeper_client.exist_node(path=self._zk_path.heartbeat)
-        self._set_metadata(path=self._zk_path.heartbeat, metadata=heartbeat, create_node=create_node)
 
     def stop_update_heartbeat(self) -> None:
         """Set the flag of *_Updating_Stop_Signal* to be True.
@@ -791,6 +698,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # example:
         # self._metadata_util.set(metadata=state, create_node=True).to_zookeeper(path=self._zk_path.group_state)
         self._metadata_util.set_metadata_to_zookeeper(path=path, metadata=metadata, create_node=create_node)
+
+    def _exist_metadata(self, path: str) -> bool:
+        return self._zookeeper_client.exist_node(path=path)
 
     def _run_crawling_processing(self, content: RunningContent) -> Any:
         """The wrapper function of core crawling function *processing_crawling_task*. This meaning is checking the
