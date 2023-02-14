@@ -135,26 +135,25 @@ class Register:
         """
 
         def update_group_state() -> bool:
-            if not self._exist_metadata(path=self._path.group_state):
-                state = Initial.group_state(
-                    crawler_name=self._crawler_name,
+            """This function be run in distributed lock. About Zookeeper distributed lock behavior, it would initial
+            the target node first which be specified to be run in lock. So the node which would be used under lock MUST
+            exist. So it remove the initialization process in pacakge version 0.2.0.
+
+            Returns:
+                A boolean type value. Returns *True* if it works finely without any issue, nor it would return *False*.
+
+            """
+            state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
+            if not state.current_crawler or self._crawler_name not in state.current_crawler:
+                state = Update.group_state(
+                    state,
                     total_crawler=runner + backup,
                     total_runner=runner,
                     total_backup=backup,
+                    append_current_crawler=[self._crawler_name],
+                    standby_id=self._initial_standby_id,
                 )
-                self._set_metadata(path=self._path.group_state, metadata=state, create_node=True)
-            else:
-                state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-                if not state.current_crawler or self._crawler_name not in state.current_crawler:
-                    state = Update.group_state(
-                        state,
-                        total_crawler=runner + backup,
-                        total_runner=runner,
-                        total_backup=backup,
-                        append_current_crawler=[self._crawler_name],
-                        standby_id=self._initial_standby_id,
-                    )
-                    self._set_metadata(path=self._path.group_state, metadata=state)
+                self._set_metadata(path=self._path.group_state, metadata=state)
 
             if not ensure:
                 return True
@@ -172,7 +171,7 @@ class Register:
             if ensure_wait:
                 time.sleep(ensure_wait)
         else:
-            raise TimeoutError(f"It gets timeout of registering meta data *GroupState* to Zookeeper cluster.")
+            raise TimeoutError("It gets timeout of registering meta data *GroupState* to Zookeeper cluster.")
 
     def node_state(self) -> None:
         """Register meta-data *NodeState* to crawler cluster.
