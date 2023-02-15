@@ -166,7 +166,7 @@ class Register:
             return False
 
         for _ in range(ensure_timeout):
-            result_is_ok = self._opt_metadata_with_lock.run_in_lock(function=update_group_state)
+            result_is_ok = self._opt_metadata_with_lock.strongly_run(function=update_group_state)
             if result_is_ok:
                 break
             if ensure_wait:
