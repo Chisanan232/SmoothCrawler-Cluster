@@ -90,15 +90,15 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
     def under_test_obj_has_special_methods(self) -> bool:
         return hasattr(self.mock_lock, "__enter__") and hasattr(self.mock_lock, "__exit__")
 
-    def template_testing_run(self, ut_lock: DistributedLock) -> None:
-        self._test_run_by_function_without_args(lock=ut_lock)
-        self._test_run_by_function_with_args(lock=ut_lock)
-        self._test_run_by_function_with_kwargs(lock=ut_lock)
+    def template_testing_weakly_run(self, ut_lock: DistributedLock) -> None:
+        self._test_weakly_run_by_function_without_args(lock=ut_lock)
+        self._test_weakly_run_by_function_with_args(lock=ut_lock)
+        self._test_weakly_run_by_function_with_kwargs(lock=ut_lock)
 
-    def template_testing_run_with_lock(self, ut_lock: DistributedLock) -> None:
-        self._test_run_with_lock_by_function_without_args(ut_lock)
-        self._test_run_with_lock_by_function_with_args(ut_lock)
-        self._test_run_with_lock_by_function_with_kwargs(ut_lock)
+    def template_testing_strongly_run(self, ut_lock: DistributedLock) -> None:
+        self._test_strongly_run_with_lock_by_function_without_args(ut_lock)
+        self._test_strongly_run_with_lock_by_function_with_args(ut_lock)
+        self._test_strongly_run_with_lock_by_function_with_kwargs(ut_lock)
 
     @_reset_flags_in_test
     def template_testing_has_enter_and_exit(self, ut_lock: DistributedLock) -> None:
@@ -113,26 +113,26 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
             ), f"The check result should be False if under test object {ut_lock} doesn't have special methods."
 
     @_reset_flags_in_test
-    def _test_run_by_function_without_args(self, lock: DistributedLock) -> None:
-        return_val = lock.run(function=_test_func)
+    def _test_weakly_run_by_function_without_args(self, lock: DistributedLock) -> None:
+        return_val = lock.weakly_run(function=_test_func)
         self._verify(return_val, _NO_ARGS_RETURN_VALUE)
 
     @_reset_flags_in_test
-    def _test_run_by_function_with_args(self, lock: DistributedLock) -> None:
+    def _test_weakly_run_by_function_with_args(self, lock: DistributedLock) -> None:
         args = ("func_test",)
-        return_val = lock.run(_test_func, *args)
+        return_val = lock.weakly_run(_test_func, *args)
         self._verify(return_val, args)
 
     @_reset_flags_in_test
-    def _test_run_by_function_with_kwargs(self, lock: DistributedLock) -> None:
+    def _test_weakly_run_by_function_with_kwargs(self, lock: DistributedLock) -> None:
         kwargs = {"func_test": "func_test_val"}
-        return_val = lock.run(_test_func, **kwargs)
+        return_val = lock.weakly_run(_test_func, **kwargs)
         self._verify(return_val, kwargs)
 
     @_reset_flags_in_test
-    def _test_run_with_lock_by_function_without_args(self, lock: DistributedLock) -> None:
+    def _test_strongly_run_with_lock_by_function_without_args(self, lock: DistributedLock) -> None:
         try:
-            return_val = lock.run_in_lock(function=_test_func)
+            return_val = lock.strongly_run(function=_test_func)
         except Exception as e:
             if not self.under_test_obj_has_special_methods:
                 self._verify_exception(e)
@@ -142,10 +142,10 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
             self._verify(return_val, _NO_ARGS_RETURN_VALUE)
 
     @_reset_flags_in_test
-    def _test_run_with_lock_by_function_with_args(self, lock: DistributedLock) -> None:
+    def _test_strongly_run_with_lock_by_function_with_args(self, lock: DistributedLock) -> None:
         args = ("func_test",)
         try:
-            return_val = lock.run_in_lock(_test_func, *args)
+            return_val = lock.strongly_run(_test_func, *args)
         except Exception as e:
             if not self.under_test_obj_has_special_methods:
                 self._verify_exception(e)
@@ -155,10 +155,10 @@ class DistributedLockTestSpec(metaclass=ABCMeta):
             self._verify(return_val, args)
 
     @_reset_flags_in_test
-    def _test_run_with_lock_by_function_with_kwargs(self, lock: DistributedLock) -> None:
+    def _test_strongly_run_with_lock_by_function_with_kwargs(self, lock: DistributedLock) -> None:
         kwargs = {"func_test": "func_test_val"}
         try:
-            return_val = lock.run_in_lock(_test_func, **kwargs)
+            return_val = lock.strongly_run(_test_func, **kwargs)
         except Exception as e:
             if not self.under_test_obj_has_special_methods:
                 self._verify_exception(e)
@@ -199,29 +199,29 @@ class BaseDistributedLockTest(DistributedLockTestSpec, ABC):
         kwargs = {"test": "test_val"}
         return DistributedLock(lock=self.mock_lock, **kwargs)
 
-    def test_run_by_lock(self, lock: DistributedLock):
-        self.template_testing_run(lock)
+    def test_weakly_run_by_lock(self, lock: DistributedLock):
+        self.template_testing_weakly_run(lock)
 
-    def test_run_in_lock_by_lock(self, lock: DistributedLock):
-        self.template_testing_run_with_lock(lock)
+    def test_strongly_run_by_lock(self, lock: DistributedLock):
+        self.template_testing_strongly_run(lock)
 
     def test_has_enter_or_exist_by_lock(self, lock: DistributedLock):
         self.template_testing_has_enter_and_exit(ut_lock=lock)
 
-    def test_run_by_lock_with_args(self, lock_with_args: DistributedLock):
-        self.template_testing_run(lock_with_args)
+    def test_weakly_run_by_lock_with_args(self, lock_with_args: DistributedLock):
+        self.template_testing_weakly_run(lock_with_args)
 
-    def test_run_in_lock_by_lock_with_args(self, lock_with_args: DistributedLock):
-        self.template_testing_run_with_lock(lock_with_args)
+    def test_strongly_run_by_lock_with_args(self, lock_with_args: DistributedLock):
+        self.template_testing_strongly_run(lock_with_args)
 
     def test_has_enter_or_exist_by_lock_with_args(self, lock_with_args: DistributedLock):
         self.template_testing_has_enter_and_exit(ut_lock=lock_with_args)
 
-    def test_run_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
-        self.template_testing_run(lock_with_kwargs)
+    def test_weakly_run_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
+        self.template_testing_weakly_run(lock_with_kwargs)
 
-    def test_run_in_lock_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
-        self.template_testing_run_with_lock(lock_with_kwargs)
+    def test_strongly_run_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
+        self.template_testing_strongly_run(lock_with_kwargs)
 
     def test_has_enter_or_exist_by_lock_with_kwargs(self, lock_with_kwargs: DistributedLock):
         self.template_testing_has_enter_and_exit(ut_lock=lock_with_kwargs)
