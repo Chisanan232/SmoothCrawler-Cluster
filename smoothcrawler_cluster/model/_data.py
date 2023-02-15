@@ -9,29 +9,66 @@ from typing import Callable
 class CrawlerName:
     """*Data about crawler's name*"""
 
-    _name: str = None
+    _group: str = None
+    _base_name: str = None
+    _crawler_id: str = None
     _index_sep: str = None
 
-    @property
-    def name(self) -> str:
-        """:obj:`str`: Properties with both getter and setter for crawler instance's name. In generally, it should be
-        unique.
+    def __repr__(self):
+        """It would return the entire crawler instance's name which is same as *__str__* and includes the group which
+        it is in.
         """
-        return self._name
+        return f"<{self.__class__.__name__} object(group: {self.group}, name: {str(self)})>"
 
-    @name.setter
-    def name(self, name: str) -> None:
-        self._name = str(name)
+    def __str__(self):
+        """It would return the entire crawler instance's name which combines with *base_name*, *index_separation* and
+        *id*.
+        """
+        return f"{self.base_name}{self.index_separation}{self.id}"
 
     @property
-    def index_sep(self) -> str:
+    def group(self) -> str:
+        """:obj:`str`: Properties with both getter and setter for which cluster group the crawler instance is in."""
+        return self._group
+
+    @group.setter
+    def group(self, group: str) -> None:
+        self._group = str(group)
+
+    @property
+    def base_name(self) -> str:
+        """:obj:`str`: Properties with both getter and setter for crawler instance's name part. Its value could be
+        repeated, but the combination of *base_name* and *id* should be unique to let cluster could identify it. For
+        example, a crawler instance's name would be like ``sc-crawler_1``, the ``sc-crawler`` is *base_name* part, and
+        the ``_`` is the index separation, ``1`` is its ID.
+        """
+        return self._base_name
+
+    @base_name.setter
+    def base_name(self, name: str) -> None:
+        self._base_name = str(name)
+
+    @property
+    def id(self) -> str:
+        """:obj:`str`: Properties with both getter and setter for the identity of crawler instance. It MUST be unique
+        so that it could combine with *base_name* and *index_separation* as an entire unique crawler's name which could
+        be identified by cluster.
+        """
+        return self._crawler_id
+
+    @id.setter
+    def id(self, crawler_id: str) -> None:
+        self._crawler_id = str(crawler_id)
+
+    @property
+    def index_separation(self) -> str:
         """:obj:`str`: Properties with both getter and setter for parsing to get index info from current crawler
         instance's name.
         """
         return self._index_sep
 
-    @index_sep.setter
-    def index_sep(self, index_sep: str) -> None:
+    @index_separation.setter
+    def index_separation(self, index_sep: str) -> None:
         self._index_sep = str(index_sep)
 
 
