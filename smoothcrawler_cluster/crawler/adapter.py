@@ -33,7 +33,7 @@ class DistributedLock:
         else:
             self._lock = lock()
 
-    def run(self, function: Callable, *args, **kwargs) -> Any:
+    def weakly_run(self, function: Callable, *args, **kwargs) -> Any:
         """Try to run the target function synchronously with lock. If the lock function doesn't have special methods one
         of *__enter__* and *__exit__*, it would keep running the function directly without lock.
 
@@ -50,7 +50,7 @@ class DistributedLock:
             return self._run_within_lock(function, *args, **kwargs)
         return function(*args, **kwargs)
 
-    def run_in_lock(self, function: Callable, *args, **kwargs) -> Any:
+    def strongly_run(self, function: Callable, *args, **kwargs) -> Any:
         """Try to run the target function synchronously with lock. The lock function must have both of special methods
         *__enter__* and *__exit__*, nor it would raise an exception to it.
 

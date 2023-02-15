@@ -441,7 +441,7 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
         node_state.role = CrawlerStateRole.RUNNER
         self._set_metadata(path=self._path.node_state, metadata=node_state)
 
-        self._opt_metadata_with_lock.run(function=_update_group_state)
+        self._opt_metadata_with_lock.strongly_run(function=_update_group_state)
 
     def hand_over_task(self, task: Task) -> None:
         """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
