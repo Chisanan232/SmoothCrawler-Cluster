@@ -13,7 +13,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
 )
-from smoothcrawler_cluster.model import CrawlerRole, Initial, TaskResult, Update
+from smoothcrawler_cluster.model import CrawlerRole, Initial, TaskState, Update
 from smoothcrawler_cluster.model._data import CrawlerTimer, TimeInterval, TimerThreshold
 
 from ..._config import Zookeeper_Hosts
@@ -159,7 +159,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 1, "fail_count": 0},
-            running_status=TaskResult.DONE.value,
+            running_status=TaskState.DONE.value,
             result_detail_len=1,
         )
         self._verify_metadata.one_task_result_detail(
@@ -244,7 +244,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 0, "fail_count": 0},
-            running_status=TaskResult.NOTHING.value,
+            running_status=TaskState.NOTHING.value,
             result_detail_len=0,
         )
         self._verify_metadata.one_task_result_detail(
@@ -323,7 +323,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 0, "fail_count": 1},
-            running_status=TaskResult.DONE.value,
+            running_status=TaskState.DONE.value,
             result_detail_len=1,
         )
         self._verify_metadata.one_task_result_detail(
@@ -366,7 +366,7 @@ class TestPrimaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
                 self._create_node(path=_node_path, value=bytes(node_state_data_str, "utf-8"), include_data=True)
 
         def _initial_task(_task_path: str) -> None:
-            task = Initial.task(running_state=TaskResult.PROCESSING)
+            task = Initial.task(running_state=TaskState.PROCESSING)
             if self._exist_node(path=_task_path) is None:
                 task_data_str = json.dumps(task.to_readable_object())
                 self._create_node(path=_task_path, value=bytes(task_data_str, "utf-8"), include_data=True)

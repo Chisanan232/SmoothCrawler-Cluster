@@ -9,7 +9,7 @@ from collections import namedtuple
 from datetime import datetime as dt
 from typing import List, Optional, TypeVar, Union
 
-from .metadata_enum import CrawlerRole, HeartState, TaskResult
+from .metadata_enum import CrawlerRole, HeartState, TaskState
 
 _DatetimeType = TypeVar("_DatetimeType", bound=dt)
 
@@ -557,10 +557,10 @@ class Task(_BaseMetaData):
         return self._running_status
 
     @running_status.setter
-    def running_status(self, running_status: Union[str, TaskResult]) -> None:
-        if isinstance(running_status, (str, TaskResult)) is False:
+    def running_status(self, running_status: Union[str, TaskState]) -> None:
+        if isinstance(running_status, (str, TaskState)) is False:
             raise ValueError("Property *running_status* only accept *str* or *TaskResult* type value.")
-        result_detail = running_status.value if isinstance(running_status, TaskResult) else running_status
+        result_detail = running_status.value if isinstance(running_status, TaskState) else running_status
         self._running_status = result_detail
 
     @property
@@ -849,12 +849,12 @@ class Heartbeat(_BaseMetaData):
         return self._task_state
 
     @task_state.setter
-    def task_state(self, task_state: Union[str, TaskResult]) -> None:
-        if isinstance(task_state, (str, TaskResult)) is False:
+    def task_state(self, task_state: Union[str, TaskState]) -> None:
+        if isinstance(task_state, (str, TaskState)) is False:
             raise ValueError("Property *task_state* only accept *str* or *TaskResult* type value.")
-        if isinstance(task_state, str) and task_state not in [i.value for i in TaskResult]:
+        if isinstance(task_state, str) and task_state not in [i.value for i in TaskState]:
             raise ValueError("The value of property *task_state* should be as *TaskResult* value.")
-        task_state = task_state.value if isinstance(task_state, TaskResult) else task_state
+        task_state = task_state.value if isinstance(task_state, TaskState) else task_state
         self._task_state = task_state
 
     @classmethod

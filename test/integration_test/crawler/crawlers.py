@@ -15,7 +15,7 @@ from smoothcrawler_cluster.model import (
     GroupState,
     Initial,
     NodeState,
-    TaskResult,
+    TaskState,
     Update,
 )
 
@@ -458,7 +458,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 1, "fail_count": 0},
-            running_status=TaskResult.DONE.value,
+            running_status=TaskState.DONE.value,
             result_detail_len=1,
         )
         self._verify_metadata.one_task_result_detail(
@@ -540,7 +540,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 0, "fail_count": 0},
-            running_status=TaskResult.NOTHING.value,
+            running_status=TaskState.NOTHING.value,
             result_detail_len=0,
         )
         self._verify_metadata.one_task_result_detail(
@@ -578,7 +578,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 self._create_node(path=_node_path, value=bytes(node_state_data_str, "utf-8"), include_data=True)
 
         def _initial_task(_task_path: str) -> None:
-            task = Initial.task(running_state=TaskResult.PROCESSING)
+            task = Initial.task(running_state=TaskState.PROCESSING)
             if self._exist_node(path=_task_path) is None:
                 task_data_str = json.dumps(task.to_readable_object())
                 self._create_node(path=_task_path, value=bytes(task_data_str, "utf-8"), include_data=True)

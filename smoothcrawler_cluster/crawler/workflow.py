@@ -24,7 +24,7 @@ from ..model import (
     ResultDetail,
     RunningResult,
     Task,
-    TaskResult,
+    TaskState,
     Update,
 )
 from ..model._data import CrawlerName, CrawlerTimer, MetaDataOpt, MetaDataPath
@@ -209,7 +209,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
             original_task = self._get_metadata(path=self._path.task, as_obj=Task)
             if index == 0:
                 current_task = Update.task(
-                    task=original_task, in_progressing_id=content.task_id, running_status=TaskResult.PROCESSING
+                    task=original_task, in_progressing_id=content.task_id, running_status=TaskState.PROCESSING
                 )
             else:
                 current_task = Update.task(task=original_task, in_progressing_id=content.task_id)
@@ -234,7 +234,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
                 result_detail.append(
                     ResultDetail(
                         task_id=content.task_id,
-                        state=TaskResult.ERROR.value,
+                        state=TaskState.ERROR.value,
                         status_code=500,
                         response=None,
                         error_msg=f"{e}",
@@ -252,7 +252,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
                 result_detail.append(
                     ResultDetail(
                         task_id=content.task_id,
-                        state=TaskResult.DONE.value,
+                        state=TaskState.DONE.value,
                         status_code=200,
                         response=data,
                         error_msg=None,
@@ -269,7 +269,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
 
         # Finish all tasks, record the running result and reset the content ...
         current_task = Update.task(
-            task=current_task, running_content=[], in_progressing_id="-1", running_status=TaskResult.DONE
+            task=current_task, running_content=[], in_progressing_id="-1", running_status=TaskState.DONE
         )
         self._set_metadata(path=self._path.task, metadata=current_task)
 
@@ -444,10 +444,10 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
             None
 
         """
-        if task.running_status == TaskResult.PROCESSING.value:
+        if task.running_status == TaskState.PROCESSING.value:
             # Run the tasks from the start index
             self._set_metadata(path=self._path.task, metadata=task)
-        elif task.running_status == TaskResult.ERROR.value:
+        elif task.running_status == TaskState.ERROR.value:
             # Reset some specific attributes
             updated_task = Update.task(
                 task,

@@ -10,5 +10,5 @@ Below are the currently enum objects it supports:
    :maxdepth: 1
 
    crawler_role
-   task_result
+   task_state
    heartbeat_state

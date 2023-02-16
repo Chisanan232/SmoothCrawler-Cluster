@@ -12,7 +12,7 @@ from smoothcrawler_cluster.model import (
     HeartState,
     NodeState,
     Task,
-    TaskResult,
+    TaskState,
 )
 
 from ._metadata_values import (
@@ -283,7 +283,7 @@ class VerifyMetaData:
         _equal_assertion(task.cookies, cookies)
         _equal_assertion(task.authorization, authorization)
         if running_status is None:
-            running_status = TaskResult.NOTHING.value
+            running_status = TaskState.NOTHING.value
         _equal_assertion(task.running_status, running_status)
         if running_result is None:
             running_result = {"success_count": 0, "fail_count": 0}
@@ -456,7 +456,7 @@ class VerifyMetaData:
             heartbeat.update_timeout[:-1]
         ), ""
         assert heartbeat.healthy_state == HeartState.HEALTHY.value, ""
-        assert heartbeat.task_state == TaskResult.NOTHING.value, ""
+        assert heartbeat.task_state == TaskState.NOTHING.value, ""
 
     def one_heartbeat_content_updating_state(self, stop_updating: bool) -> None:
         heartbeat_paths = _ZKNodePathUtils.all_heartbeat(size=1, start_index=1)
@@ -552,10 +552,10 @@ class VerifyMetaData:
         assert len(one_detail.running_content) == 0, ""
         assert one_detail.in_progressing_id == "-1", ""
         assert one_detail.running_result == {"success_count": 1, "fail_count": 0}, ""
-        assert one_detail.running_status == TaskResult.DONE.value, ""
+        assert one_detail.running_status == TaskState.DONE.value, ""
         assert one_detail.result_detail[0] == {
             "task_id": _Task_Running_Content_Value[0]["task_id"],
-            "state": TaskResult.DONE.value,
+            "state": TaskState.DONE.value,
             "status_code": 200,
             "response": "Example Domain",
             "error_msg": None,
@@ -566,10 +566,10 @@ class VerifyMetaData:
         assert len(one_detail.running_content) == 0, ""
         assert one_detail.in_progressing_id == "-1", ""
         assert one_detail.running_result == {"success_count": 0, "fail_count": 1}, ""
-        assert one_detail.running_status == TaskResult.DONE.value, ""
+        assert one_detail.running_status == TaskState.DONE.value, ""
         assert one_detail.result_detail[0] == {
             "task_id": _Task_Running_Content_Value[0]["task_id"],
-            "state": TaskResult.ERROR.value,
+            "state": TaskState.ERROR.value,
             "status_code": 500,
             "response": None,
             "error_msg": "For test by PyTest.",
@@ -580,7 +580,7 @@ class VerifyMetaData:
         assert len(one_detail.running_content) == 1, ""
         assert one_detail.in_progressing_id == "0", ""
         assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert one_detail.running_status == TaskResult.PROCESSING.value, ""
+        assert one_detail.running_status == TaskState.PROCESSING.value, ""
         assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     @classmethod
@@ -588,7 +588,7 @@ class VerifyMetaData:
         assert len(one_detail.running_content) == 0, ""
         assert one_detail.in_progressing_id == "-1", ""
         assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert one_detail.running_status == TaskResult.NOTHING.value, ""
+        assert one_detail.running_status == TaskState.NOTHING.value, ""
         assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     @classmethod
@@ -596,7 +596,7 @@ class VerifyMetaData:
         assert len(one_detail.running_content) == 1, ""
         assert one_detail.in_progressing_id == "-1", ""
         assert one_detail.running_result == {"success_count": 0, "fail_count": 0}, ""
-        assert one_detail.running_status == TaskResult.NOTHING.value, ""
+        assert one_detail.running_status == TaskState.NOTHING.value, ""
         assert len(one_detail.result_detail) == 0, "It should NOT have any running result because it is backup role."
 
     def __get_metadata_opts(

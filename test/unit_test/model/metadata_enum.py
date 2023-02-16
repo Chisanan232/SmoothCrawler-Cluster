@@ -1,11 +1,7 @@
 from abc import ABCMeta
 from enum import Enum
 
-from smoothcrawler_cluster.model.metadata_enum import (
-    CrawlerRole,
-    HeartState,
-    TaskResult,
-)
+from smoothcrawler_cluster.model.metadata_enum import CrawlerRole, HeartState, TaskState
 
 
 class _EnumObjTest(metaclass=ABCMeta):
@@ -44,22 +40,22 @@ class TestTaskResult(_EnumObjTest):
     """Test for the enum object key-value mapping."""
 
     def test_processing_value(self) -> None:
-        under_test_enum = TaskResult.PROCESSING
+        under_test_enum = TaskState.PROCESSING
         expected_value = "processing"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_done_value(self) -> None:
-        under_test_enum = TaskResult.DONE
+        under_test_enum = TaskState.DONE
         expected_value = "done"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_terminate_value(self) -> None:
-        under_test_enum = TaskResult.TERMINATE
+        under_test_enum = TaskState.TERMINATE
         expected_value = "terminate"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_error_value(self) -> None:
-        under_test_enum = TaskResult.ERROR
+        under_test_enum = TaskState.ERROR
         expected_value = "error"
         self._run_enum_value_test(under_test_enum, expected_value)
 

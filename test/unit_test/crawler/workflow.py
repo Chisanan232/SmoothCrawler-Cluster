@@ -16,7 +16,7 @@ from smoothcrawler_cluster.model import (
     CrawlerRole,
     RunningResult,
     Task,
-    TaskResult,
+    TaskState,
     Update,
 )
 from smoothcrawler_cluster.model._data import CrawlerName, MetaDataOpt, MetaDataPath
@@ -83,7 +83,7 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
             raise NotImplementedError("NotImplementedError by PyTest")
 
         mock_task = Mock(Task())
-        mock_task.running_status = TaskResult.PROCESSING.value
+        mock_task.running_status = TaskState.PROCESSING.value
         mock_task.running_content = _Task_Running_Content_Value
         mock_task.in_progressing_id = int(_Task_In_Progressing_Id_Value)
         mock_task.running_result = _Task_Running_Result
@@ -128,7 +128,7 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
         mock_update_task.assert_called_once_with(
             task=mock_task,
             in_progressing_id=_One_Running_Content_As_Object.task_id,
-            running_status=TaskResult.PROCESSING,
+            running_status=TaskState.PROCESSING,
         )
         prop_task.assert_has_calls([call for _ in range(2)])
         workflow._get_metadata.assert_called_once_with(path=type(mock_metadata_path).task, as_obj=Task)
@@ -147,7 +147,7 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
 
     def test_hand_over_task_with_processing(self):
         # Mock function what it needs
-        mock_task = self._mock_task(TaskResult.PROCESSING)
+        mock_task = self._mock_task(TaskState.PROCESSING)
         mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
         mock_distributed_lock = self._mock_distributed_lock()
 
@@ -161,7 +161,7 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
 
     def test_hand_over_task_with_error(self):
         # Mock function what it needs
-        mock_task = self._mock_task(TaskResult.ERROR)
+        mock_task = self._mock_task(TaskState.ERROR)
         mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
         mock_distributed_lock = self._mock_distributed_lock()
 
@@ -181,8 +181,8 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
             prop_task.assert_called_once()
             workflow._set_metadata.assert_called_once_with(path=type(mock_metadata_path).task, metadata=mock_task)
 
-    @pytest.mark.parametrize("task_state", [TaskResult.NOTHING, TaskResult.TERMINATE, TaskResult.DONE])
-    def test_hand_over_task_with_other_status(self, task_state: TaskResult):
+    @pytest.mark.parametrize("task_state", [TaskState.NOTHING, TaskState.TERMINATE, TaskState.DONE])
+    def test_hand_over_task_with_other_status(self, task_state: TaskState):
         # Mock function what it needs
         mock_task = self._mock_task(task_state)
         mock_metadata_path, prop_task = self._mock_prop_metadata_task_path()
@@ -196,7 +196,7 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
         prop_task.assert_not_called()
         workflow._set_metadata.assert_not_called()
 
-    def _mock_task(self, task_state: TaskResult) -> Mock:
+    def _mock_task(self, task_state: TaskState) -> Mock:
         mock_task = Mock(Task())
         mock_task.running_status = task_state.value
         return mock_task

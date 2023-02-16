@@ -52,7 +52,7 @@ class CrawlerRole(Enum):
     """**Dead Backup Runner** is same as **Dead Runner** but it's for **Backup Runner**."""
 
 
-class TaskResult(Enum):
+class TaskState(Enum):
     """*The task running state*
 
     The task result means it is the result of running web spider task. The web spider task could classify to be

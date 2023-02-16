@@ -13,7 +13,7 @@ from smoothcrawler_cluster.model import (
     NodeState,
     RunningContent,
     Task,
-    TaskResult,
+    TaskState,
 )
 
 from ._config import Test_Task_API_Path, Test_Task_HTTP_Host
@@ -64,7 +64,7 @@ _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}
 _Task_In_Progressing_Id_Value: str = "0"
 _Task_Running_Result: dict = {"success_count": 0, "fail_count": 0}
-_Task_Running_State: str = str(TaskResult.NOTHING.value)
+_Task_Running_State: str = str(TaskState.NOTHING.value)
 _Task_Result_Detail_Value: List[dict] = [
     {"task_id": 0, "state": "done", "status_code": 200, "response": "", "error_msg": None}
 ]
@@ -76,7 +76,7 @@ _Update_Value: str = "2s"
 _Update_Timeout_Value: str = "4s"
 _Heartbeat_Timeout_Value: str = "2"
 _Heartbeat_State_Value: str = HeartState.HEALTHY.value
-_Task_State_Value: str = TaskResult.PROCESSING.value
+_Task_State_Value: str = TaskState.PROCESSING.value
 
 _Waiting_Time: int = 5
 
