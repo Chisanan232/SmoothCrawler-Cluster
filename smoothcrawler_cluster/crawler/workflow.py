@@ -46,12 +46,7 @@ class BaseWorkflow(metaclass=ABCMeta):
         could only use `<BaseWorkflow object>.run(*args, **kwargs)` to run it.
     """
 
-    def __init__(
-        self,
-        name: CrawlerName,
-        path: Type[MetaDataPath],
-        metadata_opts_callback: MetaDataOpt,
-    ):
+    def __init__(self, name: CrawlerName, path: Type[MetaDataPath], metadata_opts_callback: MetaDataOpt):
         """
 
         Args:
