@@ -22,12 +22,10 @@ _Testing_Value: _TestValue = _TestValue()
 
 def _get_workflow_arguments() -> dict:
     workflow_args = {
-        "crawler_name": "test_name",
-        "index_sep": "test_index_sep",
+        "name": Mock(),
         "path": Mock(),
-        "get_metadata": Mock(),
-        "set_metadata": Mock(),
-        "opt_metadata_with_lock": Mock(),
+        "metadata_opts_callback": Mock(),
+        "lock": Mock(),
         "crawler_process_callback": Mock(),
     }
     return workflow_args
