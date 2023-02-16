@@ -30,7 +30,7 @@ from ..._values import (
 from ..._verify import VerifyMetaData
 from .._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from .._test_utils._multirunner import run_2_diff_workers, run_multi_diff_workers
-from ._spec import MultiCrawlerTestSuite, generate_crawler_name
+from ._spec import MultiCrawlerTestSuite, generate_crawler_name, generate_metadata_opts
 
 _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
@@ -59,8 +59,7 @@ def _get_base_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
     return {
         "name": generate_crawler_name(zk_crawler),
         "path": zk_crawler._zk_path,
-        "get_metadata": zk_crawler._get_metadata,
-        "set_metadata": zk_crawler._set_metadata,
+        "metadata_opts_callback": generate_metadata_opts(zk_crawler),
     }
 
 

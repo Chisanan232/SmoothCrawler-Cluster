@@ -50,22 +50,23 @@ class BaseWorkflow(metaclass=ABCMeta):
         self,
         name: CrawlerName,
         path: Type[MetaDataPath],
-        get_metadata: Callable,
-        set_metadata: Callable,
+        metadata_opts_callback: MetaDataOpt,
     ):
         """
 
         Args:
-            name (str): The data object **CrawlerName** which provides some attribute like crawler instance's name or
-                ID, etc.
+            name (CrawlerName): The data object **CrawlerName** which provides some attribute like crawler instance's
+                name or ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
-            get_metadata (Callable): The callback function about getting meta-data as object.
-            set_metadata (Callable): The callback function about setting meta-data from object.
+            metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
+                functions about getting and setting meta-data.
         """
         self._crawler_name = name
         self._path = path
-        self._get_metadata = get_metadata
-        self._set_metadata = set_metadata
+        # get_metadata (Callable): The callback function about getting meta-data as object.
+        self._get_metadata = metadata_opts_callback.get_callback
+        # set_metadata (Callable): The callback function about setting meta-data from object.
+        self._set_metadata = metadata_opts_callback.set_callback
 
     @abstractmethod
     def run(self, *args, **kwargs) -> Any:
@@ -95,27 +96,25 @@ class BaseRoleWorkflow(BaseWorkflow):
         self,
         name: CrawlerName,
         path: Type[MetaDataPath],
-        get_metadata: Callable,
-        set_metadata: Callable,
+        metadata_opts_callback: MetaDataOpt,
         opt_metadata_with_lock: DistributedLock,
         crawler_process_callback: Callable,
     ):
         """
 
         Args:
-            name (str): The data object **CrawlerName** which provides some attribute like crawler instance's name or
-                ID, etc.
+            name (CrawlerName): The data object **CrawlerName** which provides some attribute like crawler instance's
+                name or ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
-            get_metadata (Callable): The callback function about getting meta-data as object.
-            set_metadata (Callable): The callback function about setting meta-data from object.
+            metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
+                functions about getting and setting meta-data.
             opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         super().__init__(
             name=name,
             path=path,
-            get_metadata=get_metadata,
-            set_metadata=set_metadata,
+            metadata_opts_callback=metadata_opts_callback,
         )
         self._opt_metadata_with_lock = opt_metadata_with_lock
         self._crawler_process_callback = crawler_process_callback
