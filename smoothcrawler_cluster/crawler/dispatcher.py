@@ -20,7 +20,6 @@ from typing import Callable, Optional, Union
 from smoothcrawler_cluster.crawler.adapter import DistributedLock
 from smoothcrawler_cluster.crawler.workflow import (
     BaseRoleWorkflow,
-    BaseWorkflow,
     HeartbeatUpdatingWorkflow,
     PrimaryBackupRunnerWorkflow,
     RunnerWorkflow,
@@ -28,7 +27,7 @@ from smoothcrawler_cluster.crawler.workflow import (
 )
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
 from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
-from smoothcrawler_cluster.model._data import MetaDataPath
+from smoothcrawler_cluster.model._data import CrawlerName, MetaDataPath
 
 
 class WorkflowDispatcher:
@@ -42,9 +41,7 @@ class WorkflowDispatcher:
 
     def __init__(
         self,
-        crawler_name: str,
-        group: str,
-        index_sep: str,
+        name: CrawlerName,
         path: MetaDataPath,
         get_metadata_callback: Callable,
         set_metadata_callback: Callable,
@@ -54,17 +51,15 @@ class WorkflowDispatcher:
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (str): The data object **CrawlerName** which provides some attribute like crawler instance's name or
+                ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             get_metadata_callback (Callable): The callback function about getting meta-data as object.
             set_metadata_callback (Callable): The callback function about setting meta-data from object.
             opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
-        self._crawler_name = crawler_name
-        self._group = group
-        self._index_sep = index_sep
+        self._crawler_name = name
         self._path = path
         self._get_metadata = get_metadata_callback
         self._set_metadata = set_metadata_callback
@@ -97,8 +92,7 @@ class WorkflowDispatcher:
 
         """
         role_workflow_args = {
-            "crawler_name": self._crawler_name,
-            "index_sep": self._index_sep,
+            "name": self._crawler_name,
             "path": self._path,
             "get_metadata": self._get_metadata,
             "set_metadata": self._set_metadata,
@@ -114,7 +108,7 @@ class WorkflowDispatcher:
                 return SecondaryBackupRunnerWorkflow(**role_workflow_args)
         else:
             if self._is(role, CrawlerStateRole.DEAD_RUNNER) or self._is(role, CrawlerStateRole.DEAD_BACKUP_RUNNER):
-                raise CrawlerIsDeadError(crawler_name=self._crawler_name, group=self._group)
+                raise CrawlerIsDeadError(crawler_name=str(self._crawler_name), group=self._crawler_name.group)
             else:
                 raise NotImplementedError(f"It doesn't support crawler role {role} in *SmoothCrawler-Cluster*.")
 
@@ -126,8 +120,7 @@ class WorkflowDispatcher:
 
         """
         workflow_args = {
-            "crawler_name": self._crawler_name,
-            "index_sep": self._index_sep,
+            "name": self._crawler_name,
             "path": self._path,
             "get_metadata": self._get_metadata,
             "set_metadata": self._set_metadata,
@@ -159,4 +152,4 @@ class WorkflowDispatcher:
 
         """
         group_state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-        return self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id
+        return self._crawler_name.id == group_state.standby_id

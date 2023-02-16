@@ -21,6 +21,7 @@ from ..._config import Zookeeper_Hosts
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
 from .._test_utils._instance_value import _TestValue
 from .._test_utils._zk_testsuite import ZK, ZKNode
+from ._spec import generate_crawler_name
 
 _Testing_Value: _TestValue = _TestValue()
 
@@ -44,9 +45,7 @@ class TestWorkflowDispatcher(ZK):
         )
 
         return WorkflowDispatcher(
-            crawler_name=zk_crawler.name,
-            group=_Testing_Value.group,
-            index_sep=zk_crawler._index_sep,
+            name=generate_crawler_name(zk_crawler),
             path=zk_crawler._zk_path,
             get_metadata_callback=zk_crawler._get_metadata,
             set_metadata_callback=zk_crawler._set_metadata,
