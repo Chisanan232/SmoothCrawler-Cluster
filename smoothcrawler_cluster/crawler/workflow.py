@@ -61,7 +61,7 @@ class BaseWorkflow(metaclass=ABCMeta):
             metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
                 functions about getting and setting meta-data.
         """
-        self._crawler_name = name
+        self._crawler_name_data = name
         self._path = path
         # get_metadata (Callable): The callback function about getting meta-data as object.
         self._get_metadata = metadata_opts_callback.get_callback
@@ -424,8 +424,8 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
             state.total_backup = state.total_backup - 1
             state.current_crawler.remove(dead_crawler_name)
             state.current_runner.remove(dead_crawler_name)
-            state.current_runner.append(str(self._crawler_name))
-            state.current_backup.remove(str(self._crawler_name))
+            state.current_runner.append(str(self._crawler_name_data))
+            state.current_backup.remove(str(self._crawler_name_data))
             state.fail_crawler.append(dead_crawler_name)
             state.fail_runner.append(dead_crawler_name)
             state.standby_id = str(int(state.standby_id) + 1)
@@ -498,7 +498,7 @@ class SecondaryBackupRunnerWorkflow(BaseRoleWorkflow):
         """
         while True:
             group_state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-            if str(self._crawler_name.id) == group_state.standby_id:
+            if str(self._crawler_name_data.id) == group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
             time.sleep(timer.time_interval.check_standby_id)
