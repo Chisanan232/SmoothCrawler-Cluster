@@ -17,6 +17,7 @@ from .._values import (
 from .._verify import VerifyMetaData
 from ._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from ._test_utils._zk_testsuite import ZK, ZKNode, ZKTestSpec
+from .crawler._spec import generate_crawler_name, generate_metadata_opts
 
 _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
@@ -37,14 +38,10 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
             runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, initial=False, zk_hosts=Zookeeper_Hosts
         )
         return Register(
-            crawler_name=zk_crawler.name,
-            crawler_group=zk_crawler.group,
-            index_sep=zk_crawler._index_sep,
+            name=generate_crawler_name(zk_crawler),
             path=zk_crawler._zk_path,
-            get_metadata=zk_crawler._get_metadata,
-            set_metadata=zk_crawler._set_metadata,
-            exist_metadata=zk_crawler._exist_metadata,
-            opt_metadata_with_lock=zk_crawler.distributed_lock_adapter,
+            metadata_opts_callback=generate_metadata_opts(zk_crawler),
+            lock=zk_crawler.distributed_lock_adapter,
         )
 
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])

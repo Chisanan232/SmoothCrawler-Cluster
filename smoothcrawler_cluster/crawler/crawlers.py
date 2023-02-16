@@ -322,14 +322,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
         if not self._register:
             self._register = Register(
-                crawler_name=self._crawler_name,
-                crawler_group=self._crawler_group,
-                index_sep=self._index_sep,
+                name=self._crawler_name_data,
                 path=self._zk_path,
-                get_metadata=self._get_metadata,
-                set_metadata=self._set_metadata,
-                exist_metadata=self._exist_metadata,
-                opt_metadata_with_lock=self.distributed_lock_adapter,
+                metadata_opts_callback=self._metadata_opts_callback,
+                lock=self.distributed_lock_adapter,
             )
         return self._register
 
