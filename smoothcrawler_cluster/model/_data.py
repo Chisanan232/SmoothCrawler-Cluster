@@ -168,6 +168,7 @@ class MetaDataOpt:
 
     _get_callback: Callable = None
     _set_callback: Callable = None
+    _exist_callback: Callable = None
 
     @property
     def get_callback(self) -> Callable:
@@ -194,6 +195,19 @@ class MetaDataOpt:
         if not isinstance(callback, Callable):
             raise TypeError("Property *set_callback* only support callable object.")
         self._set_callback = callback
+
+    @property
+    def exist_callback(self) -> Callable:
+        """:obj:`Callable`: Properties with both getter and setter. This is a callback function about checking whether a
+        specific meta-data object exist or not.
+        """
+        return self._exist_callback
+
+    @exist_callback.setter
+    def exist_callback(self, callback: Callable) -> None:
+        if not isinstance(callback, Callable):
+            raise TypeError("Property *exist_callback* only support callable object.")
+        self._exist_callback = callback
 
 
 class BaseNode(metaclass=ABCMeta):
