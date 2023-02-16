@@ -8,7 +8,7 @@ to let value could be more clear and expected.
 from enum import Enum
 
 
-class CrawlerStateRole(Enum):
+class CrawlerRole(Enum):
     """*The crawler role in crawler cluster system*
 
     This role is NOT the role of *SmoothCrawler-AppIntegration*. They're very different. The role in

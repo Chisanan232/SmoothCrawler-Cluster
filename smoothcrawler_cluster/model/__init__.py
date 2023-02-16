@@ -19,7 +19,7 @@ from .metadata import (
     RunningResult,
     Task,
 )
-from .metadata_enum import CrawlerStateRole, HeartState, TaskResult
+from .metadata_enum import CrawlerRole, HeartState, TaskResult
 
 
 class _BaseDataObjectUtils(metaclass=ABCMeta):
@@ -128,7 +128,7 @@ class Empty(_BaseDataObjectUtils):
         """
         node_state = NodeState()
         node_state.group = ""
-        node_state.role = CrawlerStateRole.INITIAL
+        node_state.role = CrawlerRole.INITIAL
         return node_state
 
     @staticmethod
@@ -224,12 +224,12 @@ class Initial(_BaseDataObjectUtils):
         return group_state
 
     @staticmethod
-    def node_state(group: str = None, role: CrawlerStateRole = None) -> NodeState:
+    def node_state(group: str = None, role: CrawlerRole = None) -> NodeState:
         """Initialize a meta-data object **NodeState** with values.
 
         Args:
             group (str): The name of group which the current crawler instance belong to.
-            role (CrawlerStateRole): The role of current crawler instance.
+            role (CrawlerRole): The role of current crawler instance.
 
         Returns:
             NodeState: An **NodeState** meta-data object with value(s).
@@ -239,7 +239,7 @@ class Initial(_BaseDataObjectUtils):
         if group:
             node_state.group = group
         if not role:
-            role = CrawlerStateRole.INITIAL
+            role = CrawlerRole.INITIAL
         node_state.role = role
         return node_state
 
@@ -390,13 +390,13 @@ class Update(_BaseDataObjectUtils):
         return state
 
     @staticmethod
-    def node_state(node_state: NodeState, group: str = None, role: CrawlerStateRole = None) -> NodeState:
+    def node_state(node_state: NodeState, group: str = None, role: CrawlerRole = None) -> NodeState:
         """Updating a meta-data object **NodeState** with values.
 
         Args:
             node_state (NodeState): Current *NodeState* meta-data object.
             group (str): The name of group which the current crawler instance belong to.
-            role (CrawlerStateRole): The role of current crawler instance.
+            role (CrawlerRole): The role of current crawler instance.
 
         Returns:
             NodeState: An **NodeState** meta-data object with value(s).
@@ -483,7 +483,7 @@ class Update(_BaseDataObjectUtils):
     def _update_ele_if_not_none(
         data_obj,
         prop: str,
-        new_val: Union[int, str, list, dict, datetime, CrawlerStateRole, TaskResult, HeartState],
+        new_val: Union[int, str, list, dict, datetime, CrawlerRole, TaskResult, HeartState],
     ) -> None:
         if new_val is not None:
             setattr(data_obj, prop, new_val)

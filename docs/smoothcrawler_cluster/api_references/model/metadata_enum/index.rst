@@ -9,6 +9,6 @@ Below are the currently enum objects it supports:
 .. toctree::
    :maxdepth: 1
 
-   crawler_state_role
+   crawler_role
    task_result
    heartbeat_state

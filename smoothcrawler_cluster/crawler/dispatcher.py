@@ -26,7 +26,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     SecondaryBackupRunnerWorkflow,
 )
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
-from smoothcrawler_cluster.model import CrawlerStateRole, GroupState
+from smoothcrawler_cluster.model import CrawlerRole, GroupState
 from smoothcrawler_cluster.model._data import CrawlerName, MetaDataOpt, MetaDataPath
 
 
@@ -65,11 +65,11 @@ class WorkflowDispatcher:
         self._lock = lock
         self._crawler_process_callback = crawler_process_callback
 
-    def dispatch(self, role: Union[str, CrawlerStateRole]) -> Optional[BaseRoleWorkflow]:
+    def dispatch(self, role: Union[str, CrawlerRole]) -> Optional[BaseRoleWorkflow]:
         """Dispatch to generate the specific workflow object by the argument *option*.
 
         Args:
-            role (Union[str, CrawlerStateRole]): The crawler instance's role in *SmoothCrawler-Cluster*.
+            role (Union[str, CrawlerRole]): The crawler instance's role in *SmoothCrawler-Cluster*.
 
         Returns:
             It would return **BaseRoleWorkflow** type object. Below are the mapping table of role with its workflow
@@ -97,15 +97,15 @@ class WorkflowDispatcher:
             "lock": self._lock,
             "crawler_process_callback": self._crawler_process_callback,
         }
-        if self._is(role, CrawlerStateRole.RUNNER):
+        if self._is(role, CrawlerRole.RUNNER):
             return RunnerWorkflow(**role_workflow_args)
-        elif self._is(role, CrawlerStateRole.BACKUP_RUNNER):
+        elif self._is(role, CrawlerRole.BACKUP_RUNNER):
             if self._is_primary_backup():
                 return PrimaryBackupRunnerWorkflow(**role_workflow_args)
             else:
                 return SecondaryBackupRunnerWorkflow(**role_workflow_args)
         else:
-            if self._is(role, CrawlerStateRole.DEAD_RUNNER) or self._is(role, CrawlerStateRole.DEAD_BACKUP_RUNNER):
+            if self._is(role, CrawlerRole.DEAD_RUNNER) or self._is(role, CrawlerRole.DEAD_BACKUP_RUNNER):
                 raise CrawlerIsDeadError(crawler_name=str(self._crawler_name_data), group=self._crawler_name_data.group)
             else:
                 raise NotImplementedError(f"It doesn't support crawler role {role} in *SmoothCrawler-Cluster*.")
@@ -125,19 +125,19 @@ class WorkflowDispatcher:
         return HeartbeatUpdatingWorkflow(**workflow_args)
 
     @classmethod
-    def _is(cls, check: Union[str, CrawlerStateRole], expected: CrawlerStateRole) -> bool:
+    def _is(cls, check: Union[str, CrawlerRole], expected: CrawlerRole) -> bool:
         """Verify whether the input argument *check* is equal to expected value or not.
 
         Args:
-            check (Union[str, CrawlerStateRole]): The under test value which would be verified.
-            expected (CrawlerStateRole): The expected value we hope the under test value should be.
+            check (Union[str, CrawlerRole]): The under test value which would be verified.
+            expected (CrawlerRole): The expected value we hope the under test value should be.
 
         Returns:
             It returns *True* if it equals to expected value, nor it returns *False*.
 
         """
         return (isinstance(check, str) and check == expected.value) or (
-            isinstance(check, CrawlerStateRole) and check is expected
+            isinstance(check, CrawlerRole) and check is expected
         )
 
     def _is_primary_backup(self) -> bool:

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from smoothcrawler_cluster.model import (
-    CrawlerStateRole,
+    CrawlerRole,
     Empty,
     GroupState,
     HeartState,
@@ -58,9 +58,7 @@ class TestEmpty:
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="group", expected_value="")
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -137,9 +135,7 @@ class TestInitial:
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="group", expected_value="test-group")
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -228,7 +224,7 @@ class TestUpdate:
     def test_node_state(self):
         # Operate target method for testing
         init_state = Initial.node_state()
-        state = Update.node_state(init_state, group=_Crawler_Group_Name_Value, role=CrawlerStateRole.RUNNER)
+        state = Update.node_state(init_state, group=_Crawler_Group_Name_Value, role=CrawlerRole.RUNNER)
 
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
@@ -236,9 +232,7 @@ class TestUpdate:
         MetaDataValueAssertion(
             WorkingTime.AT_INITIAL, state, metadata="group", expected_value=_Crawler_Group_Name_Value
         )
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.RUNNER.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.RUNNER.value)
 
     def test_task(self):
         test_cookie = {"test_cookie": "test_cookie"}

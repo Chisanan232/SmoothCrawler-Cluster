@@ -13,7 +13,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     SecondaryBackupRunnerWorkflow,
 )
 from smoothcrawler_cluster.model import (
-    CrawlerStateRole,
+    CrawlerRole,
     RunningResult,
     Task,
     TaskResult,
@@ -58,7 +58,7 @@ class BaseRoleWorkflowTestSpec(metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def _expected_role(self) -> CrawlerStateRole:
+    def _expected_role(self) -> CrawlerRole:
         pass
 
     def test_role(self, workflow: BaseRoleWorkflow):
@@ -74,8 +74,8 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
         return RunnerWorkflow(**workflow_args)
 
     @property
-    def _expected_role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.RUNNER
+    def _expected_role(self) -> CrawlerRole:
+        return CrawlerRole.RUNNER
 
     def test_run_task_not_implemented_error(self):
         # Mock function what it needs
@@ -142,8 +142,8 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
         return PrimaryBackupRunnerWorkflow(**workflow_args)
 
     @property
-    def _expected_role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.BACKUP_RUNNER
+    def _expected_role(self) -> CrawlerRole:
+        return CrawlerRole.BACKUP_RUNNER
 
     def test_hand_over_task_with_processing(self):
         # Mock function what it needs
@@ -235,5 +235,5 @@ class TestSecondaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
         return SecondaryBackupRunnerWorkflow(**workflow_args)
 
     @property
-    def _expected_role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.BACKUP_RUNNER
+    def _expected_role(self) -> CrawlerRole:
+        return CrawlerRole.BACKUP_RUNNER

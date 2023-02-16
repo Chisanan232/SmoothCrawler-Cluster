@@ -11,7 +11,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     SecondaryBackupRunnerWorkflow,
 )
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
-from smoothcrawler_cluster.model import CrawlerStateRole, GroupState, NodeState, Update
+from smoothcrawler_cluster.model import CrawlerRole, GroupState, NodeState, Update
 
 from ..._assertion import ValueFormatAssertion
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
@@ -135,8 +135,8 @@ class TestZookeeperCrawler:
         else:
             assert False, "It should raise an 'ValueError' exception."
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
-    def test_run_finely(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.RUNNER, CrawlerRole.BACKUP_RUNNER])
+    def test_run_finely(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole):
         # Mock functions or objects
         mock_node_state = Mock(NodeState())
         mock_node_state.role = role.value
@@ -165,8 +165,8 @@ class TestZookeeperCrawler:
         )
         zk_crawler.before_dead.assert_not_called()
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
-    def test_run_with_exception(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.RUNNER, CrawlerRole.BACKUP_RUNNER])
+    def test_run_with_exception(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole):
 
         test_exe = RuntimeError("This is PyTest exception.")
 
@@ -191,8 +191,8 @@ class TestZookeeperCrawler:
         )
         zk_crawler.before_dead.assert_called_once_with(test_exe)
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, CrawlerStateRole.BACKUP_RUNNER])
-    def test_run_timeout(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.RUNNER, CrawlerRole.BACKUP_RUNNER])
+    def test_run_timeout(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole):
         # Mock functions or objects
         mock_node_state = Mock(NodeState())
         mock_node_state.role = role.value
@@ -221,21 +221,21 @@ class TestZookeeperCrawler:
 
     def test_run_as_role_runner(self, zk_crawler: ZookeeperCrawler):
         wf_args = _get_workflow_arguments()
-        self._test_run_as_role(zk_crawler, role=CrawlerStateRole.RUNNER, workflow=RunnerWorkflow(**wf_args))
+        self._test_run_as_role(zk_crawler, role=CrawlerRole.RUNNER, workflow=RunnerWorkflow(**wf_args))
 
     def test_run_as_role_primary_backup(self, zk_crawler: ZookeeperCrawler):
         wf_args = _get_workflow_arguments()
         self._test_run_as_role(
-            zk_crawler, role=CrawlerStateRole.BACKUP_RUNNER, workflow=PrimaryBackupRunnerWorkflow(**wf_args)
+            zk_crawler, role=CrawlerRole.BACKUP_RUNNER, workflow=PrimaryBackupRunnerWorkflow(**wf_args)
         )
 
     def test_run_as_role_secondary_backup(self, zk_crawler: ZookeeperCrawler):
         wf_args = _get_workflow_arguments()
         self._test_run_as_role(
-            zk_crawler, role=CrawlerStateRole.BACKUP_RUNNER, workflow=SecondaryBackupRunnerWorkflow(**wf_args)
+            zk_crawler, role=CrawlerRole.BACKUP_RUNNER, workflow=SecondaryBackupRunnerWorkflow(**wf_args)
         )
 
-    def _test_run_as_role(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole, workflow: BaseRoleWorkflow):
+    def _test_run_as_role(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole, workflow: BaseRoleWorkflow):
         # Mock functions
         zk_crawler._workflow_dispatcher.dispatch = MagicMock(return_value=workflow)
         zk_crawler.stop_update_heartbeat = MagicMock(return_value=None)
@@ -249,8 +249,8 @@ class TestZookeeperCrawler:
             runner_wf_run.assert_called_once()
             zk_crawler.stop_update_heartbeat.assert_not_called()
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.DEAD_RUNNER, CrawlerStateRole.DEAD_BACKUP_RUNNER])
-    def test_run_as_role_dead_runner(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.DEAD_RUNNER, CrawlerRole.DEAD_BACKUP_RUNNER])
+    def test_run_as_role_dead_runner(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole):
         # Mock functions
         wf_args = _get_workflow_arguments()
         workflow = SecondaryBackupRunnerWorkflow(**wf_args)
@@ -276,19 +276,19 @@ class TestZookeeperCrawler:
         else:
             assert False, "It should raise the exception."
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.RUNNER, "PRIMARY_BACKUP", "SECONDARY_BACKUP"])
-    def test__update_crawler_role(self, zk_crawler: ZookeeperCrawler, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.RUNNER, "PRIMARY_BACKUP", "SECONDARY_BACKUP"])
+    def test__update_crawler_role(self, zk_crawler: ZookeeperCrawler, role: CrawlerRole):
         # Mock functions or attributes
         mock_group_state = Mock(GroupState())
         mock_node_state = Mock(NodeState())
 
         if isinstance(role, str):
-            role_enum = CrawlerStateRole.BACKUP_RUNNER
+            role_enum = CrawlerRole.BACKUP_RUNNER
             mock_group_state.standby_id = "1"
             if role == "SECONDARY_BACKUP":
                 setattr(zk_crawler, "_crawler_name", "sc-crawler_2")
         else:
-            role_enum = CrawlerStateRole.RUNNER
+            role_enum = CrawlerRole.RUNNER
         mock_node_state.role = role_enum.value
 
         zk_crawler._get_metadata = MagicMock(side_effect=[mock_node_state, mock_group_state])
@@ -315,7 +315,7 @@ class TestZookeeperCrawler:
                 )
                 zk_crawler._zookeeper_client.restrict.assert_called_once()
                 update_node_state.assert_called_once_with(node_state=mock_node_state, role=role_enum)
-                if role is CrawlerStateRole.RUNNER:
+                if role is CrawlerRole.RUNNER:
                     update_group_state.assert_called_once_with(
                         mock_group_state, append_current_runner=[zk_crawler.name]
                     )

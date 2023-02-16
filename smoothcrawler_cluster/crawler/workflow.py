@@ -16,7 +16,7 @@ from .._utils import parse_timer
 from .._utils.converter import TaskContentDataUtils
 from ..exceptions import StopUpdateHeartbeat
 from ..model import (
-    CrawlerStateRole,
+    CrawlerRole,
     GroupState,
     Heartbeat,
     HeartState,
@@ -116,7 +116,7 @@ class BaseRoleWorkflow(BaseWorkflow):
 
     @property
     @abstractmethod
-    def role(self) -> CrawlerStateRole:
+    def role(self) -> CrawlerRole:
         """:obj:`str`: Property with only getter for the crawler role what current workflow for."""
         pass
 
@@ -142,8 +142,8 @@ class RunnerWorkflow(BaseRoleWorkflow):
     """
 
     @property
-    def role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.RUNNER
+    def role(self) -> CrawlerRole:
+        return CrawlerRole.RUNNER
 
     def run(self, timer: CrawlerTimer) -> None:
         """Keep waiting for tasks coming and run it.
@@ -172,7 +172,7 @@ class RunnerWorkflow(BaseRoleWorkflow):
             node_state = self._get_metadata(path=self._path.node_state, as_obj=NodeState, must_has_data=False)
             task = self._get_metadata(path=self._path.task, as_obj=Task, must_has_data=False)
 
-            if node_state.role == CrawlerStateRole.DEAD_RUNNER.value:
+            if node_state.role == CrawlerRole.DEAD_RUNNER.value:
                 raise StopUpdateHeartbeat
 
             if task.running_content:
@@ -287,8 +287,8 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
     """
 
     @property
-    def role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.BACKUP_RUNNER
+    def role(self) -> CrawlerRole:
+        return CrawlerRole.BACKUP_RUNNER
 
     def run(self, timer: CrawlerTimer) -> None:
         """Keep checking everyone's heartbeat info, and standby to activate to be a runner by itself if it discovers
@@ -385,7 +385,7 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
         """
         node_state_path = f"{self._path.generate_parent_node(dead_crawler_name)}/{self._path.state_node_str}"
         node_state = self._get_metadata(path=node_state_path, as_obj=NodeState)
-        node_state.role = CrawlerStateRole.DEAD_RUNNER
+        node_state.role = CrawlerRole.DEAD_RUNNER
         self._set_metadata(path=node_state_path, metadata=node_state)
 
         task = self._get_metadata(
@@ -428,7 +428,7 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
             self._set_metadata(path=self._path.group_state, metadata=state)
 
         node_state = self._get_metadata(path=self._path.node_state, as_obj=NodeState)
-        node_state.role = CrawlerStateRole.RUNNER
+        node_state.role = CrawlerRole.RUNNER
         self._set_metadata(path=self._path.node_state, metadata=node_state)
 
         self._lock.strongly_run(function=_update_group_state)
@@ -472,8 +472,8 @@ class SecondaryBackupRunnerWorkflow(BaseRoleWorkflow):
     """
 
     @property
-    def role(self) -> CrawlerStateRole:
-        return CrawlerStateRole.BACKUP_RUNNER
+    def role(self) -> CrawlerRole:
+        return CrawlerRole.BACKUP_RUNNER
 
     def run(self, timer: CrawlerTimer) -> bool:
         """Keep waiting to be the primary backup crawler instance.

@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import List
 
 from smoothcrawler_cluster.model import (
-    CrawlerStateRole,
+    CrawlerRole,
     GroupState,
     Heartbeat,
     HeartState,
@@ -31,7 +31,7 @@ Test_Zookeeper_Bytes_Value = b"This is test value in zookeeper"
 # # Related state settings
 _Crawler_Group_Name_Value: str = "sc-crawler-cluster"
 _Crawler_Name_Value: str = "sc-crawler_1"
-_Crawler_Role_Value: str = CrawlerStateRole.INITIAL.value
+_Crawler_Role_Value: str = CrawlerRole.INITIAL.value
 _Runner_Crawler_Value: int = 2
 _Backup_Crawler_Value: int = 1
 _Fail_Runner_Crawler_Value: int = 1

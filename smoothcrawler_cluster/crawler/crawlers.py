@@ -17,14 +17,7 @@ from .._utils.converter import BaseConverter, JsonStrConverter
 from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
 from ..election import BaseElection, ElectionResult, IndexElection
 from ..exceptions import StopUpdateHeartbeat
-from ..model import (
-    CrawlerStateRole,
-    GroupState,
-    Initial,
-    NodeState,
-    RunningContent,
-    Update,
-)
+from ..model import CrawlerRole, GroupState, Initial, NodeState, RunningContent, Update
 from ..model._data import (
     CrawlerName,
     CrawlerTimer,
@@ -188,7 +181,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._total_crawler = runner + backup
         self._runner = runner
         self._backup = backup
-        self._crawler_role: CrawlerStateRole = None
+        self._crawler_role: CrawlerRole = None
         self._index_sep = ""
         self._ensure_register = ensure_initial
         self._ensure_timeout = ensure_timeout
@@ -277,7 +270,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         return self._crawler_group
 
     @property
-    def role(self) -> CrawlerStateRole:
+    def role(self) -> CrawlerRole:
         """:obj:`str`: Properties with both a getter and setter. The role of crawler instance. Please refer to
         *CrawlerStateRole* to get more detail of it.
         """
@@ -367,9 +360,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # TODO (crawler): It's possible that it needs to parameterize this election running workflow
         if self.is_ready_for_election(interval=0.5, timeout=-1):
             if self.elect() is ElectionResult.WINNER:
-                self._crawler_role = CrawlerStateRole.RUNNER
+                self._crawler_role = CrawlerRole.RUNNER
             else:
-                self._crawler_role = CrawlerStateRole.BACKUP_RUNNER
+                self._crawler_role = CrawlerRole.BACKUP_RUNNER
             self._update_crawler_role(self._crawler_role)
         else:
             raise TimeoutError("Timeout to wait for crawler be ready in register process.")
@@ -564,7 +557,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     def running_as_role(
         self,
-        role: Union[str, CrawlerStateRole],
+        role: Union[str, CrawlerRole],
         wait_task_time: float = 2,
         standby_wait_time: float = 0.5,
         wait_to_be_standby_time: float = 2,
@@ -581,7 +574,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             keep checking the standby ID, and to be primary backup if the standby ID is equal to its index.
 
         Args:
-            role (CrawlerStateRole): The role of crawler instance.
+            role (CrawlerRole): The role of crawler instance.
             wait_task_time (float): For a Runner, how long does the crawler instance wait a second for next task. The
                 unit is seconds and default value is 2.
             standby_wait_time (float): For a Backup, how long does the crawler instance wait a second for next checking
@@ -611,7 +604,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         timer.threshold = threshold
 
         try:
-            role = role.value if isinstance(role, CrawlerStateRole) else role
+            role = role.value if isinstance(role, CrawlerRole) else role
             return self._workflow_dispatcher.dispatch(role=role).run(timer=timer)
         except StopUpdateHeartbeat:
             self.stop_update_heartbeat()
@@ -645,11 +638,11 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # self.persist(data=_data)
         return data
 
-    def _update_crawler_role(self, role: CrawlerStateRole) -> None:
+    def _update_crawler_role(self, role: CrawlerRole) -> None:
         """Update to be what role current crawler instance is in crawler cluster.
 
         Args:
-            role (CrawlerStateRole): The role of crawler instance.
+            role (CrawlerRole): The role of crawler instance.
 
         Returns:
             None
@@ -665,9 +658,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             identifier=self._state_identifier,
         ):
             state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
-            if role is CrawlerStateRole.RUNNER:
+            if role is CrawlerRole.RUNNER:
                 updated_state = Update.group_state(state, append_current_runner=[self._crawler_name])
-            elif role is CrawlerStateRole.BACKUP_RUNNER:
+            elif role is CrawlerRole.BACKUP_RUNNER:
                 crawler_index = self._crawler_name.split(self._index_sep)[-1]
                 current_standby_id = state.standby_id
                 if int(crawler_index) > int(current_standby_id) and current_standby_id != self._initial_standby_id:

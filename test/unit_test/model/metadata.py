@@ -15,7 +15,7 @@ from smoothcrawler_cluster.model.metadata import (
     Task,
 )
 from smoothcrawler_cluster.model.metadata_enum import (
-    CrawlerStateRole,
+    CrawlerRole,
     HeartState,
     TaskResult,
 )
@@ -272,12 +272,12 @@ class TestNodeState(_MetaDataTest):
         """
 
         # Test for setting the property normally. It would choice one value randomly.
-        under_test_value: CrawlerStateRole = random.choice(
+        under_test_value: CrawlerRole = random.choice(
             [
-                CrawlerStateRole.RUNNER,
-                CrawlerStateRole.BACKUP_RUNNER,
-                CrawlerStateRole.DEAD_RUNNER,
-                CrawlerStateRole.DEAD_BACKUP_RUNNER,
+                CrawlerRole.RUNNER,
+                CrawlerRole.BACKUP_RUNNER,
+                CrawlerRole.DEAD_RUNNER,
+                CrawlerRole.DEAD_BACKUP_RUNNER,
             ]
         )
         try:

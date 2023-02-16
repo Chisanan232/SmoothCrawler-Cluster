@@ -15,7 +15,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     SecondaryBackupRunnerWorkflow,
 )
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
-from smoothcrawler_cluster.model import CrawlerStateRole
+from smoothcrawler_cluster.model import CrawlerRole
 
 from ..._config import Zookeeper_Hosts
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
@@ -53,7 +53,7 @@ class TestWorkflowDispatcher(ZK):
         )
 
     def test_dispatcher_with_runner(self, uit_object: WorkflowDispatcher):
-        self._test_dispatch_with_valid_roles(uit_object, CrawlerStateRole.RUNNER, RunnerWorkflow)
+        self._test_dispatch_with_valid_roles(uit_object, CrawlerRole.RUNNER, RunnerWorkflow)
 
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
     @ZK.add_node_with_value_first(path_and_value={ZKNode.GROUP_STATE: _Testing_Value.group_state_data_str})
@@ -65,7 +65,7 @@ class TestWorkflowDispatcher(ZK):
             path=_Testing_Value.group_state_zookeeper_path,
             value=bytes(json.dumps(group_state.to_readable_object()), "utf-8"),
         )
-        self._test_dispatch_with_valid_roles(uit_object, CrawlerStateRole.BACKUP_RUNNER, PrimaryBackupRunnerWorkflow)
+        self._test_dispatch_with_valid_roles(uit_object, CrawlerRole.BACKUP_RUNNER, PrimaryBackupRunnerWorkflow)
 
     @ZK.reset_testing_env(path=[ZKNode.GROUP_STATE])
     @ZK.add_node_with_value_first(path_and_value={ZKNode.GROUP_STATE: _Testing_Value.group_state_data_str})
@@ -77,10 +77,10 @@ class TestWorkflowDispatcher(ZK):
             path=_Testing_Value.group_state_zookeeper_path,
             value=bytes(json.dumps(group_state.to_readable_object()), "utf-8"),
         )
-        self._test_dispatch_with_valid_roles(uit_object, CrawlerStateRole.BACKUP_RUNNER, SecondaryBackupRunnerWorkflow)
+        self._test_dispatch_with_valid_roles(uit_object, CrawlerRole.BACKUP_RUNNER, SecondaryBackupRunnerWorkflow)
 
     def _test_dispatch_with_valid_roles(
-        self, uit_object: WorkflowDispatcher, role: CrawlerStateRole, expected_workflow: Type[BaseRoleWorkflow]
+        self, uit_object: WorkflowDispatcher, role: CrawlerRole, expected_workflow: Type[BaseRoleWorkflow]
     ) -> None:
         workflow = uit_object.dispatch(role=role)
         assert workflow, "It should NOT be None."
@@ -88,8 +88,8 @@ class TestWorkflowDispatcher(ZK):
             workflow, expected_workflow
         ), f"It should be role **{role.value}**'s workflow {expected_workflow.__class__.__name__}."
 
-    @pytest.mark.parametrize("role", [CrawlerStateRole.DEAD_RUNNER, CrawlerStateRole.DEAD_BACKUP_RUNNER])
-    def test_dispatcher_with_dead_role(self, uit_object: WorkflowDispatcher, role: CrawlerStateRole):
+    @pytest.mark.parametrize("role", [CrawlerRole.DEAD_RUNNER, CrawlerRole.DEAD_BACKUP_RUNNER])
+    def test_dispatcher_with_dead_role(self, uit_object: WorkflowDispatcher, role: CrawlerRole):
         try:
             uit_object.dispatch(role=role)
         except CrawlerIsDeadError as e:

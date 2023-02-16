@@ -13,7 +13,7 @@ from smoothcrawler_cluster.crawler.workflow import (
     RunnerWorkflow,
     SecondaryBackupRunnerWorkflow,
 )
-from smoothcrawler_cluster.model import CrawlerStateRole, Initial, TaskResult, Update
+from smoothcrawler_cluster.model import CrawlerRole, Initial, TaskResult, Update
 from smoothcrawler_cluster.model._data import CrawlerTimer, TimeInterval, TimerThreshold
 
 from ..._config import Zookeeper_Hosts
@@ -94,7 +94,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
                 updated_task_str = json.dumps(updated_task.to_readable_object())
                 self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(updated_task_str, "utf-8"))
 
-                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.RUNNER)
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerRole.RUNNER)
                 node_state_str = json.dumps(node_state.to_readable_object())
                 self._set_value_to_node(
                     path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
@@ -174,7 +174,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
         def _assign_task() -> None:
             try:
                 time.sleep(2)
-                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.DEAD_RUNNER)
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerRole.DEAD_RUNNER)
                 node_state_str = json.dumps(node_state.to_readable_object())
                 self._set_value_to_node(
                     path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
@@ -264,7 +264,7 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
                 updated_task_str = json.dumps(updated_task.to_readable_object())
                 self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(updated_task_str, "utf-8"))
 
-                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.RUNNER)
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerRole.RUNNER)
                 node_state_str = json.dumps(node_state.to_readable_object())
                 self._set_value_to_node(
                     path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
@@ -360,7 +360,7 @@ class TestPrimaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
                 )
 
         def _initial_node_state(_node_path: str) -> None:
-            node_state = Initial.node_state(group=zk_crawler.group, role=CrawlerStateRole.RUNNER)
+            node_state = Initial.node_state(group=zk_crawler.group, role=CrawlerRole.RUNNER)
             if self._exist_node(path=_node_path) is None:
                 node_state_data_str = json.dumps(node_state.to_readable_object())
                 self._create_node(path=_node_path, value=bytes(node_state_data_str, "utf-8"), include_data=True)
@@ -413,7 +413,7 @@ class TestPrimaryBackupRunnerWorkflow(MultiCrawlerTestSuite):
         self._verify_metadata.all_node_state_role(
             runner=1,
             backup=1,
-            expected_role={"0": CrawlerStateRole.DEAD_RUNNER, "1": CrawlerStateRole.RUNNER},
+            expected_role={"0": CrawlerRole.DEAD_RUNNER, "1": CrawlerRole.RUNNER},
             expected_group={"0": zk_crawler._crawler_group, "1": zk_crawler._crawler_group},
             start_index=0,
         )
