@@ -3,11 +3,29 @@ from typing import List
 
 from kazoo.client import KazooClient
 
+from smoothcrawler_cluster.crawler import ZookeeperCrawler
+from smoothcrawler_cluster.model._data import CrawlerName
+
 from ..._config import Zookeeper_Hosts
 from ..._values import _Total_Crawler_Value
 from ..._verify import Verify, VerifyMetaData
 from .._test_utils._instance_value import _ZKNodePathUtils
 from .._test_utils._zk_testsuite import ZK
+
+
+def generate_crawler_name(zk_crawler: ZookeeperCrawler = None) -> CrawlerName:
+    name = CrawlerName()
+    if zk_crawler:
+        name.group = zk_crawler.group
+        name.base_name = zk_crawler.name.split(zk_crawler._index_sep)[0]
+        name.index_separation = zk_crawler._index_sep
+        name.id = zk_crawler.name.split(zk_crawler._index_sep)[-1]
+    else:
+        name.group = "pytest"
+        name.base_name = "sc-crawler"
+        name.index_separation = "_"
+        name.id = "1"
+    return name
 
 
 class MultiCrawlerTestSuite(ZK):
