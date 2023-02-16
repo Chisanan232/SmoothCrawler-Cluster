@@ -70,7 +70,7 @@ def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler, crawling_callback
         "identifier": zk_crawler._state_identifier,
     }
     workflow_args = {
-        "opt_metadata_with_lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
+        "lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
         "crawler_process_callback": (crawling_callback or _mock_crawler_processing_func),
     }
     workflow_args.update(_get_base_workflow_arguments(zk_crawler))

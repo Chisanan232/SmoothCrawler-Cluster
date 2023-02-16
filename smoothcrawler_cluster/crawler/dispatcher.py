@@ -44,7 +44,7 @@ class WorkflowDispatcher:
         name: CrawlerName,
         path: MetaDataPath,
         metadata_opts_callback: MetaDataOpt,
-        opt_metadata_with_lock: DistributedLock,
+        lock: DistributedLock,
         crawler_process_callback: Callable,
     ):
         """
@@ -55,14 +55,14 @@ class WorkflowDispatcher:
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
                 functions about getting and setting meta-data.
-            opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
+            lock (DistributedLock): The adapter of distributed lock.
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         self._crawler_name = name
         self._path = path
         self._metadata_opts_callback = metadata_opts_callback
         self._get_metadata = self._metadata_opts_callback.get_callback
-        self._opt_metadata_with_lock = opt_metadata_with_lock
+        self._lock = lock
         self._crawler_process_callback = crawler_process_callback
 
     def dispatch(self, role: Union[str, CrawlerStateRole]) -> Optional[BaseRoleWorkflow]:
@@ -94,7 +94,7 @@ class WorkflowDispatcher:
             "name": self._crawler_name,
             "path": self._path,
             "metadata_opts_callback": self._metadata_opts_callback,
-            "opt_metadata_with_lock": self._opt_metadata_with_lock,
+            "lock": self._lock,
             "crawler_process_callback": self._crawler_process_callback,
         }
         if self._is(role, CrawlerStateRole.RUNNER):

@@ -48,7 +48,7 @@ class TestWorkflowDispatcher(ZK):
             name=generate_crawler_name(zk_crawler),
             path=zk_crawler._zk_path,
             metadata_opts_callback=generate_metadata_opts(zk_crawler),
-            opt_metadata_with_lock=DistributedLock(lock=_mock_callable),
+            lock=DistributedLock(lock=_mock_callable),
             crawler_process_callback=_mock_callable,
         )
 

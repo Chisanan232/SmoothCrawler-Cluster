@@ -97,7 +97,7 @@ class BaseRoleWorkflow(BaseWorkflow):
         name: CrawlerName,
         path: Type[MetaDataPath],
         metadata_opts_callback: MetaDataOpt,
-        opt_metadata_with_lock: DistributedLock,
+        lock: DistributedLock,
         crawler_process_callback: Callable,
     ):
         """
@@ -108,7 +108,7 @@ class BaseRoleWorkflow(BaseWorkflow):
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
                 functions about getting and setting meta-data.
-            opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
+            lock (DistributedLock): The adapter of distributed lock.
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         super().__init__(
@@ -116,7 +116,7 @@ class BaseRoleWorkflow(BaseWorkflow):
             path=path,
             metadata_opts_callback=metadata_opts_callback,
         )
-        self._opt_metadata_with_lock = opt_metadata_with_lock
+        self._lock = lock
         self._crawler_process_callback = crawler_process_callback
 
     @property
@@ -436,7 +436,7 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
         node_state.role = CrawlerStateRole.RUNNER
         self._set_metadata(path=self._path.node_state, metadata=node_state)
 
-        self._opt_metadata_with_lock.strongly_run(function=_update_group_state)
+        self._lock.strongly_run(function=_update_group_state)
 
     def hand_over_task(self, task: Task) -> None:
         """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
