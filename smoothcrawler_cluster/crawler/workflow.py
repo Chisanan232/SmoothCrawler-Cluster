@@ -27,7 +27,7 @@ from ..model import (
     TaskResult,
     Update,
 )
-from ..model._data import CrawlerTimer, MetaDataPath
+from ..model._data import CrawlerName, CrawlerTimer, MetaDataOpt, MetaDataPath
 from .adapter import DistributedLock
 
 
@@ -48,8 +48,7 @@ class BaseWorkflow(metaclass=ABCMeta):
 
     def __init__(
         self,
-        crawler_name: str,
-        index_sep: str,
+        name: CrawlerName,
         path: Type[MetaDataPath],
         get_metadata: Callable,
         set_metadata: Callable,
@@ -57,14 +56,13 @@ class BaseWorkflow(metaclass=ABCMeta):
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (str): The data object **CrawlerName** which provides some attribute like crawler instance's name or
+                ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             get_metadata (Callable): The callback function about getting meta-data as object.
             set_metadata (Callable): The callback function about setting meta-data from object.
         """
-        self._crawler_name = crawler_name
-        self._index_sep = index_sep
+        self._crawler_name = name
         self._path = path
         self._get_metadata = get_metadata
         self._set_metadata = set_metadata
@@ -95,8 +93,7 @@ class BaseRoleWorkflow(BaseWorkflow):
 
     def __init__(
         self,
-        crawler_name: str,
-        index_sep: str,
+        name: CrawlerName,
         path: Type[MetaDataPath],
         get_metadata: Callable,
         set_metadata: Callable,
@@ -106,8 +103,8 @@ class BaseRoleWorkflow(BaseWorkflow):
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (str): The data object **CrawlerName** which provides some attribute like crawler instance's name or
+                ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
             get_metadata (Callable): The callback function about getting meta-data as object.
             set_metadata (Callable): The callback function about setting meta-data from object.
@@ -115,8 +112,7 @@ class BaseRoleWorkflow(BaseWorkflow):
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         super().__init__(
-            crawler_name=crawler_name,
-            index_sep=index_sep,
+            name=name,
             path=path,
             get_metadata=get_metadata,
             set_metadata=set_metadata,
@@ -429,8 +425,8 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
             state.total_backup = state.total_backup - 1
             state.current_crawler.remove(dead_crawler_name)
             state.current_runner.remove(dead_crawler_name)
-            state.current_runner.append(self._crawler_name)
-            state.current_backup.remove(self._crawler_name)
+            state.current_runner.append(str(self._crawler_name))
+            state.current_backup.remove(str(self._crawler_name))
             state.fail_crawler.append(dead_crawler_name)
             state.fail_runner.append(dead_crawler_name)
             state.standby_id = str(int(state.standby_id) + 1)
@@ -503,7 +499,7 @@ class SecondaryBackupRunnerWorkflow(BaseRoleWorkflow):
         """
         while True:
             group_state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
+            if str(self._crawler_name.id) == group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
             time.sleep(timer.time_interval.check_standby_id)
