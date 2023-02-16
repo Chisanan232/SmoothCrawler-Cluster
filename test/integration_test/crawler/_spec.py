@@ -4,7 +4,7 @@ from typing import List
 from kazoo.client import KazooClient
 
 from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from smoothcrawler_cluster.model._data import CrawlerName
+from smoothcrawler_cluster.model._data import CrawlerName, MetaDataOpt
 
 from ..._config import Zookeeper_Hosts
 from ..._values import _Total_Crawler_Value
@@ -26,6 +26,14 @@ def generate_crawler_name(zk_crawler: ZookeeperCrawler = None) -> CrawlerName:
         name.index_separation = "_"
         name.id = "1"
     return name
+
+
+def generate_metadata_opts(zk_crawler: ZookeeperCrawler = None) -> MetaDataOpt:
+    metadata_opts = MetaDataOpt()
+    metadata_opts.exist_callback = zk_crawler._exist_metadata
+    metadata_opts.get_callback = zk_crawler._get_metadata
+    metadata_opts.set_callback = zk_crawler._set_metadata
+    return metadata_opts
 
 
 class MultiCrawlerTestSuite(ZK):
