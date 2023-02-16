@@ -37,12 +37,50 @@ class TestCrawlerName(_MetaDataTest):
     def crawler_name(self) -> CrawlerName:
         return CrawlerName()
 
-    def test_name(self, crawler_name: CrawlerName):
+    def test_repr(self, crawler_name: CrawlerName):
+        crawler_name.group = "pytest"
+        crawler_name.base_name = "pytest-crawler"
+        crawler_name.id = "1"
+        crawler_name.index_separation = "_"
+
+        expected_repr = (
+            f"<{crawler_name.__class__.__name__} object(group: {crawler_name.group}, name: {str(crawler_name)})>"
+        )
+        assert (
+            repr(crawler_name) == expected_repr
+        ), f"It should be same as expected value format of *__repr___*: '{expected_repr}'."
+
+    def test_str(self, crawler_name: CrawlerName):
+        crawler_name.group = "pytest"
+        crawler_name.base_name = "pytest-crawler"
+        crawler_name.id = "1"
+        crawler_name.index_separation = "_"
+
+        expected_str = f"{crawler_name.base_name}{crawler_name.index_separation}{crawler_name.id}"
+        assert (
+            str(crawler_name) == expected_str
+        ), f"It should be same as expected value format of *__str___*: '{expected_str}'."
+
+    def test_group(self, crawler_name: CrawlerName):
         def get_func() -> str:
-            return crawler_name.name
+            return crawler_name.group
 
         def set_func(value) -> None:
-            crawler_name.name = value
+            crawler_name.group = value
+
+        self._run_property_test(
+            getting_func=get_func,
+            setting_func=set_func,
+            valid_value=_Crawler_Group_Name_Value,
+            invalid_1_value=_CannotStrObj(),
+        )
+
+    def test_base_name(self, crawler_name: CrawlerName):
+        def get_func() -> str:
+            return crawler_name.base_name
+
+        def set_func(value) -> None:
+            crawler_name.base_name = value
 
         self._run_property_test(
             getting_func=get_func,
@@ -51,12 +89,26 @@ class TestCrawlerName(_MetaDataTest):
             invalid_1_value=_CannotStrObj(),
         )
 
-    def test_index_sep(self, crawler_name: CrawlerName):
+    def test_id(self, crawler_name: CrawlerName):
         def get_func() -> str:
-            return crawler_name.index_sep
+            return crawler_name.id
 
         def set_func(value) -> None:
-            crawler_name.index_sep = value
+            crawler_name.id = value
+
+        self._run_property_test(
+            getting_func=get_func,
+            setting_func=set_func,
+            valid_value="2",
+            invalid_1_value=_CannotStrObj(),
+        )
+
+    def test_index_separation(self, crawler_name: CrawlerName):
+        def get_func() -> str:
+            return crawler_name.index_separation
+
+        def set_func(value) -> None:
+            crawler_name.index_separation = value
 
         self._run_property_test(
             getting_func=get_func,
@@ -200,6 +252,21 @@ class TestMetaDataOpt(_MetaDataTest):
 
         def set_func(value) -> None:
             metadata_opt.set_callback = value
+
+        self._run_property_test(
+            getting_func=get_func,
+            setting_func=set_func,
+            valid_value=_generate_timer_interval,
+            invalid_1_value="test",
+            invalid_2_value=["test_list"],
+        )
+
+    def test_exist_callback(self, metadata_opt: MetaDataOpt):
+        def get_func() -> Callable:
+            return metadata_opt.exist_callback
+
+        def set_func(value) -> None:
+            metadata_opt.exist_callback = value
 
         self._run_property_test(
             getting_func=get_func,
