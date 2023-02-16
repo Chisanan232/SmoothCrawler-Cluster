@@ -25,7 +25,13 @@ from ..model import (
     RunningContent,
     Update,
 )
-from ..model._data import CrawlerTimer, TimeInterval, TimerThreshold
+from ..model._data import (
+    CrawlerName,
+    CrawlerTimer,
+    MetaDataOpt,
+    TimeInterval,
+    TimerThreshold,
+)
 from ..model.metadata import _BaseMetaData
 from ..register import Register
 from .adapter import DistributedLock
@@ -230,14 +236,22 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._heartbeat_update_timeout = heartbeat_update_timeout
         self._heartbeat_dead_threshold = heartbeat_dead_threshold
 
+        self._crawler_name_data = CrawlerName()
+        self._crawler_name_data.group = self._crawler_group
+        self._crawler_name_data.base_name = self._crawler_name.split(self._index_sep)[0]
+        self._crawler_name_data.index_separation = self._index_sep
+        self._crawler_name_data.id = self._crawler_name.split(self._index_sep)[-1]
+
+        self._metadata_opts_callback = MetaDataOpt()
+        self._metadata_opts_callback.exist_callback = self._exist_metadata
+        self._metadata_opts_callback.get_callback = self._get_metadata
+        self._metadata_opts_callback.set_callback = self._set_metadata
+
         self._workflow_dispatcher = WorkflowDispatcher(
-            crawler_name=self._crawler_name,
-            group=self._crawler_group,
-            index_sep=self._index_sep,
+            name=self._crawler_name_data,
             path=self._zk_path,
-            get_metadata_callback=self._get_metadata,
-            set_metadata_callback=self._set_metadata,
-            opt_metadata_with_lock=self.distributed_lock_adapter,
+            metadata_opts_callback=self._metadata_opts_callback,
+            lock=self.distributed_lock_adapter,
             crawler_process_callback=self._run_crawling_processing,
         )
         self._heartbeat_workflow = self._workflow_dispatcher.heartbeat()
@@ -308,14 +322,10 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
         if not self._register:
             self._register = Register(
-                crawler_name=self._crawler_name,
-                crawler_group=self._crawler_group,
-                index_sep=self._index_sep,
+                name=self._crawler_name_data,
                 path=self._zk_path,
-                get_metadata=self._get_metadata,
-                set_metadata=self._set_metadata,
-                exist_metadata=self._exist_metadata,
-                opt_metadata_with_lock=self.distributed_lock_adapter,
+                metadata_opts_callback=self._metadata_opts_callback,
+                lock=self.distributed_lock_adapter,
             )
         return self._register
 

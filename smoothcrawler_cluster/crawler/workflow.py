@@ -27,7 +27,7 @@ from ..model import (
     TaskResult,
     Update,
 )
-from ..model._data import CrawlerTimer, MetaDataPath
+from ..model._data import CrawlerName, CrawlerTimer, MetaDataOpt, MetaDataPath
 from .adapter import DistributedLock
 
 
@@ -46,28 +46,22 @@ class BaseWorkflow(metaclass=ABCMeta):
         could only use `<BaseWorkflow object>.run(*args, **kwargs)` to run it.
     """
 
-    def __init__(
-        self,
-        crawler_name: str,
-        index_sep: str,
-        path: Type[MetaDataPath],
-        get_metadata: Callable,
-        set_metadata: Callable,
-    ):
+    def __init__(self, name: CrawlerName, path: Type[MetaDataPath], metadata_opts_callback: MetaDataOpt):
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (CrawlerName): The data object **CrawlerName** which provides some attribute like crawler instance's
+                name or ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
-            get_metadata (Callable): The callback function about getting meta-data as object.
-            set_metadata (Callable): The callback function about setting meta-data from object.
+            metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
+                functions about getting and setting meta-data.
         """
-        self._crawler_name = crawler_name
-        self._index_sep = index_sep
+        self._crawler_name_data = name
         self._path = path
-        self._get_metadata = get_metadata
-        self._set_metadata = set_metadata
+        # get_metadata (Callable): The callback function about getting meta-data as object.
+        self._get_metadata = metadata_opts_callback.get_callback
+        # set_metadata (Callable): The callback function about setting meta-data from object.
+        self._set_metadata = metadata_opts_callback.set_callback
 
     @abstractmethod
     def run(self, *args, **kwargs) -> Any:
@@ -95,33 +89,29 @@ class BaseRoleWorkflow(BaseWorkflow):
 
     def __init__(
         self,
-        crawler_name: str,
-        index_sep: str,
+        name: CrawlerName,
         path: Type[MetaDataPath],
-        get_metadata: Callable,
-        set_metadata: Callable,
-        opt_metadata_with_lock: DistributedLock,
+        metadata_opts_callback: MetaDataOpt,
+        lock: DistributedLock,
         crawler_process_callback: Callable,
     ):
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (CrawlerName): The data object **CrawlerName** which provides some attribute like crawler instance's
+                name or ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
-            get_metadata (Callable): The callback function about getting meta-data as object.
-            set_metadata (Callable): The callback function about setting meta-data from object.
-            opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
+            metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
+                functions about getting and setting meta-data.
+            lock (DistributedLock): The adapter of distributed lock.
             crawler_process_callback (Callable): The callback function about running the crawler core processes.
         """
         super().__init__(
-            crawler_name=crawler_name,
-            index_sep=index_sep,
+            name=name,
             path=path,
-            get_metadata=get_metadata,
-            set_metadata=set_metadata,
+            metadata_opts_callback=metadata_opts_callback,
         )
-        self._opt_metadata_with_lock = opt_metadata_with_lock
+        self._lock = lock
         self._crawler_process_callback = crawler_process_callback
 
     @property
@@ -429,8 +419,8 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
             state.total_backup = state.total_backup - 1
             state.current_crawler.remove(dead_crawler_name)
             state.current_runner.remove(dead_crawler_name)
-            state.current_runner.append(self._crawler_name)
-            state.current_backup.remove(self._crawler_name)
+            state.current_runner.append(str(self._crawler_name_data))
+            state.current_backup.remove(str(self._crawler_name_data))
             state.fail_crawler.append(dead_crawler_name)
             state.fail_runner.append(dead_crawler_name)
             state.standby_id = str(int(state.standby_id) + 1)
@@ -441,7 +431,7 @@ class PrimaryBackupRunnerWorkflow(BaseRoleWorkflow):
         node_state.role = CrawlerStateRole.RUNNER
         self._set_metadata(path=self._path.node_state, metadata=node_state)
 
-        self._opt_metadata_with_lock.strongly_run(function=_update_group_state)
+        self._lock.strongly_run(function=_update_group_state)
 
     def hand_over_task(self, task: Task) -> None:
         """Hand over the task of the dead crawler instance. It would get the meta-data **Task** from dead crawler and
@@ -503,7 +493,7 @@ class SecondaryBackupRunnerWorkflow(BaseRoleWorkflow):
         """
         while True:
             group_state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-            if self._crawler_name.split(self._index_sep)[-1] == group_state.standby_id:
+            if str(self._crawler_name_data.id) == group_state.standby_id:
                 # Start to do wait_and_standby
                 return True
             time.sleep(timer.time_interval.check_standby_id)

@@ -8,11 +8,11 @@ management and extension, let registration processes to be a single one module i
 """
 
 import time
-from typing import Callable, Type
+from typing import Type
 
 from .crawler.adapter import DistributedLock
 from .model import GroupState, Initial, Update
-from .model._data import MetaDataPath
+from .model._data import CrawlerName, MetaDataOpt, MetaDataPath
 
 
 class Register:
@@ -25,37 +25,27 @@ class Register:
 
     def __init__(
         self,
-        crawler_name: str,
-        crawler_group: str,
-        index_sep: str,
+        name: CrawlerName,
         path: MetaDataPath,
-        get_metadata: Callable,
-        set_metadata: Callable,
-        exist_metadata: Callable,
-        opt_metadata_with_lock: DistributedLock,
+        metadata_opts_callback: MetaDataOpt,
+        lock: DistributedLock,
     ):
         """
 
         Args:
-            crawler_name (str): The current crawler instance's name.
-            crawler_group (str): The group name this crawler instance would belong to it. Default value is
-                *sc-crawler-cluster*.
-            index_sep (str): The index separation of current crawler instance's name.
+            name (CrawlerName): The data object **CrawlerName** which provides some attribute like crawler instance's
+                name or ID, etc.
             path (Type[MetaDataPath]): The objects which has all meta-data object's path property.
-            get_metadata (Callable): The callback function about getting meta-data as object.
-            set_metadata (Callable): The callback function about setting meta-data from object.
-            exist_metadata (Callable): THe callback function about checking whether the target meta-data is existing or
-                not.
-            opt_metadata_with_lock (DistributedLock): The adapter of distributed lock.
+            metadata_opts_callback (MetaDataOpt): The data object *MetaDataOpt* which provides multiple callback
+                functions about getting and setting meta-data.
+            lock (DistributedLock): The adapter of distributed lock.
         """
-        self._crawler_name = crawler_name
-        self._crawler_group = crawler_group
-        self._index_sep = index_sep
+        self._crawler_name_data = name
         self._path = path
-        self._get_metadata = get_metadata
-        self._set_metadata = set_metadata
-        self._exist_metadata = exist_metadata
-        self._opt_metadata_with_lock = opt_metadata_with_lock
+        self._exist_metadata = metadata_opts_callback.exist_callback
+        self._get_metadata = metadata_opts_callback.get_callback
+        self._set_metadata = metadata_opts_callback.set_callback
+        self._lock = lock
 
     def metadata(
         self,
@@ -145,13 +135,13 @@ class Register:
 
             """
             state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
-            if not state.current_crawler or self._crawler_name not in state.current_crawler:
+            if not state.current_crawler or str(self._crawler_name_data) not in state.current_crawler:
                 state = Update.group_state(
                     state,
                     total_crawler=runner + backup,
                     total_runner=runner,
                     total_backup=backup,
-                    append_current_crawler=[self._crawler_name],
+                    append_current_crawler=[str(self._crawler_name_data)],
                     standby_id=self._initial_standby_id,
                 )
                 self._set_metadata(path=self._path.group_state, metadata=state)
@@ -161,12 +151,15 @@ class Register:
 
             state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
             assert state, "The meta data *State* should NOT be None."
-            if len(set(state.current_crawler)) == runner + backup and self._crawler_name in state.current_crawler:
+            if (
+                len(set(state.current_crawler)) == runner + backup
+                and str(self._crawler_name_data) in state.current_crawler
+            ):
                 return True
             return False
 
         for _ in range(ensure_timeout):
-            result_is_ok = self._opt_metadata_with_lock.strongly_run(function=update_group_state)
+            result_is_ok = self._lock.strongly_run(function=update_group_state)
             if result_is_ok:
                 break
             if ensure_wait:
@@ -181,7 +174,7 @@ class Register:
             None
 
         """
-        state = Initial.node_state(group=self._crawler_group)
+        state = Initial.node_state(group=self._crawler_name_data.group)
         create_node = not self._exist_metadata(path=self._path.node_state)
         self._set_metadata(path=self._path.node_state, metadata=state, create_node=create_node)
 

@@ -30,7 +30,7 @@ from ..._values import (
 from ..._verify import VerifyMetaData
 from .._test_utils._instance_value import _TestValue, _ZKNodePathUtils
 from .._test_utils._multirunner import run_2_diff_workers, run_multi_diff_workers
-from ._spec import MultiCrawlerTestSuite
+from ._spec import MultiCrawlerTestSuite, generate_crawler_name, generate_metadata_opts
 
 _Manager = mp.Manager()
 _Testing_Value: _TestValue = _TestValue()
@@ -57,11 +57,9 @@ def _mock_crawler_processing_func(*args, **kwargs) -> str:
 
 def _get_base_workflow_arguments(zk_crawler: ZookeeperCrawler) -> dict:
     return {
-        "crawler_name": zk_crawler.name,
-        "index_sep": zk_crawler._index_sep,
+        "name": generate_crawler_name(zk_crawler),
         "path": zk_crawler._zk_path,
-        "get_metadata": zk_crawler._get_metadata,
-        "set_metadata": zk_crawler._set_metadata,
+        "metadata_opts_callback": generate_metadata_opts(zk_crawler),
     }
 
 
@@ -72,7 +70,7 @@ def _get_role_workflow_arguments(zk_crawler: ZookeeperCrawler, crawling_callback
         "identifier": zk_crawler._state_identifier,
     }
     workflow_args = {
-        "opt_metadata_with_lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
+        "lock": DistributedLock(lock=zk_crawler._zookeeper_client.restrict, **restrict_args),
         "crawler_process_callback": (crawling_callback or _mock_crawler_processing_func),
     }
     workflow_args.update(_get_base_workflow_arguments(zk_crawler))
@@ -117,8 +115,8 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
                 initial=False,
                 zk_hosts=Zookeeper_Hosts,
             )
-            zk_crawler.register_node_state()
-            zk_crawler.register_task()
+            zk_crawler.register.node_state()
+            zk_crawler.register.task()
 
             workflow_args = _get_role_workflow_arguments(zk_crawler)
             workflow = RunnerWorkflow(**workflow_args)
@@ -202,8 +200,8 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
                 initial=False,
                 zk_hosts=Zookeeper_Hosts,
             )
-            zk_crawler.register_node_state()
-            zk_crawler.register_task()
+            zk_crawler.register.node_state()
+            zk_crawler.register.task()
 
             workflow_args = _get_role_workflow_arguments(zk_crawler)
             workflow = RunnerWorkflow(**workflow_args)
@@ -290,8 +288,8 @@ class TestRunnerWorkflow(MultiCrawlerTestSuite):
                 initial=False,
                 zk_hosts=Zookeeper_Hosts,
             )
-            zk_crawler.register_node_state()
-            zk_crawler.register_task()
+            zk_crawler.register.node_state()
+            zk_crawler.register.task()
 
             workflow_args = _get_role_workflow_arguments(zk_crawler, crawling_callback=_mock_crawling_processing)
             workflow = RunnerWorkflow(**workflow_args)
@@ -526,8 +524,8 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
             initial=False,
             zk_hosts=Zookeeper_Hosts,
         )
-        zk_crawler.register_task()
-        zk_crawler.register_heartbeat()
+        zk_crawler.register.task()
+        zk_crawler.register.heartbeat()
 
         workflow_args = _get_base_workflow_arguments(zk_crawler)
         workflow = HeartbeatUpdatingWorkflow(**workflow_args)
@@ -579,8 +577,8 @@ class TestHeartbeatUpdatingWorkflow(MultiCrawlerTestSuite):
             initial=False,
             zk_hosts=Zookeeper_Hosts,
         )
-        zk_crawler.register_task()
-        zk_crawler.register_heartbeat()
+        zk_crawler.register.task()
+        zk_crawler.register.heartbeat()
 
         workflow_args = _get_base_workflow_arguments(zk_crawler)
         workflow = HeartbeatUpdatingWorkflow(**workflow_args)

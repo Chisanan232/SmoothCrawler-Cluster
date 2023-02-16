@@ -1,6 +1,6 @@
 import re
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Type, TypeVar
+from typing import TypeVar
 from unittest.mock import MagicMock, Mock, PropertyMock, call, patch
 
 import pytest
@@ -19,7 +19,7 @@ from smoothcrawler_cluster.model import (
     TaskResult,
     Update,
 )
-from smoothcrawler_cluster.model._data import MetaDataPath
+from smoothcrawler_cluster.model._data import CrawlerName, MetaDataOpt, MetaDataPath
 
 from ..._values import (
     _One_Running_Content_As_Object,
@@ -35,16 +35,16 @@ def _mock_callable(*args, **kwargs):
     pass
 
 
+@patch("smoothcrawler_cluster.model._data.CrawlerName")
+@patch("smoothcrawler_cluster.model._data.MetaDataOpt")
 @patch("smoothcrawler_cluster.model._data.MetaDataPath")
 @patch("smoothcrawler_cluster.crawler.adapter.DistributedLock")
-def _get_workflow_arguments(mock_metadata_path, mock_adapter_lock) -> dict:
+def _get_workflow_arguments(mock_name, mock_metadata_opts, mock_metadata_path, mock_adapter_lock) -> dict:
     workflow_args = {
-        "crawler_name": "test_name",
-        "index_sep": "test_index_sep",
+        "name": mock_name,
         "path": mock_metadata_path,
-        "get_metadata": _mock_callable,
-        "set_metadata": _mock_callable,
-        "opt_metadata_with_lock": mock_adapter_lock,
+        "metadata_opts_callback": mock_metadata_opts,
+        "lock": mock_adapter_lock,
         "crawler_process_callback": _mock_callable,
     }
     return workflow_args
@@ -88,19 +88,21 @@ class TestRunnerWorkflow(BaseRoleWorkflowTestSpec):
         mock_task.in_progressing_id = int(_Task_In_Progressing_Id_Value)
         mock_task.running_result = _Task_Running_Result
 
+        mock_crawler_name = Mock(CrawlerName())
+
         mock_metadata_path = MagicMock(MetaDataPath(name="test_name_1", group="test_group"))
         prop_task = PropertyMock(return_value="test_task_path")
         type(mock_metadata_path).task = prop_task
 
+        mock_metadata_opts = Mock(MetaDataOpt())
+
         mock_distributed_lock = Mock(DistributedLock(lock=Mock()))
 
         workflow_args = {
-            "crawler_name": "test_name",
-            "index_sep": "test_index_sep",
+            "name": mock_crawler_name,
             "path": mock_metadata_path,
-            "get_metadata": _mock_callable,
-            "set_metadata": _mock_callable,
-            "opt_metadata_with_lock": mock_distributed_lock,
+            "metadata_opts_callback": mock_metadata_opts,
+            "lock": mock_distributed_lock,
             "crawler_process_callback": _raise_error_process,
         }
         workflow = RunnerWorkflow(**workflow_args)
@@ -211,13 +213,14 @@ class TestPrimaryBackupRunnerWorkflow(BaseRoleWorkflowTestSpec):
     def _init_workflow_and_mock_set_metadata_func(
         self, metadata_path: Mock, adapter_lock: Mock
     ) -> PrimaryBackupRunnerWorkflow:
+        mock_crawler_name = Mock(CrawlerName())
+        mock_metadata_opts = Mock(MetaDataOpt())
+
         workflow_args = {
-            "crawler_name": "test_name",
-            "index_sep": "test_index_sep",
+            "name": mock_crawler_name,
             "path": metadata_path,
-            "get_metadata": _mock_callable,
-            "set_metadata": _mock_callable,
-            "opt_metadata_with_lock": adapter_lock,
+            "metadata_opts_callback": mock_metadata_opts,
+            "lock": adapter_lock,
             "crawler_process_callback": _mock_callable,
         }
         role_workflow = PrimaryBackupRunnerWorkflow(**workflow_args)
