@@ -1,13 +1,13 @@
 from datetime import datetime
 
 from smoothcrawler_cluster.model import (
-    CrawlerStateRole,
+    CrawlerRole,
     Empty,
     GroupState,
     HeartState,
     Initial,
     RunningResult,
-    TaskResult,
+    TaskState,
     Update,
 )
 
@@ -58,9 +58,7 @@ class TestEmpty:
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="group", expected_value="")
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -78,7 +76,7 @@ class TestEmpty:
             expected_value={"success_count": 0, "fail_count": 0},
         )
         MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskResult.NOTHING.value
+            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskState.NOTHING.value
         )
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, task, metadata="result_detail", expected_value=[])
 
@@ -137,9 +135,7 @@ class TestInitial:
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
 
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="group", expected_value="test-group")
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.INITIAL.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.INITIAL.value)
 
     def test_task(self):
         # Operate target method for testing
@@ -157,7 +153,7 @@ class TestInitial:
             expected_value={"success_count": 0, "fail_count": 0},
         )
         MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskResult.NOTHING.value
+            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskState.NOTHING.value
         )
         MetaDataValueAssertion(WorkingTime.AT_INITIAL, task, metadata="result_detail", expected_value=[])
 
@@ -228,7 +224,7 @@ class TestUpdate:
     def test_node_state(self):
         # Operate target method for testing
         init_state = Initial.node_state()
-        state = Update.node_state(init_state, group=_Crawler_Group_Name_Value, role=CrawlerStateRole.RUNNER)
+        state = Update.node_state(init_state, group=_Crawler_Group_Name_Value, role=CrawlerRole.RUNNER)
 
         # Verify values
         ObjectIsNoneOrNotAssertion(WorkingTime.AT_INITIAL, state, is_none=False)
@@ -236,9 +232,7 @@ class TestUpdate:
         MetaDataValueAssertion(
             WorkingTime.AT_INITIAL, state, metadata="group", expected_value=_Crawler_Group_Name_Value
         )
-        MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerStateRole.RUNNER.value
-        )
+        MetaDataValueAssertion(WorkingTime.AT_INITIAL, state, metadata="role", expected_value=CrawlerRole.RUNNER.value)
 
     def test_task(self):
         test_cookie = {"test_cookie": "test_cookie"}
@@ -253,7 +247,7 @@ class TestUpdate:
             authorization=test_auth,
             in_progressing_id="1",
             running_result=RunningResult(success_count=1, fail_count=0),
-            running_status=TaskResult.PROCESSING,
+            running_status=TaskState.PROCESSING,
             result_detail=_Task_Result_Detail_Value,
         )
 
@@ -271,7 +265,7 @@ class TestUpdate:
             expected_value={"success_count": 1, "fail_count": 0},
         )
         MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskResult.PROCESSING.value
+            WorkingTime.AT_INITIAL, task, metadata="running_status", expected_value=TaskState.PROCESSING.value
         )
         MetaDataValueAssertion(
             WorkingTime.AT_INITIAL, task, metadata="result_detail", expected_value=_Task_Result_Detail_Value
@@ -294,7 +288,7 @@ class TestUpdate:
             update_timeout=test_update_timeout,
             heart_rhythm_timeout=test_heart_rhythm_timeout,
             healthy_state=HeartState.HEALTHY,
-            task_state=TaskResult.PROCESSING,
+            task_state=TaskState.PROCESSING,
         )
 
         # Verify value
@@ -322,5 +316,5 @@ class TestUpdate:
             WorkingTime.AT_INITIAL, heartbeat, metadata="healthy_state", expected_value=HeartState.HEALTHY.value
         )
         MetaDataValueAssertion(
-            WorkingTime.AT_INITIAL, heartbeat, metadata="task_state", expected_value=TaskResult.PROCESSING.value
+            WorkingTime.AT_INITIAL, heartbeat, metadata="task_state", expected_value=TaskState.PROCESSING.value
         )

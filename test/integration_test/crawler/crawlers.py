@@ -11,11 +11,11 @@ from kazoo.client import KazooClient
 from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
 from smoothcrawler_cluster.election import ElectionResult
 from smoothcrawler_cluster.model import (
-    CrawlerStateRole,
+    CrawlerRole,
     GroupState,
     Initial,
     NodeState,
-    TaskResult,
+    TaskState,
     Update,
 )
 
@@ -86,13 +86,13 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         node_state = uit_object._metadata_util.get_metadata_from_zookeeper(
             path=uit_object._zk_path.node_state, as_obj=NodeState
         )
-        assert node_state.role == CrawlerStateRole.INITIAL.value, (
+        assert node_state.role == CrawlerRole.INITIAL.value, (
             "At initial process, the role of crawler instance should be *initial* (or value of "
             "*CrawlerStateRole.Initial*)."
         )
 
         # Checking initial state
-        uit_object._update_crawler_role(CrawlerStateRole.RUNNER)
+        uit_object._update_crawler_role(CrawlerRole.RUNNER)
 
         # Verify the updated state
         updated_group_state = uit_object._metadata_util.get_metadata_from_zookeeper(
@@ -109,7 +109,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
             path=uit_object._zk_path.node_state, as_obj=NodeState
         )
         assert (
-            updated_node_state.role == CrawlerStateRole.RUNNER.value
+            updated_node_state.role == CrawlerRole.RUNNER.value
         ), "After update the *state* meta data, its role should change to be *runner* (*CrawlerStateRole.Runner*)."
 
     @ZK.reset_testing_env(path=[ZKNode.HEARTBEAT])
@@ -273,7 +273,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._verify_metadata.group_state_is_not_empty(
             runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0"
         )
-        self._verify_metadata.node_state_is_not_empty(role=CrawlerStateRole.RUNNER.value, group=_Testing_Value.group)
+        self._verify_metadata.node_state_is_not_empty(role=CrawlerRole.RUNNER.value, group=_Testing_Value.group)
         self._verify_metadata.task_is_not_empty()
         self._verify_metadata.heartbeat_is_not_empty()
 
@@ -337,7 +337,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
     def test_many_crawler_instances_with_initial(self):
         running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         running_flag: Dict[str, bool] = _Manager.dict()
-        role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
+        role_results: Dict[str, CrawlerRole] = _Manager.dict()
 
         index_sep_char: str = "_"
 
@@ -396,7 +396,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 updated_task_str = json.dumps(updated_task.to_readable_object())
                 self._set_value_to_node(path=_Testing_Value.task_zookeeper_path, value=bytes(updated_task_str, "utf-8"))
 
-                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.RUNNER)
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerRole.RUNNER)
                 node_state_str = json.dumps(node_state.to_readable_object())
                 self._set_value_to_node(
                     path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
@@ -421,7 +421,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             zk_crawler.register.task()
 
             try:
-                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
+                zk_crawler.running_as_role(CrawlerRole.RUNNER)
             except NotImplementedError:
                 assert True, "It works finely."
             else:
@@ -435,7 +435,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler(),
                 )
-                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
+                zk_crawler.running_as_role(CrawlerRole.RUNNER)
             except Exception as e:
                 running_flag["_wait_for_task"] = False
                 running_exception["_wait_for_task"] = e
@@ -458,7 +458,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 1, "fail_count": 0},
-            running_status=TaskResult.DONE.value,
+            running_status=TaskState.DONE.value,
             result_detail_len=1,
         )
         self._verify_metadata.one_task_result_detail(
@@ -473,7 +473,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         def _assign_task() -> None:
             try:
                 time.sleep(2)
-                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerStateRole.DEAD_RUNNER)
+                node_state = Initial.node_state(group=_Testing_Value.group, role=CrawlerRole.DEAD_RUNNER)
                 node_state_str = json.dumps(node_state.to_readable_object())
                 self._set_value_to_node(
                     path=_Testing_Value.node_state_zookeeper_path, value=bytes(node_state_str, "utf-8")
@@ -503,7 +503,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             zk_crawler.register.task()
 
             try:
-                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
+                zk_crawler.running_as_role(CrawlerRole.RUNNER)
             except NotImplementedError:
                 assert True, "It works finely."
             else:
@@ -517,7 +517,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     http_resp_parser=RequestsHTTPResponseParser(),
                     data_process=ExampleWebDataHandler(),
                 )
-                zk_crawler.running_as_role(CrawlerStateRole.RUNNER)
+                zk_crawler.running_as_role(CrawlerRole.RUNNER)
             except Exception as e:
                 running_flag["_wait_for_task"] = False
                 running_exception["_wait_for_task"] = e
@@ -540,7 +540,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             task_data,
             in_progressing_id="-1",
             running_result={"success_count": 0, "fail_count": 0},
-            running_status=TaskResult.NOTHING.value,
+            running_status=TaskState.NOTHING.value,
             result_detail_len=0,
         )
         self._verify_metadata.one_task_result_detail(
@@ -572,13 +572,13 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 )
 
         def _initial_node_state(_node_path: str) -> None:
-            node_state = Initial.node_state(group=zk_crawler.group, role=CrawlerStateRole.RUNNER)
+            node_state = Initial.node_state(group=zk_crawler.group, role=CrawlerRole.RUNNER)
             if self._exist_node(path=_node_path) is None:
                 node_state_data_str = json.dumps(node_state.to_readable_object())
                 self._create_node(path=_node_path, value=bytes(node_state_data_str, "utf-8"), include_data=True)
 
         def _initial_task(_task_path: str) -> None:
-            task = Initial.task(running_state=TaskResult.PROCESSING)
+            task = Initial.task(running_state=TaskState.PROCESSING)
             if self._exist_node(path=_task_path) is None:
                 task_data_str = json.dumps(task.to_readable_object())
                 self._create_node(path=_task_path, value=bytes(task_data_str, "utf-8"), include_data=True)
@@ -607,7 +607,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             _initial_heartbeat(heartbeat_path)
 
         if zk_crawler.is_ready_for_run(timeout=5):
-            zk_crawler.running_as_role(CrawlerStateRole.BACKUP_RUNNER)
+            zk_crawler.running_as_role(CrawlerRole.BACKUP_RUNNER)
         else:
             assert False, (
                 "It should be ready to run. Please check the detail implementation or other settings in testing has "
@@ -622,7 +622,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
         self._verify_metadata.all_node_state_role(
             runner=1,
             backup=1,
-            expected_role={"0": CrawlerStateRole.DEAD_RUNNER, "1": CrawlerStateRole.RUNNER},
+            expected_role={"0": CrawlerRole.DEAD_RUNNER, "1": CrawlerRole.RUNNER},
             expected_group={"0": zk_crawler._crawler_group, "1": zk_crawler._crawler_group},
             start_index=0,
         )
@@ -684,7 +684,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                 nonlocal result, start, end
                 start.value = time.time()
                 # # Run target function
-                result.value = zk_crawler.running_as_role(CrawlerStateRole.BACKUP_RUNNER)
+                result.value = zk_crawler.running_as_role(CrawlerRole.BACKUP_RUNNER)
                 end.value = time.time()
             except Exception as e:
                 running_flag["_run_target_test_func"] = False
@@ -730,7 +730,7 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
                     election_result is ElectionResult.LOSER
                 ), f"The election result of '{crawler_name}' should be *ElectionResult.Loser*."
 
-    def _check_role(self, role_results: Dict[str, CrawlerStateRole], index_sep_char: str) -> None:
+    def _check_role(self, role_results: Dict[str, CrawlerRole], index_sep_char: str) -> None:
         assert (
             len(role_results.keys()) == _Total_Crawler_Value
         ), f"The size of *role* attribute checksum should be {_Total_Crawler_Value}."
@@ -738,12 +738,12 @@ class TestZookeeperCrawlerFeatureWithMultipleCrawlers(MultiCrawlerTestSuite):
             crawler_index = int(crawler_name.split(index_sep_char)[-1])
             if crawler_index <= _Runner_Crawler_Value:
                 assert (
-                    role is CrawlerStateRole.RUNNER
-                ), f"The role of this crawler instance '{crawler_name}' should be '{CrawlerStateRole.RUNNER}'."
+                    role is CrawlerRole.RUNNER
+                ), f"The role of this crawler instance '{crawler_name}' should be '{CrawlerRole.RUNNER}'."
             else:
                 assert (
-                    role is CrawlerStateRole.BACKUP_RUNNER
-                ), f"The role of this crawler instance '{crawler_name}' should be '{CrawlerStateRole.BACKUP_RUNNER}'."
+                    role is CrawlerRole.BACKUP_RUNNER
+                ), f"The role of this crawler instance '{crawler_name}' should be '{CrawlerRole.BACKUP_RUNNER}'."
 
 
 class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
@@ -765,9 +765,9 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Backup_Crawler_Value,
             fail_runner=_Fail_Runner_Crawler_Value,
             expected_role={
-                "1": CrawlerStateRole.RUNNER,
-                "2": CrawlerStateRole.DEAD_RUNNER,
-                "3": CrawlerStateRole.RUNNER,
+                "1": CrawlerRole.RUNNER,
+                "2": CrawlerRole.DEAD_RUNNER,
+                "3": CrawlerRole.RUNNER,
             },
             expected_group={"1": "sc-crawler-cluster", "2": "sc-crawler-cluster", "3": "sc-crawler-cluster"},
             expected_task_result={"1": "available", "2": "available", "3": "available"},
@@ -797,10 +797,10 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Multiple_Backup_Scenarios_Backup_Crawler,
             fail_runner=_Fail_Runner_Crawler_Value,
             expected_role={
-                "1": CrawlerStateRole.RUNNER,
-                "2": CrawlerStateRole.DEAD_RUNNER,
-                "3": CrawlerStateRole.RUNNER,
-                "4": CrawlerStateRole.BACKUP_RUNNER,
+                "1": CrawlerRole.RUNNER,
+                "2": CrawlerRole.DEAD_RUNNER,
+                "3": CrawlerRole.RUNNER,
+                "4": CrawlerRole.BACKUP_RUNNER,
             },
             expected_group={
                 "1": "sc-crawler-cluster",
@@ -837,12 +837,12 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
             backup=_Multiple_Fail_Scenarios_Backup_Crawler,
             fail_runner=_Multiple_Fail_Scenarios_Fail_Crawler,
             expected_role={
-                "1": CrawlerStateRole.DEAD_RUNNER,
-                "2": CrawlerStateRole.DEAD_RUNNER,
-                "3": CrawlerStateRole.RUNNER,
-                "4": CrawlerStateRole.RUNNER,
-                "5": CrawlerStateRole.RUNNER,
-                "6": CrawlerStateRole.BACKUP_RUNNER,
+                "1": CrawlerRole.DEAD_RUNNER,
+                "2": CrawlerRole.DEAD_RUNNER,
+                "3": CrawlerRole.RUNNER,
+                "4": CrawlerRole.RUNNER,
+                "5": CrawlerRole.RUNNER,
+                "6": CrawlerRole.BACKUP_RUNNER,
             },
             expected_group={
                 "1": "sc-crawler-cluster",
@@ -877,7 +877,7 @@ class TestZookeeperCrawlerRunUnderDiffScenarios(MultiCrawlerTestSuite):
 
         running_exception: Dict[str, Optional[Exception]] = _Manager.dict()
         running_flag: Dict[str, bool] = _Manager.dict()
-        role_results: Dict[str, CrawlerStateRole] = _Manager.dict()
+        role_results: Dict[str, CrawlerRole] = _Manager.dict()
 
         def _assign_task() -> None:
             task_paths = _ZKNodePathUtils.all_task(runner)

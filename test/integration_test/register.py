@@ -5,7 +5,7 @@ import pytest
 from kazoo.client import KazooClient
 
 from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
-from smoothcrawler_cluster.model import CrawlerStateRole, GroupState, NodeState
+from smoothcrawler_cluster.model import CrawlerRole, GroupState, NodeState
 from smoothcrawler_cluster.register import Register
 
 from .._config import Zookeeper_Hosts
@@ -134,9 +134,7 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
 
         exist_node = self._exist_node(path=_Testing_Value.node_state_zookeeper_path)
         assert exist_node is not None, ""
-        self._verify_metadata.node_state_is_not_empty(
-            role=CrawlerStateRole.INITIAL.value, group=_Crawler_Group_Name_Value
-        )
+        self._verify_metadata.node_state_is_not_empty(role=CrawlerRole.INITIAL.value, group=_Crawler_Group_Name_Value)
 
     @ZK.reset_testing_env(path=[ZKNode.TASK])
     @ZK.remove_node_finally(path=[ZKNode.TASK])
@@ -239,8 +237,6 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         self._verify_metadata.group_state_is_not_empty(
             runner=_Runner_Crawler_Value, backup=_Backup_Crawler_Value, standby_id="0"
         )
-        self._verify_metadata.node_state_is_not_empty(
-            role=CrawlerStateRole.INITIAL.value, group=_Crawler_Group_Name_Value
-        )
+        self._verify_metadata.node_state_is_not_empty(role=CrawlerRole.INITIAL.value, group=_Crawler_Group_Name_Value)
         self._verify_metadata.task_is_not_empty()
         self._verify_metadata.heartbeat_is_not_empty()

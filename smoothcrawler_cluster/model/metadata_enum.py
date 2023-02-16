@@ -8,7 +8,7 @@ to let value could be more clear and expected.
 from enum import Enum
 
 
-class CrawlerStateRole(Enum):
+class CrawlerRole(Enum):
     """*The crawler role in crawler cluster system*
 
     This role is NOT the role of *SmoothCrawler-AppIntegration*. They're very different. The role in
@@ -52,7 +52,7 @@ class CrawlerStateRole(Enum):
     """**Dead Backup Runner** is same as **Dead Runner** but it's for **Backup Runner**."""
 
 
-class TaskResult(Enum):
+class TaskState(Enum):
     """*The task running state*
 
     The task result means it is the result of running web spider task. The web spider task could classify to be

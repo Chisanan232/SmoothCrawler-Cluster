@@ -14,11 +14,7 @@ from smoothcrawler_cluster.model.metadata import (
     RunningResult,
     Task,
 )
-from smoothcrawler_cluster.model.metadata_enum import (
-    CrawlerStateRole,
-    HeartState,
-    TaskResult,
-)
+from smoothcrawler_cluster.model.metadata_enum import CrawlerRole, HeartState, TaskState
 
 from ._spec import _MetaDataTest
 
@@ -272,12 +268,12 @@ class TestNodeState(_MetaDataTest):
         """
 
         # Test for setting the property normally. It would choice one value randomly.
-        under_test_value: CrawlerStateRole = random.choice(
+        under_test_value: CrawlerRole = random.choice(
             [
-                CrawlerStateRole.RUNNER,
-                CrawlerStateRole.BACKUP_RUNNER,
-                CrawlerStateRole.DEAD_RUNNER,
-                CrawlerStateRole.DEAD_BACKUP_RUNNER,
+                CrawlerRole.RUNNER,
+                CrawlerRole.BACKUP_RUNNER,
+                CrawlerRole.DEAD_RUNNER,
+                CrawlerRole.DEAD_BACKUP_RUNNER,
             ]
         )
         try:
@@ -438,7 +434,7 @@ class TestTask(_MetaDataTest):
         self._run_property_test(
             getting_func=get_func,
             setting_func=set_func,
-            valid_value=TaskResult.PROCESSING,
+            valid_value=TaskState.PROCESSING,
             invalid_1_value=5,
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"},
         )
@@ -465,7 +461,7 @@ class TestTask(_MetaDataTest):
         def set_func(value) -> None:
             task.result_detail = value
 
-        detail = ResultDetail(task_id="0", state=TaskResult.DONE.value, status_code=200, response="OK", error_msg=None)
+        detail = ResultDetail(task_id="0", state=TaskState.DONE.value, status_code=200, response="OK", error_msg=None)
         self._run_property_test(
             getting_func=get_func,
             setting_func=set_func,
@@ -597,7 +593,7 @@ class TestHeartbeat(_MetaDataTest):
         self._run_property_test(
             getting_func=get_func,
             setting_func=set_func,
-            valid_value=TaskResult.PROCESSING,
+            valid_value=TaskState.PROCESSING,
             invalid_1_value="5",
             invalid_2_value={"k1": "v1", "k2": "v2", "k3": "v3"},
         )

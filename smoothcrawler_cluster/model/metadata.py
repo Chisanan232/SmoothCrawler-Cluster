@@ -9,7 +9,7 @@ from collections import namedtuple
 from datetime import datetime as dt
 from typing import List, Optional, TypeVar, Union
 
-from .metadata_enum import CrawlerStateRole, HeartState, TaskResult
+from .metadata_enum import CrawlerRole, HeartState, TaskState
 
 _DatetimeType = TypeVar("_DatetimeType", bound=dt)
 
@@ -268,7 +268,7 @@ class NodeState(_BaseMetaData):
     """
 
     _group: str = None
-    _role: CrawlerStateRole = None
+    _role: CrawlerRole = None
 
     def to_readable_object(self) -> dict:
         return {
@@ -292,7 +292,7 @@ class NodeState(_BaseMetaData):
         self._group = group
 
     @property
-    def role(self) -> CrawlerStateRole:
+    def role(self) -> CrawlerRole:
         """:obj:`str`: Properties with both a getter and setter for the crawler role what current crawler instance is.
         It recommends that use enum object **CrawlerStateRole** to configure this property. But it still could use
         string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-runner') to do it.
@@ -302,9 +302,9 @@ class NodeState(_BaseMetaData):
         return self._role
 
     @role.setter
-    def role(self, role: Union[CrawlerStateRole, str]) -> None:
+    def role(self, role: Union[CrawlerRole, str]) -> None:
         if isinstance(role, str):
-            enum_values = list(map(lambda a: a.value, CrawlerStateRole))
+            enum_values = list(map(lambda a: a.value, CrawlerRole))
             if role not in enum_values:
                 raise ValueError(
                     "The value of attribute *role* is incorrect. It recommends that using enum object "
@@ -312,12 +312,12 @@ class NodeState(_BaseMetaData):
                     f"{enum_values}."
                 )
         else:
-            if isinstance(role, CrawlerStateRole) is False:
+            if isinstance(role, CrawlerRole) is False:
                 raise ValueError(
                     "The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*."
                 )
 
-        role = role.value if isinstance(role, CrawlerStateRole) else role
+        role = role.value if isinstance(role, CrawlerRole) else role
         self._role = role
 
 
@@ -557,10 +557,10 @@ class Task(_BaseMetaData):
         return self._running_status
 
     @running_status.setter
-    def running_status(self, running_status: Union[str, TaskResult]) -> None:
-        if isinstance(running_status, (str, TaskResult)) is False:
+    def running_status(self, running_status: Union[str, TaskState]) -> None:
+        if isinstance(running_status, (str, TaskState)) is False:
             raise ValueError("Property *running_status* only accept *str* or *TaskResult* type value.")
-        result_detail = running_status.value if isinstance(running_status, TaskResult) else running_status
+        result_detail = running_status.value if isinstance(running_status, TaskState) else running_status
         self._running_status = result_detail
 
     @property
@@ -849,12 +849,12 @@ class Heartbeat(_BaseMetaData):
         return self._task_state
 
     @task_state.setter
-    def task_state(self, task_state: Union[str, TaskResult]) -> None:
-        if isinstance(task_state, (str, TaskResult)) is False:
+    def task_state(self, task_state: Union[str, TaskState]) -> None:
+        if isinstance(task_state, (str, TaskState)) is False:
             raise ValueError("Property *task_state* only accept *str* or *TaskResult* type value.")
-        if isinstance(task_state, str) and task_state not in [i.value for i in TaskResult]:
+        if isinstance(task_state, str) and task_state not in [i.value for i in TaskState]:
             raise ValueError("The value of property *task_state* should be as *TaskResult* value.")
-        task_state = task_state.value if isinstance(task_state, TaskResult) else task_state
+        task_state = task_state.value if isinstance(task_state, TaskState) else task_state
         self._task_state = task_state
 
     @classmethod
