@@ -261,6 +261,21 @@ class TestMetaDataOpt(_MetaDataTest):
             invalid_2_value=["test_list"],
         )
 
+    def test_exist_callback(self, metadata_opt: MetaDataOpt):
+        def get_func() -> Callable:
+            return metadata_opt.exist_callback
+
+        def set_func(value) -> None:
+            metadata_opt.exist_callback = value
+
+        self._run_property_test(
+            getting_func=get_func,
+            setting_func=set_func,
+            valid_value=_generate_timer_interval,
+            invalid_1_value="test",
+            invalid_2_value=["test_list"],
+        )
+
 
 class BasePathTestSpec(metaclass=ABCMeta):
     @pytest.fixture(scope="function")
