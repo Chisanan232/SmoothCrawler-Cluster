@@ -31,19 +31,6 @@ class BaseElection(metaclass=ABCMeta):
     developers extend more different strategies of election processing for more different scenarios.
     """
 
-    _identity: str = ""
-
-    @property
-    def identity(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter. The identity of each one crawler instance. It MUST BE
-        unique.
-        """
-        return self._identity
-
-    @identity.setter
-    def identity(self, ident: str) -> None:
-        self._identity = ident
-
     @abstractmethod
     def elect(self, **kwargs) -> ElectionResult:
         """Run the election processing to verify who is/are **Runner** and otherwise is/are **Backup_Runner** finally.
@@ -85,8 +72,11 @@ class IndexElection(BaseElection):
             ElectionResult: Final election result.
 
         """
+        # Parse the index from crawler's name
         member_indexs = map(lambda one_member: int(one_member.split(sep=index_sep)[-1]), member)
+        # Sort the indexes
         sorted_list = sorted(list(member_indexs))
+        # Filter to get the winner
         winner = sorted_list[0:spot]
         is_winner = list(map(lambda winner_index: str(winner_index) in candidate, winner))
         return ElectionResult.WINNER if True in is_winner else ElectionResult.LOSER
