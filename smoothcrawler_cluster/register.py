@@ -8,7 +8,6 @@ management and extension, let registration processes to be a single one module i
 """
 
 import time
-from typing import Type
 
 from .crawler.adapter import DistributedLock
 from .model import GroupState, Initial, Update
