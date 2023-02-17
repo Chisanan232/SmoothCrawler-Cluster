@@ -17,7 +17,7 @@ from .._utils.converter import BaseConverter, JsonStrConverter
 from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
 from ..election import BaseElection, ElectionResult, IndexElection
 from ..exceptions import StopUpdateHeartbeat
-from ..model import CrawlerRole, GroupState, Initial, NodeState, RunningContent, Update
+from ..model import CrawlerRole, GroupState, NodeState, RunningContent, Update
 from ..model._data import (
     CrawlerName,
     CrawlerTimer,
@@ -187,6 +187,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._ensure_timeout = ensure_timeout
         self._ensure_wait = ensure_wait
 
+        # TODO (crawler): Set the attribute as property
         if not attribute:
             attribute = SerialCrawlerAttribute()
         self._crawler_attr = attribute
@@ -203,6 +204,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             zk_hosts = self._default_zookeeper_hosts
         self._zk_hosts = zk_hosts
         self._zookeeper_client = ZookeeperClient(hosts=self._zk_hosts)
+        # TODO (crawler): Set the attribute as property
         self._zk_path = ZookeeperPath(name=self._crawler_name, group=self._crawler_group)
 
         if not zk_converter:
@@ -217,6 +219,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             "restrict": ZookeeperRecipe.WRITE_LOCK,
             "identifier": self._state_identifier,
         }
+        # TODO (crawler): Set the attribute as property
         self.distributed_lock_adapter = DistributedLock(lock=self._zookeeper_client.restrict, **restrict_args)
 
         self._register = None
@@ -229,6 +232,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._heartbeat_update_timeout = heartbeat_update_timeout
         self._heartbeat_dead_threshold = heartbeat_dead_threshold
 
+        # TODO (crawler): Set the attribute as property
         self._crawler_name_data = CrawlerName()
         self._crawler_name_data.group = self._crawler_group
         self._crawler_name_data.base_name = self._crawler_name.split(self._index_sep)[0]
@@ -240,6 +244,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._metadata_opts_callback.get_callback = self._get_metadata
         self._metadata_opts_callback.set_callback = self._set_metadata
 
+        # TODO (crawler): Set the attribute as property
         self._workflow_dispatcher = WorkflowDispatcher(
             name=self._crawler_name_data,
             path=self._zk_path,
