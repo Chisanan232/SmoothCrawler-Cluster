@@ -45,6 +45,7 @@ class Register:
         self._get_metadata = metadata_opts_callback.get_callback
         self._set_metadata = metadata_opts_callback.set_callback
         self._lock = lock
+        # TODO (election): Add one more initial argument about election object.
 
     def metadata(
         self,
@@ -133,6 +134,7 @@ class Register:
                 A boolean type value. Returns *True* if it works finely without any issue, nor it would return *False*.
 
             """
+            # TODO (election): Think about adding election process in this running.
             state = self._get_metadata(path=self._path.group_state, as_obj=GroupState)
             if not state.current_crawler or str(self._crawler_name_data) not in state.current_crawler:
                 state = Update.group_state(
