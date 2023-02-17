@@ -5,9 +5,10 @@ import pytest
 
 from smoothcrawler_cluster.election import BaseElection, ElectionResult, IndexElection
 
+from .._values import _Crawler_Name_Value
+
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
 
-_Test_Crawler_Name: str = "sc-crawler_1"
 _Test_Loser_Crawler_Name: str = "sc-crawler_3"
 _Test_Index_Sep: str = "_"
 _Test_Crawlers: List[str] = ["sc-crawler_1", "sc-crawler_2", "sc-crawler_3"]
@@ -25,17 +26,9 @@ class TestIndexElection:
     def election(self) -> Generic[BaseElectionType]:
         return IndexElection()
 
-    def test_identity(self, election: Generic[BaseElectionType]):
-        assert election.identity == "", "It should be empty string in initial state."
-        election.identity = _Test_Crawler_Name
-        assert (
-            election.identity is not None and election.identity == _Test_Crawler_Name
-        ), f"It should be assigned correct value {_Test_Crawler_Name}."
-
     def test_elect_if_candidate_is_winner(self, election: Generic[BaseElectionType]):
-        election.identity = _Test_Crawler_Name
         election_result = election.elect(
-            candidate=_Test_Crawler_Name, member=_Test_Crawlers, index_sep=_Test_Index_Sep, spot=_Test_Spot
+            candidate=_Crawler_Name_Value, member=_Test_Crawlers, index_sep=_Test_Index_Sep, spot=_Test_Spot
         )
         assert isinstance(
             election_result, ElectionResult
