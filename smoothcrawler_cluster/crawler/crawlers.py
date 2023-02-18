@@ -15,7 +15,7 @@ from smoothcrawler.factory import BaseFactory
 from .._utils import MetaDataUtil
 from .._utils.converter import BaseConverter, JsonStrConverter
 from .._utils.zookeeper import ZookeeperClient, ZookeeperPath, ZookeeperRecipe
-from ..election import BaseElection, ElectionResult, IndexElection
+from ..election import BaseElection, ElectionResult, SmallerElection
 from ..exceptions import StopUpdateHeartbeat
 from ..model import CrawlerRole, GroupState, NodeState, RunningContent, Update
 from ..model._data import (
@@ -225,7 +225,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._register = None
 
         if not election_strategy:
-            election_strategy = IndexElection()
+            election_strategy = SmallerElection()
         self._election_strategy = election_strategy
 
         self._heartbeat_update = heartbeat_update

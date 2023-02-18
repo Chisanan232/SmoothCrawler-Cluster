@@ -72,7 +72,7 @@ class BaseElection(metaclass=ABCMeta):
         pass
 
 
-class IndexElection(BaseElection):
+class SmallerElection(BaseElection):
     """*Election by index of crawler name*
 
     The criteria of this election strategy is the **index** which is *the last characters in crawler's name*, e.g.,
