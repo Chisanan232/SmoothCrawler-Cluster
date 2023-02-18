@@ -203,6 +203,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # Initial some attributes
         self._crawler_name_data: CrawlerName = None
         self._register: Register = None
+        self._workflow_dispatcher: WorkflowDispatcher = None
 
         if not zk_hosts:
             zk_hosts = self._default_zookeeper_hosts
@@ -239,15 +240,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._metadata_opts_callback.get_callback = self._get_metadata
         self._metadata_opts_callback.set_callback = self._set_metadata
 
-        # TODO (crawler): Set the attribute as property
-        self._workflow_dispatcher = WorkflowDispatcher(
-            name=self._crawler_name_data,
-            path=self._zk_path,
-            metadata_opts_callback=self._metadata_opts_callback,
-            lock=self.distributed_lock_adapter,
-            crawler_process_callback=self._run_crawling_processing,
-        )
-        self._heartbeat_workflow = self._workflow_dispatcher.heartbeat()
+        self._heartbeat_workflow = self.dispatcher.heartbeat()
 
         if initial:
             self.initial()
@@ -318,7 +311,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def register(self) -> Register:
-        """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
+        """:obj:`Register`: Properties with both getter and setter for object **Register** to process meta-data
+        registrations.
+        """
         if not self._register:
             self._register = Register(
                 name=self.name,
@@ -327,6 +322,21 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
                 lock=self.distributed_lock_adapter,
             )
         return self._register
+
+    @property
+    def dispatcher(self) -> WorkflowDispatcher:
+        """:obj:`WorkflowDispatcher`: Properties with both getter and setter for workflow dispatcher
+        **WorkflowDispatcher** which would dispatch one specific workflow by the current crawler role to run.
+        """
+        if not self._workflow_dispatcher:
+            self._workflow_dispatcher = WorkflowDispatcher(
+                name=self.name,
+                path=self._zk_path,
+                metadata_opts_callback=self._metadata_opts_callback,
+                lock=self.distributed_lock_adapter,
+                crawler_process_callback=self._run_crawling_processing,
+            )
+        return self._workflow_dispatcher
 
     def initial(self) -> None:
         """Initial processing of entire cluster running. This processing procedure like below:
@@ -611,7 +621,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
         try:
             role = role.value if isinstance(role, CrawlerRole) else role
-            return self._workflow_dispatcher.dispatch(role=role).run(timer=timer)
+            return self.dispatcher.dispatch(role=role).run(timer=timer)
         except StopUpdateHeartbeat:
             self.stop_update_heartbeat()
 

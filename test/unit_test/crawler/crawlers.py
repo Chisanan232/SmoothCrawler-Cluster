@@ -4,6 +4,7 @@ import pytest
 from kazoo.client import KazooClient
 
 from smoothcrawler_cluster.crawler.crawlers import ZookeeperCrawler
+from smoothcrawler_cluster.crawler.dispatcher import WorkflowDispatcher
 from smoothcrawler_cluster.crawler.workflow import (
     BaseRoleWorkflow,
     PrimaryBackupRunnerWorkflow,
@@ -13,6 +14,7 @@ from smoothcrawler_cluster.crawler.workflow import (
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
 from smoothcrawler_cluster.model import CrawlerRole, GroupState, NodeState, Update
 from smoothcrawler_cluster.model._data import CrawlerName
+from smoothcrawler_cluster.register import Register
 
 from ..._assertion import ValueFormatAssertion
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
@@ -99,6 +101,22 @@ class TestZookeeperCrawler:
         zk_crawler.ensure_wait = 2
         ensure_register = zk_crawler.ensure_wait
         assert ensure_register == 2, "Property 'ensure_wait' should be True as it assigning."
+
+    def test_property_register(self, zk_crawler: ZookeeperCrawler):
+        # Test getter
+        register = zk_crawler.register
+        assert register is not None and isinstance(register, Register), (
+            "After instantiate ZookeeperCrawler, its property 'register' should NOT be None and it is instance of "
+            "*Register* object."
+        )
+
+    def test_property_dispatcher(self, zk_crawler: ZookeeperCrawler):
+        # Test getter
+        dispatcher = zk_crawler.dispatcher
+        assert dispatcher is not None and isinstance(dispatcher, WorkflowDispatcher), (
+            "After instantiate ZookeeperCrawler, its property 'dispatcher' should NOT be None and it is instance of "
+            "*WorkflowDispatcher* object."
+        )
 
     def test_initial_wait_for_election_timeout(self, zk_crawler: ZookeeperCrawler):
         zk_crawler.stop_update_heartbeat()
