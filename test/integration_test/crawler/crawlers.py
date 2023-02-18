@@ -142,8 +142,8 @@ class TestZookeeperCrawlerSingleInstance(ZKTestSpec):
         # Update the meta-data *GroupState*
         group_state_data, state = self._get_value_from_node(path=_Testing_Value.group_state_zookeeper_path)
         group_state = json.loads(group_state_data.decode("utf-8"))
-        group_state["current_crawler"].extend([uit_object.name, "test_runner", "test_backup"])
-        group_state["current_runner"].extend([uit_object.name, "test_runner"])
+        group_state["current_crawler"].extend([str(uit_object.name), "test_runner", "test_backup"])
+        group_state["current_runner"].extend([str(uit_object.name), "test_runner"])
         group_state["current_backup"].append("test_backup")
         self._set_value_to_node(
             path=_Testing_Value.group_state_zookeeper_path, value=bytes(json.dumps(group_state), "utf-8")
