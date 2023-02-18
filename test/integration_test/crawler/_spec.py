@@ -17,9 +17,9 @@ def generate_crawler_name(zk_crawler: ZookeeperCrawler = None) -> CrawlerName:
     name = CrawlerName()
     if zk_crawler:
         name.group = zk_crawler.group
-        name.base_name = zk_crawler.name.split(zk_crawler._index_sep)[0]
+        name.base_name = zk_crawler.name.base_name
         name.index_separation = zk_crawler._index_sep
-        name.id = zk_crawler.name.split(zk_crawler._index_sep)[-1]
+        name.id = zk_crawler.name.id
     else:
         name.group = "pytest"
         name.base_name = "sc-crawler"

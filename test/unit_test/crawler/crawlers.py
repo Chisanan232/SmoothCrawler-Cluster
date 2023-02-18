@@ -12,6 +12,7 @@ from smoothcrawler_cluster.crawler.workflow import (
 )
 from smoothcrawler_cluster.exceptions import CrawlerIsDeadError
 from smoothcrawler_cluster.model import CrawlerRole, GroupState, NodeState, Update
+from smoothcrawler_cluster.model._data import CrawlerName
 
 from ..._assertion import ValueFormatAssertion
 from ..._values import _Backup_Crawler_Value, _Runner_Crawler_Value
@@ -42,9 +43,10 @@ class TestZookeeperCrawler:
     def test_property_name(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing (with default, doesn't modify it by the initial options)
         crawler_name = zk_crawler.name
+        assert isinstance(crawler_name, CrawlerName), "It should be instance of inner data object 'CrawlerName'."
 
         # Verify values
-        ValueFormatAssertion(target=crawler_name, regex=r"sc-crawler_[0-9]{1,3}")
+        ValueFormatAssertion(target=str(crawler_name), regex=r"sc-crawler_[0-9]{1,3}")
 
     def test_property_group(self, zk_crawler: ZookeeperCrawler):
         # Get value by target method for testing (with default, doesn't modify it by the initial options)
@@ -286,7 +288,9 @@ class TestZookeeperCrawler:
             role_enum = CrawlerRole.BACKUP_RUNNER
             mock_group_state.standby_id = "1"
             if role == "SECONDARY_BACKUP":
-                setattr(zk_crawler, "_crawler_name", "sc-crawler_2")
+                crawler_name_data = zk_crawler.name
+                crawler_name_data.id = "2"
+                setattr(zk_crawler, "_crawler_name_data", crawler_name_data)
         else:
             role_enum = CrawlerRole.RUNNER
         mock_node_state.role = role_enum.value
@@ -317,15 +321,15 @@ class TestZookeeperCrawler:
                 update_node_state.assert_called_once_with(node_state=mock_node_state, role=role_enum)
                 if role is CrawlerRole.RUNNER:
                     update_group_state.assert_called_once_with(
-                        mock_group_state, append_current_runner=[zk_crawler.name]
+                        mock_group_state, append_current_runner=[str(zk_crawler.name)]
                     )
                 elif role == "SECONDARY_BACKUP":
                     update_group_state.assert_called_once_with(
-                        mock_group_state, append_current_backup=[zk_crawler.name]
+                        mock_group_state, append_current_backup=[str(zk_crawler.name)]
                     )
                 else:
                     update_group_state.assert_called_once_with(
-                        mock_group_state, append_current_backup=[zk_crawler.name], standby_id="1"
+                        mock_group_state, append_current_backup=[str(zk_crawler.name)], standby_id="1"
                     )
 
     def test__update_crawler_role_invalid_role(self, zk_crawler: ZookeeperCrawler):

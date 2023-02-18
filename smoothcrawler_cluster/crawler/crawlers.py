@@ -200,12 +200,16 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             group = "sc-crawler-cluster"
         self._crawler_group = group
 
+        # Initial some attributes
+        self._crawler_name_data: CrawlerName = None
+        self._register: Register = None
+
         if not zk_hosts:
             zk_hosts = self._default_zookeeper_hosts
         self._zk_hosts = zk_hosts
         self._zookeeper_client = ZookeeperClient(hosts=self._zk_hosts)
         # TODO (crawler): Set the attribute as property
-        self._zk_path = ZookeeperPath(name=self._crawler_name, group=self._crawler_group)
+        self._zk_path = ZookeeperPath(name=str(self.name), group=self._crawler_group)
 
         if not zk_converter:
             zk_converter = JsonStrConverter()
@@ -222,8 +226,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         # TODO (crawler): Set the attribute as property
         self.distributed_lock_adapter = DistributedLock(lock=self._zookeeper_client.restrict, **restrict_args)
 
-        self._register = None
-
         if not election_strategy:
             election_strategy = SmallerElection()
         self._election_strategy = election_strategy
@@ -231,13 +233,6 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         self._heartbeat_update = heartbeat_update
         self._heartbeat_update_timeout = heartbeat_update_timeout
         self._heartbeat_dead_threshold = heartbeat_dead_threshold
-
-        # TODO (crawler): Set the attribute as property
-        self._crawler_name_data = CrawlerName()
-        self._crawler_name_data.group = self._crawler_group
-        self._crawler_name_data.base_name = self._crawler_name.split(self._index_sep)[0]
-        self._crawler_name_data.index_separation = self._index_sep
-        self._crawler_name_data.id = self._crawler_name.split(self._index_sep)[-1]
 
         self._metadata_opts_callback = MetaDataOpt()
         self._metadata_opts_callback.exist_callback = self._exist_metadata
@@ -258,13 +253,19 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
             self.initial()
 
     @property
-    def name(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter. This crawler instance name. It MUST be unique naming
-        in cluster (the same group) for let entire crawler cluster to distinguish every one, for example, the properties
-        *current_crawler*, *current_runner* and *current_backup* in meta-data **GroupState** would record by crawler
-        names. This option value could be modified by Zookeeper object option *name*.
+    def name(self) -> CrawlerName:
+        """:obj:`CrawlerName`: Properties with both getter and setter. This is crawler instance name information. It
+        MUST be unique naming in cluster (the same group) for let entire crawler cluster to distinguish every one, for
+        example, the properties *current_crawler*, *current_runner* and *current_backup* in meta-data **GroupState**
+        would record by crawler names. This option value could be modified by Zookeeper object option *name*.
         """
-        return self._crawler_name
+        if not self._crawler_name_data:
+            self._crawler_name_data = CrawlerName()
+            self._crawler_name_data.group = self._crawler_group
+            self._crawler_name_data.base_name = self._crawler_name.split(self._index_sep)[0]
+            self._crawler_name_data.index_separation = self._index_sep
+            self._crawler_name_data.id = self._crawler_name.split(self._index_sep)[-1]
+        return self._crawler_name_data
 
     @property
     def group(self) -> str:
@@ -320,7 +321,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
         if not self._register:
             self._register = Register(
-                name=self._crawler_name_data,
+                name=self.name,
                 path=self._zk_path,
                 metadata_opts_callback=self._metadata_opts_callback,
                 lock=self.distributed_lock_adapter,
@@ -424,7 +425,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
 
         def _chk_by_condition(state: GroupState) -> bool:
-            return len(state.current_crawler) == self._total_crawler and self._crawler_name in state.current_crawler
+            return len(state.current_crawler) == self._total_crawler and str(self.name) in state.current_crawler
 
         return self._is_ready_by_groupstate(condition_callback=_chk_by_condition, interval=interval, timeout=timeout)
 
@@ -443,7 +444,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         def _chk_by_condition(state: GroupState) -> bool:
             return (
                 len(state.current_crawler) == self._total_crawler
-                and self._crawler_name in state.current_crawler
+                and str(self.name) in state.current_crawler
                 and len(state.current_runner) == self._runner
                 and len(state.current_backup) == self._backup
             )
@@ -491,7 +492,7 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         """
         state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
         return self._election_strategy.elect(
-            candidate=self._crawler_name, member=state.current_crawler, index_sep=self._index_sep, spot=self._runner
+            candidate=str(self.name), member=state.current_crawler, index_sep=self._index_sep, spot=self._runner
         )
 
     def run(
@@ -664,17 +665,17 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
         ):
             state = self._get_metadata(path=self._zk_path.group_state, as_obj=GroupState)
             if role is CrawlerRole.RUNNER:
-                updated_state = Update.group_state(state, append_current_runner=[self._crawler_name])
+                updated_state = Update.group_state(state, append_current_runner=[str(self.name)])
             elif role is CrawlerRole.BACKUP_RUNNER:
-                crawler_index = self._crawler_name.split(self._index_sep)[-1]
+                crawler_index = self.name.id
                 current_standby_id = state.standby_id
                 if int(crawler_index) > int(current_standby_id) and current_standby_id != self._initial_standby_id:
-                    updated_state = Update.group_state(state, append_current_backup=[self._crawler_name])
+                    updated_state = Update.group_state(state, append_current_backup=[str(self.name)])
                 else:
                     updated_state = Update.group_state(
                         state,
-                        append_current_backup=[self._crawler_name],
-                        standby_id=self._crawler_name.split(self._index_sep)[-1],
+                        append_current_backup=[str(self.name)],
+                        standby_id=self.name.id,
                     )
             else:
                 raise ValueError(f"It doesn't support '{role}' recently.")
