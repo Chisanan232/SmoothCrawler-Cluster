@@ -3,7 +3,7 @@ from typing import Generic, List, TypeVar
 
 import pytest
 
-from smoothcrawler_cluster.election import BaseElection, ElectionResult, IndexElection
+from smoothcrawler_cluster.election import BaseElection, ElectionResult, SmallerElection
 
 from .._values import _Crawler_Name_Value
 
@@ -25,7 +25,7 @@ class ElectionTestSpec(metaclass=ABCMeta):
 class TestIndexElection:
     @pytest.fixture(scope="function")
     def election(self) -> Generic[BaseElectionType]:
-        return IndexElection()
+        return SmallerElection()
 
     def test_parse_index(self, election: Generic[BaseElectionType]):
         members_indexes = election.parse_index(member=_Test_Crawlers, index_sep=_Test_Index_Sep)

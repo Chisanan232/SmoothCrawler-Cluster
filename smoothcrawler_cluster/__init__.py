@@ -5,4 +5,4 @@ This is a Python framework which is encapsulation of building cluster or decentr
 """
 
 from .crawler import ZookeeperCrawler
-from .election import IndexElection
+from .election import SmallerElection
