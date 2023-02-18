@@ -30,7 +30,7 @@ from ..register import Register
 from .adapter import DistributedLock
 from .attributes import BaseCrawlerAttribute, SerialCrawlerAttribute
 from .dispatcher import WorkflowDispatcher
-from .workflow import BaseWorkflow, HeartbeatUpdatingWorkflow
+from .workflow import HeartbeatUpdatingWorkflow
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 BaseElectionType = TypeVar("BaseElectionType", bound=BaseElection)
