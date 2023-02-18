@@ -311,7 +311,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def register(self) -> Register:
-        """:obj:`Register`: Properties with both a getter and setter. The getter and setter of option *ensure_wait*."""
+        """:obj:`Register`: Properties with both getter and setter for object **Register** to process meta-data
+        registrations.
+        """
         if not self._register:
             self._register = Register(
                 name=self.name,
@@ -323,6 +325,9 @@ class ZookeeperCrawler(BaseDecentralizedCrawler, BaseCrawler):
 
     @property
     def dispatcher(self) -> WorkflowDispatcher:
+        """:obj:`WorkflowDispatcher`: Properties with both getter and setter for workflow dispatcher
+        **WorkflowDispatcher** which would dispatch one specific workflow by the current crawler role to run.
+        """
         if not self._workflow_dispatcher:
             self._workflow_dispatcher = WorkflowDispatcher(
                 name=self.name,
