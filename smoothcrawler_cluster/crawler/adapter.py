@@ -7,6 +7,8 @@ distributed lock; if the workflow processing with each by algorithm, i.g., sync 
 *gossip* algorithm, it doesn't have and also doesn't need to use distributed lock in the workflow. Therefore, the
 responsibility what thing it should do (whether it runs with lock or not, no matter it doesn't have, or it doesn't need)
 and how it works would let **adapter** module to handle.
+
+*New in version 0.2.0.*
 """
 
 from typing import Any, Callable

@@ -6,6 +6,8 @@ are not required. Therefore, it has a question it needs to consider: what value 
 Absolutely, we could set it manually with any values we want. But if we want to set it more conveniently, how can it do?
 For example, if we run multiple crawler instance by Docker container, do we need to set the attributes like its name for
 each single containers? So this module exists for resolving this issue.
+
+*New in version 0.2.0.*
 """
 
 from abc import ABCMeta, abstractmethod

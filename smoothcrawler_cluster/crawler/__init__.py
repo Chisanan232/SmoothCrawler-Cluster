@@ -22,6 +22,7 @@ divides the crawler features into 5 parts as different single modules:
     Integrate some feature, e.g., distributed lock, into one object as adapter to let workflow could use it in
     implementation and crawler also could assign some objects it needs.
 
+*New in version 0.2.0 about refactoring module *crawler* to be sub-package *crawler*.*
 """
 
 from .crawlers import ZookeeperCrawler

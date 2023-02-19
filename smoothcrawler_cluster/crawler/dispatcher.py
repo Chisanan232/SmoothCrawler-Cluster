@@ -13,6 +13,8 @@ very easily as following code:
     workflow.run(timer=<CrawlerTimer object>)
 
 Therefore, it also could control what running strategy it should be in cluster by this *dispatcher* module objects.
+
+*New in version 0.2.0.*
 """
 
 from typing import Callable, Optional, Union

@@ -4,6 +4,8 @@
 the workflow would be dispatched to do the process which it should work at that time in crawler by the dispatcher in
 *dispatcher* module. So it won't take care who use them, it only considers that what things it should do in the cluster
 by the role.
+
+*New in version 0.2.0.*
 """
 
 import re
