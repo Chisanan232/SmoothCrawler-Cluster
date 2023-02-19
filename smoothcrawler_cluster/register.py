@@ -5,6 +5,8 @@ This module's responsibility is registering all needed meta-data objects to craw
 It's possible that have other strategies to run registration through different way, i.e., checking the identity index
 and judging whether it is **RUNNER** or not every time when it has anything info updated of **GroupState**. So for the
 management and extension, let registration processes to be a single one module in *SmoothCrawler-Cluster*.
+
+*New in version 0.2.0.*
 """
 
 import time
