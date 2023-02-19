@@ -10,7 +10,7 @@
 __title__ = "SmoothCrawler-Cluster"
 __description__ = "Develop and build web spider cluster humanly."
 __url__ = "https://smoothcrawler-cluster.readthedocs.io"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "Liu, Bryant"
 __author_email__ = "chi10211201@cycu.org.tw"
 __license__ = "Apache License 2.0"
