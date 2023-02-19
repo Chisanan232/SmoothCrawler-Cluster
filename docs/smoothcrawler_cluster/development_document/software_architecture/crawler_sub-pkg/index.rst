@@ -11,3 +11,4 @@ Below are the details of each modules in it:
 
    crawler
    workflow
+   dispatcher
