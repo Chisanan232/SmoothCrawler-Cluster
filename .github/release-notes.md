@@ -1,37 +1,59 @@
+## Refactoring the core module *crawler* to be sub-package.
+
 ### 🎉🎊🍾 New feature
 <hr>
 
-First Python library for crawler cluster be born into this world!
-
 #### Source Code
 
-1. Meta-data objects for every crawler instances communicates with each other in cluster.
-2. Utility functions.
-   2-1. Converting features about serialization and deserialization.
-   3-2. Operations with Zookeeper.
-3. Election function.
-   3-1. Design base class and implement first and only one election --- **IndexElection**.
-4. Crawler --- **ZookeeperCrawler**.
+1. Integrate all the Zookeeper node paths into new object **ZookeeperPath**
+2. Properties in module *crawler.crawlers*:
+
+  * *register*
+  * *dispatcher*
+
+3. Module *register* for processing all meta-data registrations of cluster
+4. Module *crawler.attributes* for generating some basic crawler's attributes
+5. Module *crawler.dispatcher* who dispatches which workflow crawler should call to use
+6. Module *crawler.workflow* about implementing every crawler role's job details
+7. Module *model._data* for the inner usages about data objects
+8. Content for the new modules or objects in package documentation
 
 #### Test
 
-1. Add configuration of *PyTest*.
-2. Add configuration of calculating testing coverage of source code.
-3. Unit test.
-4. Integration test.
+1. Add more tests to cover more features in source code
+2. Unit test for new module
+3. Integration test for new module
 
 #### Documentation
 
-1. Add docstring in source code includes *module*, *class*, *function* and *global variable*.
-2. Add package documentation with *Sphinx*.
+1. New content for the new modules or objects
+2. Software architectures of the new modules in sub-package *_crawler_*
 
-#### Configuration
 
-1. Project management *Poetry*.
-2. Coding style checking tool *PyLint*.
-3. Service *CodeCov*.
-4. Python pacakge *setup.py*.
-5. Software license *APACHE 2.0*.
-6. CI *GitHub Action* workflow and PR template.
-7. Documentation CI *ReadTheDoc*.
-8. Task automation tool *Tox*.
+### 🔧⚙️🔩 Breaking Change
+<hr>
+
+#### Source Code
+
+1. Add one more condition of major function *ZookeeperCrawler.wait_for_task* about it won't run anymore if crawler role
+  is **CrawlerStateRole.DEAD_RUNNER**
+
+
+### 🔬🧪🧬 Refactor
+<hr>
+
+#### Source Code
+
+1. Integrate all operating functions of getting or setting values with Zookeeper as 2 protected util functions
+
+  * *ZookeeperCrawler._metadata_util.get_metadata_from_zookeeper* -> *ZookeeperCrawler._get_metadata*
+  * *ZookeeperCrawler._metadata_util.set_metadata_to_zookeeper* -> *ZookeeperCrawler._set_metadata*
+
+2. Refactoring the *crawler* module to be *_crawler_* sub-package
+3. Refactoring the *crawler.crawlers* module implementation:
+
+  * Change to use *crawler.attributes* module to generate and manage some basic crawler's attributes, e.g., name, identity, etc
+  * Change the return data to be **CrawlerName** at property *name*
+  * Change to use *register* to process all meta-data registrations
+  * All crawler role's job details move to new module *crawler.workflow*
+  * Use *crawler.dispatcher* to dispatch needed workflow to run current crawler role's job for crawler
