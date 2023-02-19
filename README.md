@@ -44,7 +44,11 @@
   humanly with <a href="https://github.com/Chisanan232/smoothcrawler"><em>SmoothCrawler</em></a>.
 </p>
 
+<p align="center">
+
 [Overview](#overview) | [Quickly Demo](#quickly-demo) | [Documentation](#documentation)
+
+</p>
 <hr>
 
 
