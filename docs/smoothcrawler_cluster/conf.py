@@ -72,6 +72,12 @@ pygments_style = 'sphinx'
 autodoc_member_order = 'bysource'
 
 
+# -- Options for todo items -------------------------------------------------
+# Ref: https://www.sphinx-doc.org/en/master/usage/extensions/todo.html
+
+todo_include_todos = True
+
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
