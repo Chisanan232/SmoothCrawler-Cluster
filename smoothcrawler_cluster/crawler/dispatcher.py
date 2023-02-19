@@ -86,8 +86,8 @@ class WorkflowDispatcher:
             +-----------------------------+-----------------------------------------+
 
         Raises:
-            * NotImplementedError: The role is not **CrawlerStateRole** type.
-            * CrawlerIsDeadError: The current crawler instance is dead.
+            NotImplementedError: The role is not **CrawlerStateRole** type.
+            CrawlerIsDeadError: The current crawler instance is dead.
 
         """
         role_workflow_args = {
