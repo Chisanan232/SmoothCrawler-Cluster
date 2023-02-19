@@ -13,7 +13,7 @@ Crawler Module
 UML
 ----
 
-.. image:: ../../../images/development_document/software_architecture/crawler_uml.drawio.png
+.. image:: ../../../../images/development_document/software_architecture/crawler_uml.drawio.png
 
 Description
 ------------
@@ -84,7 +84,7 @@ This is the core of *SmoothCrawler-Cluster* package, so it would be more complic
 UML
 ----
 
-.. image:: ../../../images/development_document/software_architecture/crawler_relation_uml.drawio.png
+.. image:: ../../../../images/development_document/software_architecture/crawler_relation_uml.drawio.png
 
 Description
 ------------
