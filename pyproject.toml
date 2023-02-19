@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "smoothcrawler-cluster"
-version = "0.1.0"
+version = "0.2.0"
 description = "Building crawler cluster humanly depends on SmoothCrawler."
 authors = ["Liu, Bryant <chi10211201@cycu.org.tw>"]
 license = "Apache License 2.0"
