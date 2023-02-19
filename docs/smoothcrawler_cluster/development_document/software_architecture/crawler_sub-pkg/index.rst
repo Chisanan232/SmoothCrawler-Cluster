@@ -7,8 +7,9 @@ The software architecture information about the modules in sub-package *smoothcr
 Below are the details of each modules in it:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    crawler
    workflow
    dispatcher
+   attributes
