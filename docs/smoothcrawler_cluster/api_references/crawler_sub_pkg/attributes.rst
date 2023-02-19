@@ -1,3 +1,5 @@
+.. _Crawler_AttributesAPIRef:
+
 ===========
 Attributes
 ===========
