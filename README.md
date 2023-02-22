@@ -44,7 +44,7 @@
   humanly with <a href="https://github.com/Chisanan232/smoothcrawler"><em>SmoothCrawler</em></a>.
 </p>
 
-[Overview](#overview) | [Quickly Demo](#quickly-demo)
+[Overview](#overview) | [Quickly Demo](#quickly-demo) | [Documentation](#documentation)
 <hr>
 
 
@@ -173,3 +173,23 @@ crawling feature as [_General crawler feature_](#general-crawler-feature).
 
 So far, it demonstrates it besides helps developers to build web crawler as a clean software architecture, it also has cluster
 feature to let it be a high reliability crawler.
+
+
+## Documentation
+
+The [documentation](https://smoothcrawler-cluster.readthedocs.io) contains more details, and demonstrations.
+
+* [Quickly Start](https://smoothcrawler-cluster.readthedocs.io/en/master/quickly_start.html) to build your own crawler cluster with *SmoothCrawler-Cluster*
+* Detail *SmoothCrawler-Cluster* usage information of functions, classes and methods in [API References](https://smoothcrawler-cluster.readthedocs.io/en/master/index.html#api-reference)
+* I'm clear what I need and want to [customize something](https://smoothcrawler-cluster.readthedocs.io/en/master/advanced_usage/index.html) of *SmoothCrawler-Cluster*
+* Not sure how to use *SmoothCrawler-Cluster* and design your crawler cluster? [Usage Guides](https://smoothcrawler-cluster.readthedocs.io/en/master/index.html#usage-guides) could be a good guide for you
+* Be curious about the details of *SmoothCrawler-Cluster* development? [Development Documentation](https://smoothcrawler-cluster.readthedocs.io/en/master/index.html#development-documentation) would be helpful to you
+* The [Release Notes](https://smoothcrawler-cluster.readthedocs.io/en/master/index.html#change-logs) of *SmoothCrawler-Cluster*
+
+
+## Download
+
+*SmoothCrawler* still a young open source which keep growing. Here's its download state:
+
+[![Downloads](https://pepy.tech/badge/smoothcrawler-cluster)](https://pepy.tech/project/smoothcrawler-cluster)
+[![Downloads](https://pepy.tech/badge/smoothcrawler-cluster/month)](https://pepy.tech/project/smoothcrawler-cluster)
