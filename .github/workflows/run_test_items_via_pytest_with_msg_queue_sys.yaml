@@ -81,7 +81,7 @@ jobs:
     services:
       # Zookeeper is necessary for Kafka.
       pytest_zookeeper:
-        image: zookeeper:latest
+        image: zookeeper:3.8.0
         env:
           ZOO_MAX_CLIENT_CNXNS: 1000
         ports:

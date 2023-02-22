@@ -1,12 +1,13 @@
-from smoothcrawler_cluster.crawler import ZookeeperCrawler
-from kazoo.client import KazooClient
-from typing import List, Dict, TypeVar, Generic, Union
-from enum import Enum
 from abc import ABC, abstractmethod
+from enum import Enum
+from typing import Dict, Generic, List, TypeVar, Union
+
 import pytest
+from kazoo.client import KazooClient
+
+from smoothcrawler_cluster.crawler import ZookeeperCrawler
 
 from ._instance_value import _TestValue
-
 
 _ZookeeperCrawlerType = TypeVar("_ZookeeperCrawlerType", bound=ZookeeperCrawler)
 
@@ -32,11 +33,12 @@ class ZK:
                     if self._exist_node(path=p) is not None:
                         self._delete_node(path=p)
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object,
-                                                    path=path,
-                                                    zk_function=_operate_zk,
-                                                    test_item=test_item)
+                self._operate_zk_before_run_testing(
+                    zk_crawler=uit_object, path=path, zk_function=_operate_zk, test_item=test_item
+                )
+
             return _
+
         return _
 
     @staticmethod
@@ -47,11 +49,12 @@ class ZK:
                 def _operate_zk(p):
                     self._create_node(path=p, include_data=False)
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object,
-                                                    path=path,
-                                                    zk_function=_operate_zk,
-                                                    test_item=test_item)
+                self._operate_zk_before_run_testing(
+                    zk_crawler=uit_object, path=path, zk_function=_operate_zk, test_item=test_item
+                )
+
             return _
+
         return _
 
     @staticmethod
@@ -61,7 +64,7 @@ class ZK:
                 # Add new node with value in Zookeeper
                 def _get_enum_key_from_value(p):
                     for zk_node in ZKNode:
-                        inst = self._initial_zk_opt_inst(uit_object)
+                        inst = self._initial_zk_opt_inst()
                         if getattr(inst, str(zk_node.value)) == p:
                             return zk_node
                     else:
@@ -86,23 +89,27 @@ class ZK:
                         else:
                             raise TypeError("It only support type *str* and *bytes*.")
 
-                self._operate_zk_before_run_testing(zk_crawler=uit_object,
-                                                    path=list(path_and_value.keys()),
-                                                    zk_function=_operate_zk,
-                                                    test_item=test_item)
+                self._operate_zk_before_run_testing(
+                    zk_crawler=uit_object,
+                    path=list(path_and_value.keys()),
+                    zk_function=_operate_zk,
+                    test_item=test_item,
+                )
+
             return _
+
         return _
 
     def _operate_zk_before_run_testing(
-            self,
-            zk_crawler: Generic[_ZookeeperCrawlerType],
-            path: Union[ZKNode, List[ZKNode]],
-            zk_function,
-            test_item,
+        self,
+        zk_crawler: Generic[_ZookeeperCrawlerType],
+        path: Union[ZKNode, List[ZKNode]],
+        zk_function,
+        test_item,
     ) -> None:
         paths = self._paths_to_list(path)
         for p in paths:
-            inst = self._initial_zk_opt_inst(zk_crawler)
+            inst = self._initial_zk_opt_inst()
             path_str = getattr(inst, str(p.value))
             zk_function(path_str)
         test_item(self, zk_crawler)
@@ -119,16 +126,14 @@ class ZK:
                         if self._exist_node(path=p.value) is not None:
                             # Remove the metadata of target path in Zookeeper
                             self._delete_node(path=p.value)
+
             return _
+
         return _
 
     @classmethod
-    def _initial_zk_opt_inst(cls, uit_object):
-        if not isinstance(uit_object, ZookeeperCrawler):
-            inst = _TestValue()
-        else:
-            inst = uit_object
-        return inst
+    def _initial_zk_opt_inst(cls):
+        return _TestValue()
 
     @classmethod
     def _paths_to_list(cls, path: Union[ZKNode, List[ZKNode]]) -> List[ZKNode]:
@@ -162,7 +167,6 @@ class ZK:
 
 
 class ZKTestSpec(ZK, ABC):
-
     @abstractmethod
     @pytest.fixture(scope="function")
     def uit_object(self):

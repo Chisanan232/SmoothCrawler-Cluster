@@ -25,4 +25,4 @@ Below are all election strategies with different conditions for different scenar
    :maxdepth: 2
 
    abstract_election
-   index_election
+   smaller_election

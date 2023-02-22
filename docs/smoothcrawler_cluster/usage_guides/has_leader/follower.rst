@@ -14,12 +14,12 @@ Here it would explain the details what things it should do as each different rol
 *Runner*
 ---------
 
-**Runner** is same as the definition of enum value *CrawlerStateRole.RUNNER* in :ref:`CrawlerStateRoleAPIRef`.
+**Runner** is same as the definition of enum value *CrawlerStateRole.RUNNER* in :ref:`CrawlerRoleAPIRef`.
 
 *Backup Runner*
 ----------------
 
-**Backup Runner** is also mostly same as the definition of enum value *CrawlerStateRole.BACKUP_RUNNER* in :ref:`CrawlerStateRoleAPIRef`.
+**Backup Runner** is also mostly same as the definition of enum value *CrawlerStateRole.BACKUP_RUNNER* in :ref:`CrawlerRoleAPIRef`.
 The only difference is who monitor **Runner** crawler instance. So let's discussion it in different scenarios as following.
 
 Monitor *Runner* by itself

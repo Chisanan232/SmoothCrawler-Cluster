@@ -1,19 +1,26 @@
 [tool.poetry]
 name = "smoothcrawler-cluster"
-version = "0.1.0"
-description = "Develop and build web spider cluster humanly."
+version = "0.2.0"
+description = "Building crawler cluster humanly depends on SmoothCrawler."
 authors = ["Liu, Bryant <chi10211201@cycu.org.tw>"]
 license = "Apache License 2.0"
 readme = "README.md"
 packages = [{include = "smoothcrawler_cluster"}]
 
 [tool.poetry.dependencies]
-python = "^3.7.2"
+python = "^3.8.0"
 smoothcrawler = "^0.2.0"
 kazoo = "^2.7.0"
-pylint = "^2.15.8"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.docs.dependencies]
+Sphinx = "^5.3.0"
+sphinx-autobuild = "^2021.3.14"
+sphinx-rtd-theme = "^1.1.1"
+furo = "^2022.9.29"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.0.0"
+pylint = "^2.15.8"
 pytest = "^7.0.0"
 pytest-cov = "^3.0.0"
 pytest-html = "^3.1.1"
@@ -27,12 +34,8 @@ requests = "^2.27.1"
 beautifulsoup4 = "^4.10.0"
 mysql-connector-python = "^8.0.28"
 tox = "^3.25.1"
-
-[tool.poetry.group.docs.dependencies]
-Sphinx = "^5.3.0"
-sphinx-autobuild = "^2021.3.14"
-sphinx-rtd-theme = "^1.1.1"
-furo = "^2022.9.29"
+black = "^22.12.0"
+isort = "^5.12.0"
 
 [build-system]
 requires = ["poetry-core"]

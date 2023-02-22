@@ -1,36 +1,37 @@
-from smoothcrawler_cluster.model.metadata_enum import CrawlerStateRole, TaskResult, HeartState
-from enum import Enum
 from abc import ABCMeta
+from enum import Enum
+
+from smoothcrawler_cluster.model.metadata_enum import CrawlerRole, HeartState, TaskState
 
 
 class _EnumObjTest(metaclass=ABCMeta):
-
     @classmethod
     def _run_enum_value_test(cls, under_test_enum: Enum, expected_value: str) -> None:
-        assert under_test_enum.value == expected_value, \
-            f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
+        assert (
+            under_test_enum.value == expected_value
+        ), f"The value of enum member '{under_test_enum}' should be '{expected_value}'."
 
 
-class TestCrawlerStateRole(_EnumObjTest):
+class TestCrawlerRole(_EnumObjTest):
     """Test for the enum object key-value mapping."""
 
     def test_runner_value(self) -> None:
-        under_test_enum = CrawlerStateRole.RUNNER
+        under_test_enum = CrawlerRole.RUNNER
         expected_value = "runner"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_backup_runner_value(self) -> None:
-        under_test_enum = CrawlerStateRole.BACKUP_RUNNER
+        under_test_enum = CrawlerRole.BACKUP_RUNNER
         expected_value = "backup-runner"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_dead_runner_value(self) -> None:
-        under_test_enum = CrawlerStateRole.DEAD_RUNNER
+        under_test_enum = CrawlerRole.DEAD_RUNNER
         expected_value = "dead-runner"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_dead_backup_runner_value(self) -> None:
-        under_test_enum = CrawlerStateRole.DEAD_BACKUP_RUNNER
+        under_test_enum = CrawlerRole.DEAD_BACKUP_RUNNER
         expected_value = "dead-backup-runner"
         self._run_enum_value_test(under_test_enum, expected_value)
 
@@ -39,22 +40,22 @@ class TestTaskResult(_EnumObjTest):
     """Test for the enum object key-value mapping."""
 
     def test_processing_value(self) -> None:
-        under_test_enum = TaskResult.PROCESSING
+        under_test_enum = TaskState.PROCESSING
         expected_value = "processing"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_done_value(self) -> None:
-        under_test_enum = TaskResult.DONE
+        under_test_enum = TaskState.DONE
         expected_value = "done"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_terminate_value(self) -> None:
-        under_test_enum = TaskResult.TERMINATE
+        under_test_enum = TaskState.TERMINATE
         expected_value = "terminate"
         self._run_enum_value_test(under_test_enum, expected_value)
 
     def test_error_value(self) -> None:
-        under_test_enum = TaskResult.ERROR
+        under_test_enum = TaskState.ERROR
         expected_value = "error"
         self._run_enum_value_test(under_test_enum, expected_value)
 

@@ -8,13 +8,18 @@ Here are some util functions like Zookeeper client or data processing of seriali
 or objects be encapsulated again to be more convenience and readable in usage.
 """
 
-from typing import Union, Optional, Type, TypeVar, Generic
+from typing import Generic, Optional, Type, TypeVar, Union
 
-from .converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
-from .zookeeper import _BaseZookeeperNode, _BaseZookeeperClient, ZookeeperNode, ZookeeperRecipe, ZookeeperClient
-from ..model import Empty, GroupState, NodeState, Task, Heartbeat
+from ..model import Empty, GroupState, Heartbeat, NodeState, Task
 from ..model.metadata import _BaseMetaData
-
+from .converter import BaseConverter, JsonStrConverter, TaskContentDataUtils
+from .zookeeper import (
+    ZookeeperClient,
+    ZookeeperNode,
+    ZookeeperPath,
+    ZookeeperRecipe,
+    _BaseZookeeperClient,
+)
 
 _BaseMetaDataType = TypeVar("_BaseMetaDataType", bound=_BaseMetaData)
 
@@ -80,10 +85,10 @@ class MetaDataUtil:
         self._zookeeper_data_converter = converter
 
     def get_metadata_from_zookeeper(
-            self,
-            path: str,
-            as_obj: Type[_BaseMetaDataType],
-            must_has_data: bool = True,
+        self,
+        path: str,
+        as_obj: Type[_BaseMetaDataType],
+        must_has_data: bool = True,
     ) -> Generic[_BaseMetaDataType]:
         """Get meta-data from Zookeeper.
 
@@ -124,10 +129,10 @@ class MetaDataUtil:
                 return None
 
     def set_metadata_to_zookeeper(
-            self,
-            path: str,
-            metadata: Generic[_BaseMetaDataType],
-            create_node: bool = False,
+        self,
+        path: str,
+        metadata: Generic[_BaseMetaDataType],
+        create_node: bool = False,
     ) -> None:
         """Set value of meta-data to node by path in Zookeeper.
 

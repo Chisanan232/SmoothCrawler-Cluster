@@ -1,6 +1,8 @@
-"""Module docstring
-TODO: Need to add document here
+"""*SmoothCrawler-Cluster*
+
+This is a Python framework which is encapsulation of building cluster or decentralized crawler system humanly with
+*SmoothCrawler*.
 """
 
 from .crawler import ZookeeperCrawler
-from .election import IndexElection
+from .election import SmallerElection

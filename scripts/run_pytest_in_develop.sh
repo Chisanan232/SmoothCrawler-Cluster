@@ -44,4 +44,3 @@ else
   echo "🤖⚒ It would start to run testing with Python testing framework *pytest*."
   pytest $test_path
 fi
-

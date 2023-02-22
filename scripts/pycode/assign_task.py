@@ -1,6 +1,8 @@
-from kazoo.client import KazooClient
-from smoothcrawler_cluster.model import Initial, RunningContent
 import json
+
+from kazoo.client import KazooClient
+
+from smoothcrawler_cluster.model import Initial, RunningContent
 
 content = RunningContent(task_id=0, url="https://www.example.com", method="GET", header={}, parameters={}, body={})
 task = Initial.task(running_content=[content])

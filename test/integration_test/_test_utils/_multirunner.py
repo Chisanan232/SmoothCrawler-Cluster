@@ -1,13 +1,13 @@
-from typing import List
 import multiprocessing as mp
 import threading
+from typing import List, Union
 
 
 def run_multi_processes(
-        processes_num: int,
-        target_function,
-        index_sep_char: str = "_",
-        daemon: bool = True,
+    processes_num: int,
+    target_function,
+    index_sep_char: str = "_",
+    daemon: bool = True,
 ) -> List[mp.Process]:
     processes = []
     for i in range(1, processes_num + 1):
@@ -25,7 +25,9 @@ def run_multi_processes(
     return processes
 
 
-def run_2_diff_workers(func1_ps: tuple, func2_ps: tuple, worker: str = "thread") -> List[mp.Process]:
+def run_2_diff_workers(
+    func1_ps: tuple, func2_ps: tuple, worker: str = "thread"
+) -> List[Union[threading.Thread, mp.Process]]:
     func1, func1_args, func1_daemon = func1_ps
     func2, func2_args, func2_daemon = func2_ps
 
@@ -50,5 +52,27 @@ def run_2_diff_workers(func1_ps: tuple, func2_ps: tuple, worker: str = "thread")
         func1_worker.join()
     if func2_daemon is False:
         func2_worker.join()
+
+    return workers
+
+
+def run_multi_diff_workers(funcs: List[tuple], worker: str = "thread") -> List[Union[threading.Thread, mp.Process]]:
+    workers = []
+    for func, func_args, func_daemon in funcs:
+        if worker == "thread":
+            func_worker = threading.Thread(target=func, args=(func_args or ()))
+        elif worker == "process":
+            func_worker = mp.Process(target=func, args=(func_args or ()))
+        else:
+            raise ValueError(f"Doesn't support worker type {worker}.")
+        func_worker.daemon = func_daemon
+        workers.append(func_worker)
+
+    for one_worker in workers:
+        one_worker.start()
+
+    for index, one_func in enumerate(funcs):
+        if one_func[2] is False:
+            workers[index].join()
 
     return workers

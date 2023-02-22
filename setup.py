@@ -1,7 +1,7 @@
-from typing import List
-import setuptools
 import os
+from typing import List
 
+import setuptools
 
 packages = ["smoothcrawler_cluster"]
 here = os.path.abspath(os.path.dirname(__file__))
@@ -59,7 +59,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.11",
     ],
     keyword="crawler web spider cluster",
-    python_requires='>=3.6',
+    python_requires=">=3.6",
     install_requires=requires,
     tests_require=test_requires,
     project_urls={

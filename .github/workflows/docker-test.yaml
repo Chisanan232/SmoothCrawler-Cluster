@@ -36,7 +36,7 @@ jobs:
       docker_build_image_name: sc-cluster_pytest
       docker_build_image_tag: v0
       docker_build_context_path: ./
-      docker_build_file_name: ./pytest_Dockerfile
+      docker_build_file_name: ./scripts/test_in_docker/pytest_Dockerfile
       docker_run_name: sc-cluster_pytest
       docker_run_option: -e TESTING_TYPE=unit-test
       docker_run_image_name: sc-cluster_pytest

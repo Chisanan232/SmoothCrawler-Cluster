@@ -3,12 +3,20 @@ Here are some global variables for testing.
 """
 
 from datetime import datetime
-from smoothcrawler_cluster.model import (
-    CrawlerStateRole, TaskResult, RunningContent, HeartState, GroupState, NodeState, Task, Heartbeat)
 from typing import List
 
-from ._config import Test_Task_HTTP_Host, Test_Task_API_Path
+from smoothcrawler_cluster.model import (
+    CrawlerRole,
+    GroupState,
+    Heartbeat,
+    HeartState,
+    NodeState,
+    RunningContent,
+    Task,
+    TaskState,
+)
 
+from ._config import Test_Task_API_Path, Test_Task_HTTP_Host
 
 # # # # For Zookeeper
 # # Zookeeper paths
@@ -23,7 +31,7 @@ Test_Zookeeper_Bytes_Value = b"This is test value in zookeeper"
 # # Related state settings
 _Crawler_Group_Name_Value: str = "sc-crawler-cluster"
 _Crawler_Name_Value: str = "sc-crawler_1"
-_Crawler_Role_Value: str = CrawlerStateRole.INITIAL.value
+_Crawler_Role_Value: str = CrawlerRole.INITIAL.value
 _Runner_Crawler_Value: int = 2
 _Backup_Crawler_Value: int = 1
 _Fail_Runner_Crawler_Value: int = 1
@@ -41,7 +49,7 @@ _One_Running_Content: dict = {
     "method": "GET",
     "parameters": _Empty_Dict_Value,
     "header": _Empty_Dict_Value,
-    "body": _Empty_Dict_Value
+    "body": _Empty_Dict_Value,
 }
 _One_Running_Content_As_Object = RunningContent(
     task_id=0,
@@ -49,24 +57,17 @@ _One_Running_Content_As_Object = RunningContent(
     method="GET",
     parameters=_Empty_Dict_Value,
     header=_Empty_Dict_Value,
-    body=_Empty_Dict_Value
+    body=_Empty_Dict_Value,
 )
 _Task_Running_Content_Value: List[dict] = [_One_Running_Content]
 _Task_Cookie_Value: dict = {}
 _Task_Authorization_Value: dict = {}
 _Task_In_Progressing_Id_Value: str = "0"
-_Task_Running_Result: dict = {
-    "success_count": 0,
-    "fail_count": 0
-}
-_Task_Running_State: str = str(TaskResult.NOTHING.value)
-_Task_Result_Detail_Value: List[dict] = [{
-    "task_id": 0,
-    "state": "done",
-    "status_code": 200,
-    "response": "",
-    "error_msg": None
-}]
+_Task_Running_Result: dict = {"success_count": 0, "fail_count": 0}
+_Task_Running_State: str = str(TaskState.NOTHING.value)
+_Task_Result_Detail_Value: List[dict] = [
+    {"task_id": 0, "state": "done", "status_code": 200, "response": "", "error_msg": None}
+]
 
 # # Related heartbeat settings
 _Time_Value: datetime = datetime.now()
@@ -75,7 +76,7 @@ _Update_Value: str = "2s"
 _Update_Timeout_Value: str = "4s"
 _Heartbeat_Timeout_Value: str = "2"
 _Heartbeat_State_Value: str = HeartState.HEALTHY.value
-_Task_State_Value: str = TaskResult.PROCESSING.value
+_Task_State_Value: str = TaskState.PROCESSING.value
 
 _Waiting_Time: int = 5
 
@@ -96,14 +97,11 @@ _Test_Group_State_Data = {
     "current_backup": generate_crawler_list(1),
     "fail_crawler": _Empty_List_Value,
     "fail_runner": _Empty_List_Value,
-    "fail_backup": _Empty_List_Value
+    "fail_backup": _Empty_List_Value,
 }
 
 # # *NodeState*
-_Test_Node_State_Data = {
-    "group": _Crawler_Group_Name_Value,
-    "role": _Crawler_Role_Value
-}
+_Test_Node_State_Data = {"group": _Crawler_Group_Name_Value, "role": _Crawler_Role_Value}
 
 # # *Task*
 _Test_Task_Data = {
@@ -113,7 +111,7 @@ _Test_Task_Data = {
     "in_progressing_id": _Task_In_Progressing_Id_Value,
     "running_result": _Task_Running_Result,
     "running_status": _Task_Running_State,
-    "result_detail": _Task_Result_Detail_Value
+    "result_detail": _Task_Result_Detail_Value,
 }
 
 # # *Heartbeat*
@@ -124,7 +122,7 @@ _Test_Heartbeat_Data = {
     "update_timeout": _Update_Timeout_Value,
     "heart_rhythm_timeout": _Heartbeat_Timeout_Value,
     "healthy_state": _Heartbeat_State_Value,
-    "task_state": _Task_State_Value
+    "task_state": _Task_State_Value,
 }
 
 
