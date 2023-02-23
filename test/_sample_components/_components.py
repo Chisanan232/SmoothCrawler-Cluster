@@ -1,16 +1,18 @@
-from bs4 import BeautifulSoup
-from multirunnable.persistence.file import SavingStrategy
 from typing import Any
-from smoothcrawler.components.data import (
-    # General component
-    BaseHTTPResponseParser, BaseDataHandler,
-    # Asynchronous version of general component
-    BaseAsyncHTTPResponseParser, BaseAsyncDataHandler)
-from smoothcrawler.components.httpio import HTTP, AsyncHTTP
-from smoothcrawler.components.persistence import PersistenceFacade
+
 import aiohttp
 import requests
 import urllib3
+from bs4 import BeautifulSoup
+from multirunnable.persistence.file import SavingStrategy
+from smoothcrawler.components.data import (
+    BaseAsyncDataHandler,
+    BaseAsyncHTTPResponseParser,
+    BaseDataHandler,
+    BaseHTTPResponseParser,
+)
+from smoothcrawler.components.httpio import HTTP, AsyncHTTP
+from smoothcrawler.components.persistence import PersistenceFacade
 
 from ._persistence_layer import StockDao, StockFao
 
@@ -45,7 +47,6 @@ class AsyncHTTPRequest(AsyncHTTP):
 
 
 class Urllib3HTTPResponseParser(BaseHTTPResponseParser):
-
     def get_status_code(self, response: urllib3.response.HTTPResponse) -> int:
         return response.status
 
@@ -56,7 +57,6 @@ class Urllib3HTTPResponseParser(BaseHTTPResponseParser):
 
 
 class RequestsHTTPResponseParser(BaseHTTPResponseParser):
-
     def get_status_code(self, response: requests.Response) -> int:
         return response.status_code
 
@@ -67,7 +67,6 @@ class RequestsHTTPResponseParser(BaseHTTPResponseParser):
 
 
 class AsyncHTTPResponseParser(BaseAsyncHTTPResponseParser):
-
     async def get_status_code(self, response: aiohttp.client.ClientResponse) -> int:
         return response.status
 
@@ -83,29 +82,24 @@ class AsyncHTTPResponseParser(BaseAsyncHTTPResponseParser):
 
 
 class ExampleWebDataHandler(BaseDataHandler):
-
     def process(self, result):
         return result
 
 
 class ExampleWebAsyncDataHandler(BaseAsyncDataHandler):
-
     async def process(self, result):
         return result
 
 
 class DataFilePersistenceLayer(PersistenceFacade):
-
     def save(self, data, *args, **kwargs):
         stock_fao = StockFao(strategy=SavingStrategy.ONE_THREAD_ONE_FILE)
         stock_fao.save(formatter="csv", file="/Users/bryantliu/Downloads/stock_crawler_2330.csv", mode="a+", data=data)
 
 
 class DataDatabasePersistenceLayer(PersistenceFacade):
-
     def save(self, data, *args, **kwargs):
         stock_dao = StockDao()
         stock_dao.create_stock_data_table(stock_symbol="2330")
         data_rows = [tuple(d) for d in data]
         stock_dao.batch_insert(stock_symbol="2330", data=data_rows)
-

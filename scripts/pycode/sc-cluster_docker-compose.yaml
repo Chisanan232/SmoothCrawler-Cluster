@@ -1,0 +1,167 @@
+version: "3.8"
+
+services:
+
+  sc-cluster_linux_1:
+    container_name: sc-cluster_client_1
+    environment:
+      - CRAWLER_MODE=cluster
+      - CRAWLER_NAME=sc-crawler_1
+      - CLUSTER_RUNNER=2
+      - CLUSTER_BACKUP=2
+      - ZK_HOSTS=10.20.23.10:2181
+    depends_on:
+      test_zookeeper:
+        condition: service_healthy
+    image: client/sc-cluster:v3
+#    build:
+#      context: .
+#      dockerfile: sc-crawler_Dockerfile
+    networks:
+      sc-cluster_client_network:
+        ipv4_address: 10.20.23.2
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+  sc-cluster_linux_2:
+    container_name: sc-cluster_client_2
+    environment:
+      - CRAWLER_MODE=cluster
+      - CRAWLER_NAME=sc-crawler_2
+      - CLUSTER_RUNNER=2
+      - CLUSTER_BACKUP=2
+      - ZK_HOSTS=10.20.23.10:2181
+    depends_on:
+      test_zookeeper:
+        condition: service_healthy
+    image: client/sc-cluster:v3
+#    build:
+#      context: .
+#      dockerfile: sc-crawler_Dockerfile
+    networks:
+      sc-cluster_client_network:
+        ipv4_address: 10.20.23.3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+  sc-cluster_linux_3:
+    container_name: sc-cluster_client_3
+    environment:
+      - CRAWLER_MODE=cluster
+      - CRAWLER_NAME=sc-crawler_3
+      - CLUSTER_RUNNER=2
+      - CLUSTER_BACKUP=2
+      - ZK_HOSTS=10.20.23.10:2181
+    depends_on:
+      test_zookeeper:
+        condition: service_healthy
+    image: client/sc-cluster:v3
+#    build:
+#      context: .
+#      dockerfile: sc-crawler_Dockerfile
+    networks:
+      sc-cluster_client_network:
+        ipv4_address: 10.20.23.4
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+  sc-cluster_linux_4:
+    container_name: sc-cluster_client_4
+    environment:
+      - CRAWLER_MODE=cluster
+      - CRAWLER_NAME=sc-crawler_4
+      - CLUSTER_RUNNER=2
+      - CLUSTER_BACKUP=2
+      - ZK_HOSTS=10.20.23.10:2181
+    depends_on:
+      test_zookeeper:
+        condition: service_healthy
+    image: client/sc-cluster:v3
+#    build:
+#      context: .
+#      dockerfile: sc-crawler_Dockerfile
+    networks:
+      sc-cluster_client_network:
+        ipv4_address: 10.20.23.5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+  test_zookeeper:
+    container_name: test-zookeeper
+    environment:
+      - ZOO_MAX_CLIENT_CNXNS=100000
+    image: zookeeper:latest
+    restart: always
+    networks:
+      sc-cluster_client_network:
+        ipv4_address: 10.20.23.10
+    ports:
+      - "2181:2181"
+      - "2888:2888"
+      - "3888:3888"
+      - "7010:7010"
+    healthcheck:
+      test: ["CMD", "/apache-zookeeper-3.8.0-bin/bin/zkServer.sh", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.75'
+          memory: 256M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+      restart_policy:
+        condition: on-failure
+        max_attempts: 2
+
+
+networks:
+  sc-cluster_client_network:
+    # # It would test web spider features so that it needs to connect to internet.
+    driver: ipvlan
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.20.23.0/24
+          gateway: 10.20.23.1
+      options:
+        parent: en0

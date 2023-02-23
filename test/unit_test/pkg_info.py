@@ -1,12 +1,18 @@
 from smoothcrawler_cluster.__pkg_info__ import (
-    __title__, __version__, __description__, __url__, __license__, __author__, __author_email__, __copyright__
+    __author__,
+    __author_email__,
+    __copyright__,
+    __description__,
+    __license__,
+    __title__,
+    __url__,
+    __version__,
 )
-
 
 _Expected_Title: str = "SmoothCrawler-Cluster"
 _Expected_Description: str = "Develop and build web spider cluster humanly."
 _Expected_URL: str = "https://smoothcrawler-cluster.readthedocs.io"
-_Expected_Version: str = "0.1.0"
+_Expected_Version: str = "0.2.0"
 _Expected_Author: str = "Liu, Bryant"
 _Expected_Author_Email: str = "chi10211201@cycu.org.tw"
 _Expected_License: str = "Apache License 2.0"

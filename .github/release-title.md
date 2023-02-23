@@ -1,1 +1,1 @@
-v0.1.0 - First Python library for crawler cluster be born to this world 🎊🥂🍻
+v0.2.0 - Refactoring the core module *crawler* to be sub-package 🛠🧬🤖

@@ -1,11 +1,59 @@
+============
+Version 0.X
+============
+
+Version 0.2.0
 ==============
+
+Release date: 2023-02-23 (UTC+08:00)
+
+New Feature
+------------
+
+* Integrate all the Zookeeper node paths into new object **ZookeeperPath**
+* New properties in module *crawler.crawlers*:
+
+  * *register*
+  * *dispatcher*
+
+* New module *register* for processing all meta-data registrations of cluster
+* New module *crawler.attributes* for generating some basic crawler's attributes
+* New module *crawler.dispatcher* who dispatches which workflow crawler should call to use
+* New module *crawler.workflow* about implementing every crawler role's job details
+* New module *model._data* for the inner usages about data objects
+* New content for the new modules or objects in package documentation
+
+Breaking Change
+----------------
+
+* Add one more condition of major function *ZookeeperCrawler.wait_for_task* about it won't run anymore if crawler role
+  is **CrawlerStateRole.DEAD_RUNNER**
+
+Refactor
+---------
+
+* Integrate all operating functions of getting or setting values with Zookeeper as 2 protected util functions
+
+  * *ZookeeperCrawler._metadata_util.get_metadata_from_zookeeper* -> *ZookeeperCrawler._get_metadata*
+  * *ZookeeperCrawler._metadata_util.set_metadata_to_zookeeper* -> *ZookeeperCrawler._set_metadata*
+
+* Refactoring the *crawler* module to be *crawler* sub-package
+* Refactoring the *crawler.crawlers* module implementation:
+
+  * Change to use *crawler.attributes* module to generate and manage some basic crawler's attributes, e.g., name, identity, etc
+  * Change the return data to be **CrawlerName** at property *name*
+  * Change to use *register* to process all meta-data registrations
+  * All crawler role's job details move to new module *crawler.workflow*
+  * Use *crawler.dispatcher* to dispatch needed workflow to run current crawler role's job for crawler
+
+
 Version 0.1.0
 ==============
 
 Release date: 2023-01-23 (UTC+08:00)
 
 New Feature
-============
+------------
 
 * Meta-data objects in cluster
 * Utility modules

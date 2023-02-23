@@ -13,7 +13,7 @@ Crawler Module
 UML
 ----
 
-.. image:: ../../../images/development_document/software_architecture/crawler_uml.drawio.png
+.. image:: ../../../../images/development_document/software_architecture/crawler_uml.drawio.png
 
 Description
 ------------
@@ -84,7 +84,7 @@ This is the core of *SmoothCrawler-Cluster* package, so it would be more complic
 UML
 ----
 
-.. image:: ../../../images/development_document/software_architecture/crawler_relation_uml.drawio.png
+.. image:: ../../../../images/development_document/software_architecture/crawler_relation_uml.drawio.png
 
 Description
 ------------
@@ -92,17 +92,62 @@ Description
 *Crawler* module has aggregation relation with many classes in different modules. Here would clear that which modules is in
 the relation and why use it in *crawler* module.
 
-Aggregation with *zookeeper* module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In briefly, it could divide the relationship to be 3 sections of module *crawler.crawlers*:
+
+* *Basic attributes and election*
+* *Meta-data operations and communication*
+* *Crawler role's responsibility and running*
+
+*Basic attributes and election* (Red square)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Aggregation with *crawler.attributes* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To generate crawler's basic attributes, e.g., name, identity, etc, for running **Runner** election.
+
+Aggregation with *election* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+About running **Runner** election, it would use the strategy in *election* module to run.
+
+
+*Meta-data operations and communication* (Grey square)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Aggregation with *_utils.zookeeper* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Crawler would use *zookeeper* module to build session and do some operations with Zookeeper.
 
-Aggregation with *converter* module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Aggregation with *_utils.converter* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 All the meta-data objects would be processed by *converter* module.
 
-Aggregation with *election* module
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Aggregation with *crawler.adapter* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-About running **Runner** election, it would use the strategy in *election* module to run.
+For some special operations, i.e., operate something with one specific node synchronously (with a distributed lock).
+
+
+*Crawler role's responsibility and running* (Blue square)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Aggregation with *crawler.workflow* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To run the specific crawler role's jobs. For objects in *crawler.crawlers* module, it could use it directly without any checking or something else.
+
+Aggregation with *crawler.dispatcher* module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The dispatcher who takes care which workflow the crawler should call and use it by crawler's role. For objects in *crawler.crawlers* module, it needs
+get the needed workflow through *crawler.dispatcher* module to dispatch for crawler.
+
+.. note::
+
+    About the details of the relationship between modules *dispatcher*, *workflow* and *crawler*, please refer to below links to get more info:
+
+    * :ref:`Software architecture of module *crawler.dispatcher* <DevelopmentDoc_SA_Crawler_Dispatcher>`
+    * :ref:`Software architecture of module *crawler.workflow* <DevelopmentDoc_SA_Crawler_Workflow>`

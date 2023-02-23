@@ -31,19 +31,6 @@ class BaseElection(metaclass=ABCMeta):
     developers extend more different strategies of election processing for more different scenarios.
     """
 
-    _identity: str = ""
-
-    @property
-    def identity(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter. The identity of each one crawler instance. It MUST BE
-        unique.
-        """
-        return self._identity
-
-    @identity.setter
-    def identity(self, ident: str) -> None:
-        self._identity = ident
-
     @abstractmethod
     def elect(self, **kwargs) -> ElectionResult:
         """Run the election processing to verify who is/are **Runner** and otherwise is/are **Backup_Runner** finally.
@@ -57,8 +44,35 @@ class BaseElection(metaclass=ABCMeta):
         """
         pass
 
+    @abstractmethod
+    def parse_index(self, **kwargs) -> List[int]:
+        """Parse all the member's identity from their name.
 
-class IndexElection(BaseElection):
+        Args:
+            **kwargs (dict): The parameters of this one specific election strategy processing.
+
+        Returns:
+            A list of int object which are the identities from all members in cluster.
+
+        """
+        pass
+
+    @abstractmethod
+    def filter(self, **kwargs) -> List[bool]:
+        """Filter all member's identity and generate winners who would be **RUNNER** in cluster, nor they would be
+        **BACKUP RUNNER**.
+
+        Args:
+            **kwargs (dict): The parameters of this one specific election strategy processing.
+
+        Returns:
+            A list of bool object which means the current crawler instance is winner.
+
+        """
+        pass
+
+
+class SmallerElection(BaseElection):
     """*Election by index of crawler name*
 
     The criteria of this election strategy is the **index** which is *the last characters in crawler's name*, e.g.,
@@ -72,7 +86,7 @@ class IndexElection(BaseElection):
     """
 
     def elect(self, candidate: str, member: List[str], index_sep: str, spot: int) -> ElectionResult:
-        """
+        """Run the election processing to verify who is/are **Runner** and otherwise is/are **Backup_Runner** finally.
 
         Args:
             candidate (str): The crawler instance which apply for the runner election. In generally, it is the crawler
@@ -85,8 +99,44 @@ class IndexElection(BaseElection):
             ElectionResult: Final election result.
 
         """
-        member_indexs = map(lambda one_member: int(one_member.split(sep=index_sep)[-1]), member)
-        sorted_list = sorted(list(member_indexs))
-        winner = sorted_list[0:spot]
-        is_winner = list(map(lambda winner_index: str(winner_index) in candidate, winner))
+        # Parse the index from crawler's name
+        member_indexes = self.parse_index(member=member, index_sep=index_sep)
+        # Sort the indexes and filter to get the winner
+        is_winner = self.filter(member_indexes, candidate=candidate, index_sep=index_sep, spot=spot)
         return ElectionResult.WINNER if True in is_winner else ElectionResult.LOSER
+
+    def parse_index(self, member: List[str], index_sep: str) -> List[int]:
+        """Parse all the member's identity from their name.
+
+        Args:
+            member (List[str]): All the members who would participate in this election. In generally, the members would
+                be the value of meta-data *GroupSate.current_crawler*.
+            index_sep (str): The separation which could separate the crawler instance's name and get the identity from
+                it.
+
+        Returns:
+            A list of int object which are the identities from all members in cluster.
+
+        """
+        return list(map(lambda one_member: int(one_member.split(sep=index_sep)[-1]), member))
+
+    def filter(self, member_indexes: List[int], candidate: str, index_sep: str, spot: int) -> List[bool]:
+        """Filter all member's identity and generate winners who would be **RUNNER** in cluster, nor they would be
+        **BACKUP RUNNER**.
+
+        Args:
+            member_indexes (List[int]): A list of int object which are the identities from all members in cluster.
+            candidate (str): The current crawler instance who participates in this election.
+            index_sep (str): The separation which could separate the crawler instance's name and get the identity from
+                it.
+            spot (int): The amount of **Winner**, in the other words, **Runner** it could have.
+
+        Returns:
+            A list of bool object which means the current crawler instance is winner.
+
+        """
+        # Sort the indexes
+        sorted_list = sorted(member_indexes)
+        # Filter to get the winner
+        winner = sorted_list[0:spot]
+        return list(map(lambda winner_index: str(winner_index) == candidate.split(index_sep)[-1], winner))

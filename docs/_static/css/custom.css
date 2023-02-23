@@ -1,15 +1,8 @@
-.toctree-wrapper > p.caption {
-  display: none;
-}
-
+section#smoothcrawler-cluster > h1,
 section#smoothcrawler-cluster > p {
   text-align: center;
 }
 
-div.admonition-todo {
-  border-top: 2px solid red;
-  border-bottom: 2px solid red;
-  border-left: 2px solid red;
-  border-right: 2px solid red;
-  background-color: #ff6347;
+.toctree-wrapper > p.caption {
+  display: none;
 }

@@ -11,6 +11,6 @@ Following are the details of all current modules:
 .. toctree::
    :maxdepth: 2
 
-   crawler
+   crawler_sub-pkg/index
    election
    utils

@@ -3,13 +3,13 @@
 Here are the meta-data which keeps state for distributed system running finely with each others.
 """
 
+import re
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple
 from datetime import datetime as dt
-from typing import List, Union, Optional, TypeVar
-import re
+from typing import List, Optional, TypeVar, Union
 
-from .metadata_enum import CrawlerStateRole, TaskResult, HeartState
+from .metadata_enum import CrawlerRole, HeartState, TaskState
 
 _DatetimeType = TypeVar("_DatetimeType", bound=dt)
 
@@ -268,7 +268,7 @@ class NodeState(_BaseMetaData):
     """
 
     _group: str = None
-    _role: CrawlerStateRole = None
+    _role: CrawlerRole = None
 
     def to_readable_object(self) -> dict:
         return {
@@ -292,7 +292,7 @@ class NodeState(_BaseMetaData):
         self._group = group
 
     @property
-    def role(self) -> CrawlerStateRole:
+    def role(self) -> CrawlerRole:
         """:obj:`str`: Properties with both a getter and setter for the crawler role what current crawler instance is.
         It recommends that use enum object **CrawlerStateRole** to configure this property. But it still could use
         string type value ('runner', 'backup-runner', 'dead-runner', 'dead-backup-runner') to do it.
@@ -302,19 +302,22 @@ class NodeState(_BaseMetaData):
         return self._role
 
     @role.setter
-    def role(self, role: Union[CrawlerStateRole, str]) -> None:
+    def role(self, role: Union[CrawlerRole, str]) -> None:
         if isinstance(role, str):
-            enum_values = list(map(lambda a: a.value, CrawlerStateRole))
+            enum_values = list(map(lambda a: a.value, CrawlerRole))
             if role not in enum_values:
-                raise ValueError("The value of attribute *role* is incorrect. It recommends that using enum object "
-                                 f"*CrawlerStateRole*, but you also could use string which is valid if it in list "
-                                 f"{enum_values}.")
-        else:
-            if isinstance(role, CrawlerStateRole) is False:
                 raise ValueError(
-                    "The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*.")
+                    "The value of attribute *role* is incorrect. It recommends that using enum object "
+                    f"*CrawlerStateRole*, but you also could use string which is valid if it in list "
+                    f"{enum_values}."
+                )
+        else:
+            if isinstance(role, CrawlerRole) is False:
+                raise ValueError(
+                    "The value of attribute *role* is incorrect. Please use enum object *CrawlerStateRole*."
+                )
 
-        role = role.value if isinstance(role, CrawlerStateRole) else role
+        role = role.value if isinstance(role, CrawlerRole) else role
         self._role = role
 
 
@@ -455,15 +458,19 @@ class Task(_BaseMetaData):
     @running_content.setter
     def running_content(self, running_content: List[Union[dict, RunningContent]]) -> None:
         if isinstance(running_content, list) is False:
-            raise ValueError("Property *running_content* only accept list type object which be combined with "
-                             "RunningContent type elements.")
+            raise ValueError(
+                "Property *running_content* only accept list type object which be combined with "
+                "RunningContent type elements."
+            )
         chksum = map(lambda content: isinstance(content, (dict, RunningContent)), running_content)
         if False in list(chksum):
             raise ValueError("Property *running_content* only accept list with RunningContent type elements.")
         dict_contents = map(
             lambda content: self.__to_dict(content, _RunningContent_Attrs)
-            if isinstance(content, RunningContent) else content,
-            running_content)
+            if isinstance(content, RunningContent)
+            else content,
+            running_content,
+        )
         self._running_content = list(dict_contents)
 
     @property
@@ -508,8 +515,9 @@ class Task(_BaseMetaData):
     @in_progressing_id.setter
     def in_progressing_id(self, in_progressing_id: Union[str, int]) -> None:
         if isinstance(in_progressing_id, (str, int)) is False:
-            raise ValueError("Property *in_progressing_id* only accept int type value or str type value which is a "
-                             "number format.")
+            raise ValueError(
+                "Property *in_progressing_id* only accept int type value or str type value which is a " "number format."
+            )
         try:
             int(in_progressing_id)
         except ValueError as e:
@@ -532,8 +540,11 @@ class Task(_BaseMetaData):
     def running_result(self, running_result: Union[dict, RunningResult]) -> None:
         if isinstance(running_result, (dict, RunningResult)) is False:
             raise ValueError("Property *running_result* only accept dict type or RunningResult type value.")
-        running_result = self.__to_dict(running_result, _RunningResult_Attrs) \
-            if isinstance(running_result, RunningResult) else running_result
+        running_result = (
+            self.__to_dict(running_result, _RunningResult_Attrs)
+            if isinstance(running_result, RunningResult)
+            else running_result
+        )
         self._running_result = running_result
 
     @property
@@ -546,10 +557,10 @@ class Task(_BaseMetaData):
         return self._running_status
 
     @running_status.setter
-    def running_status(self, running_status: Union[str, TaskResult]) -> None:
-        if isinstance(running_status, (str, TaskResult)) is False:
+    def running_status(self, running_status: Union[str, TaskState]) -> None:
+        if isinstance(running_status, (str, TaskState)) is False:
             raise ValueError("Property *running_status* only accept *str* or *TaskResult* type value.")
-        result_detail = running_status.value if isinstance(running_status, TaskResult) else running_status
+        result_detail = running_status.value if isinstance(running_status, TaskState) else running_status
         self._running_status = result_detail
 
     @property
@@ -566,14 +577,17 @@ class Task(_BaseMetaData):
     @result_detail.setter
     def result_detail(self, result_detail: List[Union[dict, ResultDetail]]) -> None:
         if isinstance(result_detail, list) is False:
-            raise ValueError("Property *result_detail* only accept list type object which be combined with ResultDetail"
-                             " type elements.")
+            raise ValueError(
+                "Property *result_detail* only accept list type object which be combined with ResultDetail"
+                " type elements."
+            )
         chksum = map(lambda detail: isinstance(detail, (dict, ResultDetail)), result_detail)
         if False in list(chksum):
             raise ValueError("Property *result_detail* only accept list with ResultDetail type elements.")
         dict_details = map(
             lambda detail: self.__to_dict(detail, _ResultDetail_Attrs) if isinstance(detail, ResultDetail) else detail,
-            result_detail)
+            result_detail,
+        )
         self._result_detail = list(dict_details)
 
     @classmethod
@@ -625,7 +639,8 @@ class Heartbeat(_BaseMetaData):
     _default_time_format: str = "%Y-%m-%d %H:%M:%S"
 
     _Time_Setting_Value_Format_Error = ValueError(
-        "The value format of property *update_time* should be like '<number><timeunit>', i.e., '3s' or '2m', etc.")
+        "The value format of property *update_time* should be like '<number><timeunit>', i.e., '3s' or '2m', etc."
+    )
 
     def to_readable_object(self) -> dict:
         return {
@@ -640,6 +655,7 @@ class Heartbeat(_BaseMetaData):
 
     @property
     def heart_rhythm_time(self) -> Optional[str]:
+        # pylint: disable=anomalous-backslash-in-string
         """:obj:`str`: Properties with both a getter and setter for the datetime value of currently heartbeat of one
         specific **Runner** crawler.
 
@@ -687,7 +703,8 @@ class Heartbeat(_BaseMetaData):
             else:
                 checksum = re.search(
                     r"[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}.[0-9]{2,4}[\-\/:][0-9]{2,4}[\-\/:][0-9]{2,4}",
-                    str(heart_rhythm_time))
+                    str(heart_rhythm_time),
+                )
                 if checksum.group() is None or checksum.group() == "":
                     raise ValueError("The datetime type value is invalid. Please check it.")
         else:
@@ -712,8 +729,10 @@ class Heartbeat(_BaseMetaData):
             raise ValueError("Property *time_format* only accept str type value.")
         result = dt.now().strftime(formatter)
         if result == formatter:
-            raise ValueError("The value of property *time_format* is invalid. Please set a valid value as "
-                             "'datetime.datetime.strftime()'.")
+            raise ValueError(
+                "The value of property *time_format* is invalid. Please set a valid value as "
+                "'datetime.datetime.strftime()'."
+            )
         self._time_format = formatter
 
     @property
@@ -792,8 +811,10 @@ class Heartbeat(_BaseMetaData):
         try:
             int(heart_rhythm_timeout)
         except ValueError as e:
-            raise ValueError(f"The value of property *heart_rhythm_time* should be ONLY number type value as 'int' type"
-                             f". But it got {heart_rhythm_timeout} currently.") from e
+            raise ValueError(
+                f"The value of property *heart_rhythm_time* should be ONLY number type value as 'int' type"
+                f". But it got {heart_rhythm_timeout} currently."
+            ) from e
         else:
             self._heart_rhythm_timeout = heart_rhythm_timeout
 
@@ -828,12 +849,12 @@ class Heartbeat(_BaseMetaData):
         return self._task_state
 
     @task_state.setter
-    def task_state(self, task_state: Union[str, TaskResult]) -> None:
-        if isinstance(task_state, (str, TaskResult)) is False:
+    def task_state(self, task_state: Union[str, TaskState]) -> None:
+        if isinstance(task_state, (str, TaskState)) is False:
             raise ValueError("Property *task_state* only accept *str* or *TaskResult* type value.")
-        if isinstance(task_state, str) and task_state not in [i.value for i in TaskResult]:
+        if isinstance(task_state, str) and task_state not in [i.value for i in TaskState]:
             raise ValueError("The value of property *task_state* should be as *TaskResult* value.")
-        task_state = task_state.value if isinstance(task_state, TaskResult) else task_state
+        task_state = task_state.value if isinstance(task_state, TaskState) else task_state
         self._task_state = task_state
 
     @classmethod

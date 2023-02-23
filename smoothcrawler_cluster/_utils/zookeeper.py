@@ -7,49 +7,41 @@ module for that.
 
 from abc import ABCMeta, abstractmethod
 from enum import Enum
+from typing import Any, Generic, Optional, TypeVar, Union
+
 from kazoo.client import KazooClient
 from kazoo.exceptions import NodeExistsError
-from kazoo.recipe.lock import ReadLock, WriteLock, Semaphore
-from typing import Any, Union, Optional, TypeVar, Generic
+from kazoo.recipe.lock import ReadLock, Semaphore, WriteLock
 
-from .converter import BaseConverter
-
-
-BaseConverterType = TypeVar("BaseConverterType", bound=BaseConverter)
+from ..model._data import BaseNode, MetaDataPath
 
 
-class _BaseZookeeperNode(metaclass=ABCMeta):
-    """*Framework module to define some attributes of node in Zookeeper*
+class ZookeeperPath(MetaDataPath):
+    """*All paths of Zookeeper*
 
-    A node of Zookeeper.
+    In Zookeeper, it would save data under specific path as node. This object provides all paths of Zookeeper which
+    saves meta-data for *SmoothCrawler-Cluster*.
     """
 
-    @property
-    @abstractmethod
-    def path(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter for the path of node in Zookeeper."""
-        pass
+    @classmethod
+    def generate_parent_node(cls, parent_name: str, is_group: bool = False) -> str:
+        """Generate node path of Zookeeper with fixed format.
 
-    @path.setter
-    @abstractmethod
-    def path(self, val: str) -> None:
-        pass
+        Args:
+            parent_name (str): The crawler name.
+            is_group (bool): If it's True, generate node path for _group_ type meta-data.
 
-    @property
-    @abstractmethod
-    def value(self) -> str:
-        """:obj:`str`: Properties with both a getter and setter for the value of the path. It may need to deserialize
-        the data if it needs.
+        Returns:
+            str: A Zookeeper node path.
+
         """
-        pass
-
-    @value.setter
-    @abstractmethod
-    def value(self, val: str) -> None:
-        pass
+        if is_group:
+            return f"smoothcrawler/group/{parent_name}"
+        else:
+            return f"smoothcrawler/node/{parent_name}"
 
 
-class ZookeeperNode(_BaseZookeeperNode):
+class ZookeeperNode(BaseNode):
     """*Zookeeper node object*
 
     All data be got from Zookeeper would be converted to this object in all util functions for getting value.
@@ -75,7 +67,7 @@ class ZookeeperNode(_BaseZookeeperNode):
         self._value = val
 
 
-_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=_BaseZookeeperNode)
+_BaseZookeeperNodeType = TypeVar("_BaseZookeeperNodeType", bound=BaseNode)
 
 
 class ZookeeperRecipe(Enum):
@@ -111,11 +103,11 @@ class _BaseZookeeperClient(metaclass=ABCMeta):
 
     @abstractmethod
     def restrict(
-            self,
-            path: str,
-            restrict: ZookeeperRecipe,
-            identifier: str,
-            max_leases: Optional[int] = None,
+        self,
+        path: str,
+        restrict: ZookeeperRecipe,
+        identifier: str,
+        max_leases: Optional[int] = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
         """Limit Zookeeper operations in concurrency scenarios by distributed lock.
 
@@ -247,11 +239,11 @@ class ZookeeperClient(_BaseZookeeperClient):
         self.__zk_client.start()
 
     def restrict(
-            self,
-            path: str,
-            restrict: ZookeeperRecipe,
-            identifier: str,
-            max_leases: int = None,
+        self,
+        path: str,
+        restrict: ZookeeperRecipe,
+        identifier: str,
+        max_leases: int = None,
     ) -> Union[ReadLock, WriteLock, Semaphore]:
         restrict_obj = getattr(self.__zk_client, str(restrict.value))
         if max_leases:
@@ -264,7 +256,7 @@ class ZookeeperClient(_BaseZookeeperClient):
         return self.__zk_client.exists(path=path)
 
     def get_node(self, path: str) -> Generic[_BaseZookeeperNodeType]:
-        data, state = self.__zk_client.get(path=path)    # pylint: disable=unused-variable
+        data, state = self.__zk_client.get(path=path)  # pylint: disable=unused-variable
 
         zk_path = ZookeeperNode()
         zk_path.path = path
