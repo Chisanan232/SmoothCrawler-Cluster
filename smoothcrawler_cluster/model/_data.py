@@ -4,6 +4,7 @@ Here provides some data objects for inner usage in *SmoothCrawler-Cluster*.
 
 *New in version 0.2.0.*
 """
+
 from abc import ABCMeta, abstractmethod
 from typing import Callable
 
