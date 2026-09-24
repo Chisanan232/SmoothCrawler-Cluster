@@ -1,3 +1,11 @@
+> [!WARNING]
+> **Maintenance status: unmaintained (legacy project).**
+>
+> This project is no longer actively maintained. Compatibility updates, dependency upgrades
+> and security fixes are not currently planned. If you use it — especially in production —
+> please evaluate it carefully and pin your dependency versions. Existing releases and the
+> historical documentation remain available.
+
 <h1 align="center">
   SmoothCrawler-Cluster
 </h1>
