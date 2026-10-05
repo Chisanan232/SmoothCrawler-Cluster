@@ -466,9 +466,9 @@ class Task(_BaseMetaData):
         if False in list(chksum):
             raise ValueError("Property *running_content* only accept list with RunningContent type elements.")
         dict_contents = map(
-            lambda content: self.__to_dict(content, _RunningContent_Attrs)
-            if isinstance(content, RunningContent)
-            else content,
+            lambda content: (
+                self.__to_dict(content, _RunningContent_Attrs) if isinstance(content, RunningContent) else content
+            ),
             running_content,
         )
         self._running_content = list(dict_contents)
